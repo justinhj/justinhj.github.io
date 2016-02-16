@@ -8,12 +8,11 @@
 # Site settings
 title: justinhj's technical blog
 email: justinhj@gmail.com
-description: > # this means to ignore newlines until "baseurl:"
-	     Documents my adventures in the world of computer programming and develop operations
+description: Documents my adventures in the world of software technology
 baseurl: "/blog" # the subpath of your site, e.g. /blog
 url: "http://justinhj.github.io" # the base hostname & protocol for your site
 twitter_username: justinhj
-github_username:  justinhj
+github_username:  justin
 
 # Build settings
 markdown: kramdown
