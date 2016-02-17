@@ -1,0 +1,13 @@
+---
+layout: post
+title: Checkout out your DB tables
+date: '2014-03-12T14:03:00.001-07:00'
+author: Justin
+tags:
+- mysql
+modified_time: '2014-03-12T14:03:50.880-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-2134789851764625828
+blogger_orig_url: http://justinsboringpage.blogspot.com/2014/03/checkout-out-your-db-tables.html
+---
+
+I was doing some DB work today and wanted to be able to sort all DB tables based on the date they were created. Turns out you can do some neat stuff by looking in the information_schema.tables. For example this shows all the InnoDB tables.<br /><br /><br /><pre style="background-color: #eeeeee; border: 1px dashed #999999; color: black; font-family: Andale Mono, Lucida Console, Monaco, fixed, monospace; font-size: 12px; line-height: 14px; overflow: auto; padding: 5px; width: 100%;"><code>select `table_schema`, `table_name`, `create_time`  FROM information_schema.tables where engine = 'InnoDB' order by create_time desc  ;<br /></code></pre>

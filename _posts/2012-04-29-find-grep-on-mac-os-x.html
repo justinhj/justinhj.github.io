@@ -1,0 +1,16 @@
+---
+layout: post
+title: find grep on Mac OS X
+date: '2012-04-29T12:24:00.001-07:00'
+author: Justin
+tags:
+- mac osx
+- grep
+- bash
+- find
+modified_time: '2012-10-14T20:09:05.907-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-428279681799602225
+blogger_orig_url: http://justinsboringpage.blogspot.com/2012/04/find-grep-on-mac-os-x.html
+---
+
+On linux machines I search files using find, egrep and xargs as follows:<br /><br />&nbsp; find . -name "*.cpp" | xargs -i egrep -iHn "some search string" {}<br /><br />this outputs any matches with the filename and number and also disables case dependency.<br /><br />On my Mac it doesn't work. I tried reverting to egrep -r (to search recursively) instead, but that doesn't work. It just fails silently too. I tried installing findutils with brew to see if that helped, as often gnu tools are more up to date in brew than in the Apple version, but that didn't help.<br /><br />So after some fiddling I found that the syntax below works:<br /><br /><br />&nbsp; find . -name "*.cpp" | xargs egrep -iHn "some search string"<br /><br />Only subtly different!<br /><br />Actually, hold up, this does not work for filenames that have spaces in them. :(<br /><br />Try this instead:<br /><br />find . -type f -print0 | xargs -0 egrep -iHn "some search string"<br /><br />J.<br /><div><br /></div>

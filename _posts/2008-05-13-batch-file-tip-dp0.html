@@ -1,0 +1,13 @@
+---
+layout: post
+title: Batch file tip ... %~dp0
+date: '2008-05-13T11:45:00.000-07:00'
+author: Justin
+tags:
+- msdos win32 command line batch files
+modified_time: '2009-01-12T07:54:08.235-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-393191312791773744
+blogger_orig_url: http://justinsboringpage.blogspot.com/2008/05/batch-file-tip-dp0.html
+---
+
+Here's a nice blog post on this...<br /><br /><a href="http://weblogs.asp.net/lorenh/archive/2006/03/24/441004.aspx">Silly batch file tricks, redirecting stdout into an evironment variable and %~dp0</a><br /><br />But just for my own reference the cryptic looking character sequence resolves to the path to the batchfile you are running. <br /><br />So if you put the following in a batch file, no matter what directory you are in when you run it, it will print the directory the batch file is in, and do a directory listing.<br /><br /><pre><br />echo Batch file path is %~dp0<br />dir %~dp0<br /></pre>

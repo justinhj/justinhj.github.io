@@ -1,0 +1,17 @@
+---
+layout: post
+title: Transparent emacs on windows
+date: '2009-10-12T21:35:00.000-07:00'
+author: Justin
+tags:
+- emacs
+- windows
+- transparent
+- win32
+modified_time: '2009-11-13T22:30:24.102-08:00'
+thumbnail: http://2.bp.blogspot.com/_nkGbjVeC3i4/StQIyYwON5I/AAAAAAAADMc/lvO2Qo2ZidE/s72-c/transparentemacs.png
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-8882538686469456338
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/10/transparent-emacs-on-windows.html
+---
+
+<a onblur="try {parent.deselectBloggerImageGracefully();} catch(e) {}" href="http://2.bp.blogspot.com/_nkGbjVeC3i4/StQIyYwON5I/AAAAAAAADMc/lvO2Qo2ZidE/s1600-h/transparentemacs.png"><img style="cursor:pointer; cursor:hand;width: 320px; height: 186px;" src="http://2.bp.blogspot.com/_nkGbjVeC3i4/StQIyYwON5I/AAAAAAAADMc/lvO2Qo2ZidE/s320/transparentemacs.png" border="0" alt="" id="BLOGGER_PHOTO_ID_5391944315600517010" /></a><br /><div><br /></div><div>Here's a handy function which lets you choose a transparent level (0 is fully transparent and 100 is opaque), for the main emacs frame in both focused and unfocused state.</div><pre style="font-family: Andale Mono, Lucida Console, Monaco, fixed, monospace; color: #000000; background-color: #eee;font-size: 12px;border: 1px dashed #999999;line-height: 14px;padding: 5px; overflow: auto; width: 100%"><code>(defun transparent(alpha-level no-focus-alpha-level)<br /> "Let's you make the window transparent"<br /> (interactive "nAlpha level (0-100): \nnNo focus alpha level (0-100): ")<br /> (set-frame-parameter (selected-frame) 'alpha (list alpha-level no-focus-alpha-level))<br /> (add-to-list 'default-frame-alist `(alpha ,alpha-level)))<br /><br /></code></pre><p><span class="Apple-style-span"  style="font-family:arial;">To run M-x transparent. </span><span class="Apple-style-span"  style="font-family:arial;"><br /></span></p><p><span class="Apple-style-span"  style="font-family:arial;">Enter the values you want for when the window has focus and when it does not. </span>In the background you can see system status information on the desktop, which is another excellent utility from sysinternals called <a href="http://technet.microsoft.com/en-us/sysinternals/bb897557.aspx">BgInfo</a>. It let's you display useful info about your system right on your desktop, similar to tools you may find on linux. <br /></p><p><br /></p>

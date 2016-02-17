@@ -1,0 +1,13 @@
+---
+layout: post
+title: A* algorithm bug fixes
+date: '2009-02-16T17:04:00.000-08:00'
+author: Justin
+tags:
+- c++ astar a* game programming bugs
+modified_time: '2009-02-16T17:17:54.042-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-1598145118141425524
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/02/algorithm-bug-fixes.html
+---
+
+It's been a while since I checked the issues page on my A* algorithm google code project. So it turns out there's a possible memory leak and the Manhattan distance calculation in the findpath.cpp is wrong. I've investigated both of these and uploaded a fixed version.<br /><br />In the case of the memory leak, there is some code in my "fast simple allocator" which allocates some memory, assigns it to a temporary pointer, then converts it and stores it in a member variable. Apparently, this shows up in memory tracking software as a leak, even though the memory is released in the destructor, so I've changed the code so that the allocation and free is done with the same variable. <br /><br />The Manhattan distance refers to a simple heuristic for finding a path when you can only move horizontally and vertically through a grid. Like calculating how far you would have to walk in a city on a grid system, like NY, you simple count how many blocks along and how many blocks up you need to walk. Well I implemented this carelessly and forgot to make sure that I take the absolute value when calculating the difference between 'streets'. That's done now. <br /><br />You can download the latest version of the A* algorithm here...<br /><br />http://code.google.com/p/a-star-algorithm-implementation/downloads/list

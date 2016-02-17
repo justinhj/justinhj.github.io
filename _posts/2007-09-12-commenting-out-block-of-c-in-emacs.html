@@ -1,0 +1,12 @@
+---
+layout: post
+title: Commenting out a block of C++ in emacs
+date: '2007-09-12T13:30:00.000-07:00'
+author: Justin
+tags: 
+modified_time: '2007-09-12T13:35:24.944-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-3090427255484728398
+blogger_orig_url: http://justinsboringpage.blogspot.com/2007/09/commenting-out-block-of-c-in-emacs.html
+---
+
+Here are couple more simple functions, used for commenting out a block of C++ code.<br /><span style="font-weight: bold;"><br />c++-comment-line</span> below simple inserts "//" at the start of a line<br /><br /><span style="font-weight: bold;">c++-comment</span> region will take the current region and run the c++comment-line on each line.<br /><br /><pre><br />(defun c++-comment-region()<br /> "Comment a region out"<br /> (interactive)<br /> (save-excursion<br />   (save-restriction<br />     (narrow-to-region (point) (mark))<br />     (goto-char (point-min))<br />     (while (> (point-max) (point))<br /> (c++-comment-line)<br /> (forward-line)))))<br /><br />(defun c++-comment-line()<br /> "Comment a line of C++ out"<br /> (beginning-of-line)<br /> (insert "//"))<br /></pre>

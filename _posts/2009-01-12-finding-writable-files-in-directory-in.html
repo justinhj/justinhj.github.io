@@ -1,0 +1,13 @@
+---
+layout: post
+title: Finding writable files in a directory in a windows command line
+date: '2009-01-12T07:45:00.000-08:00'
+author: Justin
+tags:
+- msdos win32 command line
+modified_time: '2009-01-12T07:50:02.781-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-6013800755026330923
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/01/finding-writable-files-in-directory-in.html
+---
+
+Simple thing, but if you want to find which files in a directory are writable, use this dos command ...<br /><br /><blockquote><br />dir /a-r-d /s /b<br /></blockquote><br /><br />/a is to search for attributes. In this case r is read only and d is directory. The minus signs negate those attributes. So we're looking for writable files only. <br /><br />/s means recurse subdirectories<br /><br />/b means bare format. Path and filename only.

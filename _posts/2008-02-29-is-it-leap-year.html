@@ -1,0 +1,12 @@
+---
+layout: post
+title: Is it a leap year
+date: '2008-02-29T18:24:00.000-08:00'
+author: Justin
+tags: 
+modified_time: '2008-02-29T18:27:02.093-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-2501944839386894200
+blogger_orig_url: http://justinsboringpage.blogspot.com/2008/02/is-it-leap-year.html
+---
+
+Here's a bit of elisp code to find out...<br /><br /><pre><br />(defun is-century-year(year)<br />  (if (= (mod year 100) 0)<br />      t<br />    nil))<br /><br />(defun is-leap-year(year)<br />  "leap year is century years divisible by 400, <br />not other century years, otherwise anything evenly <br />divisble by 4"<br />  (if (is-century-year year) <br />      (if (= 0 (mod year 400))<br />   t<br /> nil)<br />    (if (= 0 (mod year 4))<br /> t<br />      nil)))<br /><br /></pre>

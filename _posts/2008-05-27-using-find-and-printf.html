@@ -1,0 +1,12 @@
+---
+layout: post
+title: Using find and printf
+date: '2008-05-27T17:25:00.000-07:00'
+author: Justin
+tags: 
+modified_time: '2008-05-27T17:31:19.283-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-2796100524992614258
+blogger_orig_url: http://justinsboringpage.blogspot.com/2008/05/using-find-and-printf.html
+---
+
+This is basic stuff but I wanted to post it so I can find it when I search for it...<br /><br />How to find a file and print the name, path and date and time it was last accessed...<br /><br />Change filename to be the file you want, with optional wildcards. (Use -iname for case insensitive search).<br /><br /><pre><br />find . -name <filename> -printf "%p %AD %AH:%AM\n"<br /></pre>

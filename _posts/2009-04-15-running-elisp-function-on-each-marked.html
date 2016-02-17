@@ -1,0 +1,17 @@
+---
+layout: post
+title: Running an elisp function on each marked file in a dired buffer
+date: '2009-04-15T10:49:00.001-07:00'
+author: Justin
+tags:
+- emacs
+- mark files
+- dired
+- elisp
+modified_time: '2009-06-03T09:27:22.374-07:00'
+thumbnail: http://4.bp.blogspot.com/_nkGbjVeC3i4/SiajYmJlKzI/AAAAAAAACYk/lUIZ4tMObYg/s72-c/chaintool_florian.jpg
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-2739159345223074504
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/04/running-elisp-function-on-each-marked.html
+---
+
+<a onblur="try {parent.deselectBloggerImageGracefully();} catch(e) {}" href="http://4.bp.blogspot.com/_nkGbjVeC3i4/SiajYmJlKzI/AAAAAAAACYk/lUIZ4tMObYg/s1600-h/chaintool_florian.jpg"><img style="cursor:pointer; cursor:hand;width: 200px; height: 150px;" src="http://4.bp.blogspot.com/_nkGbjVeC3i4/SiajYmJlKzI/AAAAAAAACYk/lUIZ4tMObYg/s200/chaintool_florian.jpg" border="0" alt="" id="BLOGGER_PHOTO_ID_5343137650874592050" /><br /></a><span class="Apple-style-span" style="font-size: x-small;">Chain Tool by </span><a href="http://www.flickr.com/photos/fboyd/"><span class="Apple-style-span" style="font-size: x-small;">Florian</span></a><span class="Apple-style-span" style="font-size: x-small;"> </span><br /><br />If you have some function, say some custom refactoring operation, you can call it from a dired buffer, and have it run on each marked file, using the code below. <br /><br />Go into a dired buffer, mark some files, and then do M-x and run your command. In this case it would be <i>test-for-each-dired-marked-file</i><br /><br /><pre><code><br />;;; iterating over files in dired<br /><br />;;; usage example - for-each-dired-marked-file returns a filename and path<br />;;; for each marked file, so this is what a function using it looks like<br />(defun view-stuff(filename)<br />"opens up the file and gets the length of it, then messages the result"<br />(let (fpath fname mybuffer len)<br />  (setq fpath filename)<br />  (setq fname (file-name-nondirectory fpath))<br />  (setq mybuffer (find-file fpath))<br />  (setq len (buffer-size))<br />  (kill-buffer mybuffer)<br />  (message "Buffer length %d %s" len (buffer-file-name mybuffer))))<br /><br />; Usage example<br />(defun test-for-each-dired-marked-file()<br />(interactive)<br />(for-each-dired-marked-file 'view-stuff))<br /><br />(defun for-each-dired-marked-file(fn)<br />"Do stuff for each marked file, only works in dired window"<br />(interactive)<br />(if (eq major-mode 'dired-mode)<br />   (let ((filenames (dired-get-marked-files)))<br />     (mapcar fn filenames))<br /> (error (format "Not a Dired buffer \(%s\)" major-mode))))<br /><br /></code></pre>

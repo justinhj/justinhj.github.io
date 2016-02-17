@@ -1,0 +1,20 @@
+---
+layout: post
+title: Programmer tips for Mac OSX
+date: '2011-04-26T15:12:00.000-07:00'
+author: Justin
+tags:
+- hai
+- mac osx
+- pbcopy
+- pbpaste
+- open
+- terminal
+- finder
+- tips
+modified_time: '2011-04-26T15:41:20.982-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-3562574788450026175
+blogger_orig_url: http://justinsboringpage.blogspot.com/2011/04/programmer-tips-for-mac-osx.html
+---
+
+Some tips for programmers on the Mac.<div><br /></div><div>emacs: the best place to get emacs for Mac seems to be here <a href="http://emacsformacosx.com/">http://emacsformacosx.com/</a> which is also the most no nonsense website design ever</div><div><br /></div><div>Not really a Mac tip, but I stick my .emacs configuration file in a Dropbox folder, along with any emacs libraries and  emacs lisp code I write. Then where-ever I install emacs I make a simple .emacs that points to the one in the Dropbox folder. This also forces me to make sure any platform specific emacs stuff is properly handled. </div><div><br /></div><div>Clipboard: copy and paste between the terminal and other apps can be done with pbcopy and pbpaste. For example a long complicated command line you want to email to yourself, just do:</div><div><br /></div><div>echo "long complicated bash command line you don't want to retype" | pbcopy </div><div><br /></div><div>And then you can Command-V that into your email window. Going the other way is just as simple; Command-C the text you want and pop it into the terminal window with pbpaste.</div><div><br /></div><div>Open: If you want open an application from the command line you can do it like this:</div><div><br /></div><div><div>open -a SomeApp /Users/yourname/SomeFile.hai</div></div><div><br /></div><div>You can open a folder in finder </div><div><br /></div><div>open /Folder/</div><div><br /></div><div>or </div><div><br /></div><div>open /Folder/SomeFile.hai</div><div><br /></div><div>to open that file with it's default application.</div><div><br /></div><div>Check out the help 'man open', to see other stuff like how you pipe stdout into an application. </div><div><br /></div><div>Finally check out this guys OpenTerminalHere script. This pops an icon in finder that lets you open a terminal window in the highlighted folder. </div><div><br /></div><div><a href="http://www.entropy.ch/software/applescript/">http://www.entropy.ch/software/applescript/</a></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div><div>   </div>

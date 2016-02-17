@@ -1,0 +1,15 @@
+---
+layout: post
+title: Using screen
+date: '2010-01-01T18:49:00.000-08:00'
+author: Justin
+tags:
+- screen
+- linux
+- gnu
+modified_time: '2010-01-01T18:57:45.808-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-4469694132027966504
+blogger_orig_url: http://justinsboringpage.blogspot.com/2010/01/using-screen.html
+---
+
+When running a linux app, perhaps on a remote box, you don't want it to terminate when you close the terminal window. You can run some applications as daemons, or run them with the nohup command (no hang up). <div><br /></div><div>For example:</div><div><br /></div><div>    nohup ./myapp > output.txt </div><div><br /></div><div>will run the program myapp and send the output to output.txt.</div><div><br /></div><div>You can then follow the output.txt with a command </div><div><br /></div><div>    tail -f output.txt </div><div><br /></div><div>but if you hit Ctrl-C or close the terminal (or have a power cut), the application will still be running on the remote machine.</div><div><br /></div><div>A more powerful solution is the Gnu screen application. This lets you run multiple shell sessions and switch between them. Using screen you can be logged into a server in your office, then detach from the screen session, go home and reattach to it there (assuming you have network access to the computer). </div><div><br /></div><div>Here's a cheat sheet for using screen. </div><div><br /></div><div><div>Running it:</div><div><br /></div><div>    screen</div><div><br /></div><div>Learning to use it:</div><div><br /></div><div>Ctrl-a help</div><div><br /></div><div>Important commands:</div><div><br /></div><div>Ctrl-a c  (open a new window)</div><div><br /></div><div>Ctrl-a p  (prev window)</div><div>Ctrl-a n (next window)</div><div><br /></div><div>exit or C-a q to exit </div><div><br /></div><div>How to reattach to the screen session:</div><div><br /></div><div>    screen -ls  </div><div><br /></div><div>That shows screen sessions on the machine your logged on to, and then you reattach using:</div><div><br /></div><div>screen -r name</div><div><br /></div><div>That's all folks!</div><div><br /></div><div><br /></div><div><br /></div></div><div><br /></div><div><br /></div>

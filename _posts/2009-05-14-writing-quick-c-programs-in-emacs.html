@@ -1,0 +1,18 @@
+---
+layout: post
+title: Writing quick C++ programs in emacs without a makefile
+date: '2009-05-14T16:36:00.000-07:00'
+author: Justin
+tags:
+- emacs
+- prototype
+- C++
+- test
+- compile
+modified_time: '2009-05-19T19:10:44.999-07:00'
+thumbnail: http://4.bp.blogspot.com/_nkGbjVeC3i4/SgyrtjhXGUI/AAAAAAAACS8/f4sO655etfc/s72-c/cheetah.jpg
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-3500343950147124068
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/05/writing-quick-c-programs-in-emacs.html
+---
+
+<a onblur="try {parent.deselectBloggerImageGracefully();} catch(e) {}" href="http://4.bp.blogspot.com/_nkGbjVeC3i4/SgyrtjhXGUI/AAAAAAAACS8/f4sO655etfc/s1600-h/cheetah.jpg"><img style="cursor:pointer; cursor:hand;width: 320px; height: 239px;" src="http://4.bp.blogspot.com/_nkGbjVeC3i4/SgyrtjhXGUI/AAAAAAAACS8/f4sO655etfc/s320/cheetah.jpg" border="0" alt=""id="BLOGGER_PHOTO_ID_5335828457644824898" /></a><br /><br /><a href="http://www.flickr.com/photos/storm-crypt/">Cheetah by Storm Crypt</a><br /><br />Often when programming in C++ (or many other languages) it's desirable to write a quick program, usually a console application, to test something quickly. Working in developer studio, it takes an amount of fiddling and clicking large enough that you may not want to bother.<br /><br />Working in emacs and MingW32 (or Microsoft's CL.exe) I can quickly create a CPP file, and then compile it. To compile a program though you need to either write a makefile, or build up a complex g++ command line. <br /><br />Rather than do either of those I make a helloworld.cpp file which can be built like this: <br /><br />g++ helloworld.cpp -g -o helloworld.exe<br /><br />So I hit <br /><br />M-x compile<br /><br />then type in the above to compile and link it. <br /><br />However there's a better way. You can add the compile command as the first line of the file as a file local variable. <br /><br />// -*- compile-command:"g++ helloworld.cpp -g -o helloworld.exe"; -*-<br /><br />Now I can hit the compile and it works right away, between sessions. No makefile or project settings in sight, and now there are minimal barriers involved in creating a simple test program beyond copy and pasting the file.

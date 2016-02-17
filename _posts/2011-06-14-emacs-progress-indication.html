@@ -1,0 +1,14 @@
+---
+layout: post
+title: Emacs progress indication
+date: '2011-06-14T15:12:00.000-07:00'
+author: Justin
+tags:
+- emacs
+- emacs-lisp
+modified_time: '2011-06-14T15:37:32.516-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-2921268486508874004
+blogger_orig_url: http://justinsboringpage.blogspot.com/2011/06/emacs-progress-indication.html
+---
+
+<div><div>When programming in emacs lisp, there is an easy way to show progress feedback to the user when a task will take some time. Here's a block of code from the elisp manual showing how to do it.</div><div><br /></div><div>(let ((progress-reporter</div><div>       (make-progress-reporter "Collecting mana for Emacs..."</div><div><span class="Apple-tab-span" style="white-space:pre">   </span>       0 500)))<span class="Apple-tab-span" style="white-space:pre">  </span></div><div>  (dotimes (k 500)</div><div>    (sit-for 0.01)</div><div>    (progress-reporter-update progress-reporter k))</div><div>  (progress-reporter-done progress-reporter))</div></div><div><br /></div><div>I've incorporated this into my duplicate files code, linked below...</div><div><br /></div><a href="http://code.google.com/p/justinhj-emacs-utils/source/browse/trunk/duplicates.el">http://code.google.com/p/justinhj-emacs-utils/source/browse/trunk/duplicates.el</a><div><br /></div><div><br /></div>

@@ -1,0 +1,13 @@
+---
+layout: post
+title: Setting up lispworks personal
+date: '2009-02-13T22:42:00.000-08:00'
+author: Justin
+tags:
+- emacs lispworks slime win32
+modified_time: '2009-02-13T22:58:00.366-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-8177538575446771997
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/02/setting-up-lispworks-personal.html
+---
+
+I've always used this excellent pair of blog posts by Bill Clementson to get lispworks personal working with emacs/slime on windows. <br /><br /><a href="http://bc.tech.coop/blog/040306.html">Configuring SLIME for 3 Win32 CL Implementations</a><br /><a href="http://bc.tech.coop/blog/040315.html">Using LispWorks Personal with Emacs/SLIME on Windows</a><br /><br />Having had the joy of a hard drive failure last week I had to reinstall everything, and I've found that with the latest CVS version of slime you need to change your ".slime.lisp" file to look like this:<br /><br /><pre><br />(load "/YOURPATHTOSLIME/slime/swank-loader.lisp")<br />(swank-loader:init)<br />(swank::create-server :port 4005)<br /></pre><br /><br />So if your slime/lispworks personal setup stops working when you upgrade slime, hopefully you found your way here.

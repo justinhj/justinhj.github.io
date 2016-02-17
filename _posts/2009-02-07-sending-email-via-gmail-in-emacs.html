@@ -1,0 +1,13 @@
+---
+layout: post
+title: Sending email via gmail in emacs
+date: '2009-02-07T13:33:00.000-08:00'
+author: Justin
+tags:
+- emacs send mail smtp
+modified_time: '2009-02-07T23:03:50.937-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-3781339005307236974
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/02/sending-email-via-gmail-in-emacs.html
+---
+
+I got this working in linux, and it's fairly easy. I'm still trying to get it working on my win32 machines, and I'll post about that later if I get it working.<br /><br />This post has most of the details I needed:<br /><br />http://obfuscatedcode.wordpress.com/2007/04/26/configuring-emacs-for-gmails-smtp/<br /><br />So I put the following in my .emacs<br /><br /><pre><br />; install starttls from here (no need for patch)<br />; http://josefsson.org/emacs-smtp-starttls.html<br /><br />(setq send-mail-function 'smtpmail-send-it<br />   message-send-mail-function 'smtpmail-send-it<br />   smtpmail-starttls-credentials<br />   '(("smtp.gmail.com" 587 nil nil))<br />   smtpmail-auth-credentials<br />   (expand-file-name "~/.authinfo")<br />   smtpmail-default-smtp-server "smtp.gmail.com"<br />   smtpmail-smtp-server "smtp.gmail.com"<br />   smtpmail-smtp-service 587<br />   smtpmail-debug-info t<br />   starttls-extra-arguments nil<br />   smtpmail-warn-about-unknown-extensions t<br />   starttls-use-gnutls nil)<br /></pre><br /><br />And followed the instructions to make the .authinfo file containing:<br /><br />machine smtp.gmail.com login [your name]@gmail.com password [your password]<br /><br />And finally download, unzip, make and install startttls:<br /><br />http://josefsson.org/emacs-smtp-starttls.html<br /><br />You don't need to apply the patch there, it works without as far as I can tell.<br /><br />Finally you can create and send mail.

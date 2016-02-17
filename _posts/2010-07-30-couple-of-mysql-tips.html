@@ -1,0 +1,14 @@
+---
+layout: post
+title: Couple of mysql tips
+date: '2010-07-30T14:55:00.000-07:00'
+author: Justin
+tags:
+- mysql
+- thread safe insert
+modified_time: '2010-07-30T15:08:46.359-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-6332396053021969167
+blogger_orig_url: http://justinsboringpage.blogspot.com/2010/07/couple-of-mysql-tips.html
+---
+
+<b>Wondering what the heck is going on on your mysql DB?</b><div><br /></div><div>show processlist ;</div><div><br /></div><div>Shows you all the active threads, which is very handy indeed. It shows what each thread is doing, and how long it has been doing it for.</div><div><br /></div><div><b>Thread safe record insertion</b></div><div><b><br /></b></div><div>When doing a record insert, another thread could be trying to insert a record that would violate any DB contraints, and if it gets there before you, then your insert will fail. </div><div><br /></div><div>There may be cases where you want don't want to have it fail and try again; you may want to take a different action if the record already exists. For example lets say you have some data like this, where the Name is a unique key...</div><div><br /></div><div>Name, Number of products purchase</div><div>Bob, 1, </div><div>Ben, 2,</div><div><br /></div><div>Now if two threads try to insert a user 'Roger' who has just bought an item, then the one that arrives at the server last will fail. </div><div><br /></div><div>INSERT INTO purchase (Name, PurchaseCount) VALUES ('Roger',  '1') ON DUPLICATE KEY UPDATE PurchaseCount=PurchaseCount+1;</div><div><br /></div><div>This will handle the key collision and execute the update clause instead, in the event that somebody beat you to it. This makes it much easier to write thread safe code that adds records.</div><div><br /></div><div><br /></div><div><b><br /></b></div><div><b><br /></b></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div>

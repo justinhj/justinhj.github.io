@@ -1,0 +1,12 @@
+---
+layout: post
+title: 'C: Passing on variadic function arguments to another function'
+date: '2007-12-07T13:04:00.000-08:00'
+author: Justin
+tags: 
+modified_time: '2009-06-03T15:41:13.439-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-2962431215723075681
+blogger_orig_url: http://justinsboringpage.blogspot.com/2007/12/c-passing-on-variadic-function.html
+---
+
+I needed to do this today, and it took me a while to google it, so here is complete sample showing how it's done:<br /><br /><pre><code><br />// How to pass a variadic argument list to another function<br />// Justin<br /><br />#include "iostream"<br />#include "stdarg.h"<br /><br />using namespace std;<br /><br />void debugMessageHelper(char *buffer, const char* format, va_list arglist)<br />{<br /> vsprintf(buffer, format, arglist);<br />} <br /><br />void debugMessage(char *buffer, const char* format, ...)<br />{<br /> va_list arg;<br /> va_start(arg, format);<br /><br /> debugMessageHelper(buffer, format, arg);<br /><br /> va_end(arg);<br />} <br /><br />int main(int argc, char *argv[])<br />{<br /> char testBuffer[128];<br /> <br /> debugMessage(testBuffer, "hello %s %u %-04.2f", "world", 21 33.122f);<br /><br /> cout << "\'" << testBuffer << "\'" << endl;<br /><br />}<br /><br /></code><br /></pre>

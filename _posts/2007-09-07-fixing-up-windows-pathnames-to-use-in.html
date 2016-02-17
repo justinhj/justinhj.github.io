@@ -1,0 +1,12 @@
+---
+layout: post
+title: Fixing up windows pathnames to use in cygwin
+date: '2007-09-07T16:46:00.000-07:00'
+author: Justin
+tags: 
+modified_time: '2007-09-07T16:52:49.381-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-8503690313313184615
+blogger_orig_url: http://justinsboringpage.blogspot.com/2007/09/fixing-up-windows-pathnames-to-use-in.html
+---
+
+I use emacs within Cygwin, and often I want to paste a pathname from an explorer window into emacs and use it there. Unfortunately you have to edit it by hand before it will work.<br /><br />So for example a path like:<br /><br /><span style="font-family:courier new;">c:\code\haskell\cats\monkeys<br /><br />Needs to be converted to:<br /><br />/cygdrive/c/code/haskell/cats/monkeys<br /></span><br />The following interactive elisp function does that with the currently selected text:<br /><br /><br /><pre><br />(defun win32-to-cygwin-path()<br />  "Converts a win32 path into a cygwin happy one"<br />  (interactive)<br />  (save-excursion<br />    (save-restriction<br />      (narrow-to-region (point) (mark))<br />      (goto-char (point-min))<br />      (insert "/cygdrive/")<br />      (goto-char (point-min))<br />      (while (search-forward ":" nil t)<br />        (replace-match "" nil t))<br />      (while (search-forward "\\" nil t)<br />        (replace-match "/" nil t)))))<br /></pre><br /><br />Nothing much clever going on here, just two search and replaces for the slashes and to removed the colon, and I insert the cygdrive prefix.

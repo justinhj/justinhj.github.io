@@ -1,0 +1,13 @@
+---
+layout: post
+title: Simple perforce checkout in emacs using elisp
+date: '2009-01-23T14:23:00.000-08:00'
+author: Justin
+tags:
+- emacs perforce p4
+modified_time: '2009-01-23T14:26:28.741-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-1821438704277709106
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/01/simple-perforce-checkout-in-emacs-using.html
+---
+
+I know there are all kinds of clever perforce modes, but I prefer to have a few common perforce actions that I write myself and can easily extend and customise as needed.<br /><br />For example this is all you need to checkout a file you are visiting.<br /><br /><pre><br />(defun p4-checkout-buffer()<br /> "Check out the current buffer from perforce using a shell command line"<br /> (interactive)<br /> (shell-command (format "p4.exe edit %s" (buffer-file-name)))<br /> (toggle-read-only -1))<br /></pre>

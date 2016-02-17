@@ -1,0 +1,18 @@
+---
+layout: post
+title: rgrep on windows 7 for emacs
+date: '2010-10-19T16:14:00.000-07:00'
+author: Justin
+tags:
+- emacs
+- unxutils
+- rgrep
+- windows vista
+- find
+- windows 7
+modified_time: '2010-10-19T16:15:05.318-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-3950018987680156658
+blogger_orig_url: http://justinsboringpage.blogspot.com/2010/10/rgrep-on-windows-7-for-emacs.html
+---
+
+I lost an hour configuring this, so seems worthy of a blog post.<br /><br />A fresh install of <a href="http://ftp.gnu.org/gnu/emacs/windows/">emacs for windows</a> will have functionality that does not work because it depends on unix style utilities.<br /><br />One very useful example is the command rgrep, which searches files recursively through subfolders looking for a regular expression in those files.<br /><br />Under the hood it uses the unix command line tools find, and egrep. Unfortunately the windows version of find takes entirely different parameters and will not function. In fact you will get an error that looks like this:<br /><br />FIND: Wrong parameter format<br /><br />Using the set of native ports of Unix command line tools <a href="http://sourceforge.net/projects/unxutils/">UnxUtils </a>you can easily fix this:<br /><br /><ol><li>Download the zip file and extract it to c:\unxutils</li><li>Add the following path to the very front of your path by editing your system environment variables C:\unxutils\usr\local\wbin\;</li></ol><div>That's it. You can run rgrep now and hopefully you're up and running. </div><div><br /></div><div>If not make sure you have restarted emacs so it picks up the new setting of PATH. Open a shell in emacs and type 'find --version'. You should see something like this if your path is configured correctly:</div><div><br /></div><div><div>c:\find --version</div><div>find --version</div><div>GNU find version 4.1</div></div><div><br /></div><div>and if not you will see:</div><div><br /></div><div><div>C:\Windows\system32>find --help</div><div>FIND: Parameter format not correct</div></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div>

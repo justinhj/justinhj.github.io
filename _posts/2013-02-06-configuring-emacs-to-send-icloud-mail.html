@@ -1,0 +1,18 @@
+---
+layout: post
+title: Configuring emacs to send iCloud mail on Mac OS X
+date: '2013-02-06T02:33:00.001-08:00'
+author: Justin
+tags:
+- email
+- icloud
+- emacs
+- emacs-lisp
+- elisp
+- smtp
+modified_time: '2013-06-02T19:06:23.160-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-1720561274846448565
+blogger_orig_url: http://justinsboringpage.blogspot.com/2013/02/configuring-emacs-to-send-icloud-mail.html
+---
+
+<table cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody><tr><td style="text-align: center;"><a href="http://farm6.staticflickr.com/5230/5807619643_392d857dfe_m.jpg" imageanchor="1" style="clear: left; margin-bottom: 1em; margin-left: auto; margin-right: auto;"><img border="0" src="http://farm6.staticflickr.com/5230/5807619643_392d857dfe_m.jpg" /></a></td></tr><tr><td class="tr-caption" style="text-align: center;">Pic from&nbsp;ajc1 on Flikr</td></tr></tbody></table>It's handy to be able to send emails from emacs, and this guide will show how to set up SMTP via an iCloud email account.<br /><div><br /></div><div><b>Step 1. Install gnutls</b></div><div><b><br /></b></div><div>iCloud requires you to send emails over secure channel, and emacs supports sending email with starttls or gnutls. gnutls is available through <a href="http://mxcl.github.com/homebrew/">brew</a></div><div><br /></div><div>To install it is easy:</div><div><br /></div><blockquote class="tr_bq">brew install gnutls</blockquote><br />Wait a few minutes while your Mac gets hot downloading and compiling!<br /><br /><b>Step 2. Create an authinfo file</b><br /><br />emacs can look in a file ~/.authinfo to find your login credentials, so create that file and fill in the blanks.<br /><br /><blockquote class="tr_bq">touch ~/.authinfo</blockquote><blockquote class="tr_bq">chmod 600 ~/.authinfo</blockquote><br />The contents of the file should read:<br /><br /><blockquote class="tr_bq">machine smtp.mail.me.com port 587 login YOURNAME@icloud.com password YOURPASSWORD</blockquote><b>Step 3. Configure emacs</b><br /><b><br /></b>Add the following to your .emacs file:<br /><br /><br />(setq<br />&nbsp;send-mail-function 'smtpmail-send-it<br />&nbsp;message-send-mail-function 'smtpmail-send-it<br />&nbsp;user-mail-address "YOURNAME@icloud.com"<br />&nbsp;user-full-name "YOUR FULLNAME"<br />&nbsp;smtpmail-starttls-credentials '(("smtp.mail.me.com" 587 nil nil))<br />&nbsp;smtpmail-auth-credentials &nbsp;(expand-file-name "~/.authinfo")<br />&nbsp;smtpmail-default-smtp-server "smtp.mail.me.com"<br />&nbsp;smtpmail-smtp-server "smtp.mail.me.com"<br />&nbsp;smtpmail-smtp-service 587<br />&nbsp;smtpmail-debug-info t<br />&nbsp;starttls-extra-arguments nil<br />&nbsp;starttls-gnutls-program&nbsp;(executable-find "gnutls-cli")<br />&nbsp;smtpmail-warn-about-unknown-extensions t<br />&nbsp;starttls-use-gnutls t)<br /><br />Note that your gnutls program may be in a different spot. Find it with:<br /><br /><blockquote class="tr_bq">mdfind -name gnutls-cli&nbsp;</blockquote><b>Step 4. Testing</b><br /><b><br /></b>To compose an email C-x m<br /><br />Enter an email and hit C-c c to send it.<br /><br />If it works, great! If not switch to the *Messages* buffer for hints on what may have gone wrong.<br /><br /><b>Step 5. Sending emails from elisp code</b><br /><b><br /></b><br /><br /><span class="Apple-tab-span" style="white-space: pre;"> </span>(message-mail recipient subject)<br /><span class="Apple-tab-span" style="white-space: pre;"> </span>(message-send-and-exit)))))<br /><div><br /></div><br /><blockquote class="tr_bq"></blockquote><blockquote class="tr_bq"></blockquote>

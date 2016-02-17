@@ -1,0 +1,14 @@
+---
+layout: post
+title: Using tags in emacs on windows
+date: '2009-03-09T10:06:00.000-07:00'
+author: Justin
+tags:
+- emacs source browsing tags win32 etags Emacs cygwin
+modified_time: '2010-05-10T11:54:44.249-07:00'
+thumbnail: http://4.bp.blogspot.com/_nkGbjVeC3i4/SbVQbc-LTaI/AAAAAAAACHk/hgWI49WsfaM/s72-c/tags.jpg
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-5815951488324447581
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/03/using-tags-in-emacs-on-windows.html
+---
+
+<a onblur="try {parent.deselectBloggerImageGracefully();} catch(e) {}" href="http://4.bp.blogspot.com/_nkGbjVeC3i4/SbVQbc-LTaI/AAAAAAAACHk/hgWI49WsfaM/s1600-h/tags.jpg"><img style="margin: 0px auto 10px; display: block; text-align: center; cursor: pointer; width: 200px; height: 200px;" src="http://4.bp.blogspot.com/_nkGbjVeC3i4/SbVQbc-LTaI/AAAAAAAACHk/hgWI49WsfaM/s200/tags.jpg" alt="" id="BLOGGER_PHOTO_ID_5311239768117038498" border="0" /></a><br /><br /><br />This requires you install the Gunwin32 tools or Cygwin, and describes how to build a tags table for the project you're working on, when using emacs to edit the source.<br /><br />First you want to generate a file containing all the source files you want to have tagged. Go to the root folder of your project.<br /><pre>find . -regex ".*\(h$\|cpp$\)" > files.txt<br /></pre><span style="font-family: arial;font-size:100%;" >Next pass this to etags to generate the tags table.</span><br /><pre>etags.exe - < files.txt <br /><br /><span style="font-size:100%;"><span style="font-family: arial;">Then when you're in emacs you need to visit the tags table, which will have been saved as TAGS.  M-x visit-tags-table  then browse to the folder where you made the TAGS file.  Now when you have the curser on some function you can type...  M-.  to go to a tag and  C-u M-.  to go to the next tag.  Once you're done, you can return to where you started with  M-*  Another useful function is  tags-apropos  Which will list all the tags matching a regex in a buffer.        </span></span></pre>

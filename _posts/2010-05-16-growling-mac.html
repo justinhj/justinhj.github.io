@@ -1,0 +1,17 @@
+---
+layout: post
+title: Growling Mac
+date: '2010-05-16T18:28:00.000-07:00'
+author: Justin
+tags:
+- emacs
+- growlnotify
+- growl
+- mac
+modified_time: '2010-05-16T18:46:55.847-07:00'
+thumbnail: http://4.bp.blogspot.com/_nkGbjVeC3i4/S_Cf27TKAlI/AAAAAAAAEUM/PD_QMF-IWU4/s72-c/1304953088_7ee7791e3c_o.jpg
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-7962302601635061486
+blogger_orig_url: http://justinsboringpage.blogspot.com/2010/05/growling-mac.html
+---
+
+<a onblur="try {parent.deselectBloggerImageGracefully();} catch(e) {}" href="http://4.bp.blogspot.com/_nkGbjVeC3i4/S_Cf27TKAlI/AAAAAAAAEUM/PD_QMF-IWU4/s1600/1304953088_7ee7791e3c_o.jpg"><img style="cursor:pointer; cursor:hand;width: 320px; height: 254px;" src="http://4.bp.blogspot.com/_nkGbjVeC3i4/S_Cf27TKAlI/AAAAAAAAEUM/PD_QMF-IWU4/s320/1304953088_7ee7791e3c_o.jpg" border="0" alt="" id="BLOGGER_PHOTO_ID_5472049313234944594" /></a><br /><div><br /></div><div><a href="http://www.flickr.com/photos/poenaru/1304953088/">(pic from flickr)</a></div><div><br /></div>Last year I wrote a <a href="{{ site.baseurl }}{% post_url 2009-09-10-making-emacs-growl %}">blog post </a>about how to make growl notifications (little pop ups driven by the application Growl) appear from emacs in windows. Since then I've become a total Mac-head. Here's an update on how you get that working from emacs on a mac... <div><br /></div><div>Everything is the same except you need to install Growl for Mac (obv) and also make sure you copy the folder called Extras somewhere. </div><div><br /></div><div>Open up a terminal and then cd to where you put the Extras directory. Find a sub-directory called growlnotify. Enter that and run 'sudo ./install.sh' which will prompt you for your admin password, and then go ahead and install <a href="http://growl.info/extras.php#growlnotify">growlnotify</a>.</div><div><br /></div><div>You can now run growlnotify from a terminal window. Try it out, if it doesn't work you won't be able to growl from emacs.</div><div><br /></div><div>Now follow the instructions in my blog post above but ignore all the windows parts. You'll need to customize the growl command (M-x customize group, todochiku) and replace the full path I used for windows with just 'growlnotify'.</div><div><br /></div><div>If everything is cool you can now do M-x todochiku-in and type a message, a time in minutes (zero for now), and pop, you should have a notification.</div>

@@ -1,0 +1,18 @@
+---
+layout: post
+title: Easy find
+date: '2014-06-29T09:47:00.001-07:00'
+author: Justin
+tags:
+- scripting
+- grep
+- programming
+- tools
+- bash
+modified_time: '2014-06-29T09:49:50.617-07:00'
+thumbnail: http://3.bp.blogspot.com/-H9jPbJaEsBY/U7BDjzQ-8-I/AAAAAAAAIcc/Y9Q9v41pGps/s72-c/Screen+Shot+2014-06-29+at+9.48.52+AM.png
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-7075420961610612507
+blogger_orig_url: http://justinsboringpage.blogspot.com/2014/06/easy-find.html
+---
+
+<div class="separator" style="clear: both; text-align: center;"><a href="http://3.bp.blogspot.com/-H9jPbJaEsBY/U7BDjzQ-8-I/AAAAAAAAIcc/Y9Q9v41pGps/s1600/Screen+Shot+2014-06-29+at+9.48.52+AM.png" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img alt="" border="0" src="http://3.bp.blogspot.com/-H9jPbJaEsBY/U7BDjzQ-8-I/AAAAAAAAIcc/Y9Q9v41pGps/s1600/Screen+Shot+2014-06-29+at+9.48.52+AM.png" height="200" title="" width="180" /></a></div><span style="font-family: Arial, Helvetica, sans-serif;"><br /></span><span style="font-family: Arial, Helvetica, sans-serif;">I found myself typing&nbsp;<span style="background-color: #2c67c8; color: white; font-size: 14px;">find . -name "*.java" | xargs -iHn "something"</span><span style="background-color: #2c67c8; color: white; font-size: 14px;">&nbsp;</span><span style="background-color: white; color: white; font-size: 14px;">&nbsp;</span><span style="background-color: white;"><span style="font-size: 14px;">so often I decided to make it into a bash script and put it in a new ~/Dropbox/bin folder so that I never&nbsp;have to do it again. Worse I never use the print0 option which let's you search files that have spaces in the filename, as it's too hard to remember. So, here's the script.</span></span></span><br /><br /><div><script src="https://gist.github.com/justinhj/f4cca62abf809eb49622.js"></script></div><div><br /></div><div><br /></div>

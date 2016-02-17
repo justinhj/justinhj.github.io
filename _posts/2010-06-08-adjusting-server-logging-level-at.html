@@ -1,0 +1,15 @@
+---
+layout: post
+title: Adjusting server logging level at runtime
+date: '2010-06-08T14:12:00.000-07:00'
+author: Justin
+tags:
+- log4j
+- server programming
+- tips
+modified_time: '2010-06-08T14:19:06.213-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-753817652935776038
+blogger_orig_url: http://justinsboringpage.blogspot.com/2010/06/adjusting-server-logging-level-at.html
+---
+
+<div>log4j is an awesome logging library for Java. One thing I found out today is that you can change the logging level (debug, warn, info) at runtime, with a few lines of code.</div><div><br /><pre style="font-family: Andale Mono, Lucida Console, Monaco, fixed, monospace; color: #000000; background-color: #eee;font-size: 12px;border: 1px dashed #999999;line-height: 14px;padding: 5px; overflow: auto; width: 100%"><code>static<br />{<br />       // This monitors the log4j for changes over a specified period of milliseconds<br />       PropertyConfigurator.configureAndWatch("./resources/log4j.properties", 60000);<br />}<br /></code></pre><br /></div><div>What this function does is to tell log4j to check the configuration file every minute (60000 ms) for changes. So you can deploy a production server with only warn and error logging, but if something goes wrong you can enable debug and info logging (for example) simply by editing the configuration file and waiting a minute. </div><div><br /></div><div><span class="Apple-style-span"  style="font-family:arial;"><span class="Apple-style-span" style="font-size: medium;">(source code formatted by this handy website </span></span><span class="Apple-style-span" style="white-space: pre; "><span class="Apple-style-span"  style="font-family:arial;"><span class="Apple-style-span" style="font-size: medium;"><span class="Apple-style-span"  style="color:#000000;"><a href="http://formatmysourcecode.blogspot.com">http://formatmysourcecode.blogspot.com</a></span></span></span><span class="Apple-style-span"  style="font-family:arial;"><span class="Apple-style-span" style="font-size: medium;">)<span class="Apple-tab-span" style="white-space:pre"> </span></span></span></span></div>

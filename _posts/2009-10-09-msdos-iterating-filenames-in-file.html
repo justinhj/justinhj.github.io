@@ -1,0 +1,15 @@
+---
+layout: post
+title: MSDOS iterating filenames in a file
+date: '2009-10-09T12:18:00.000-07:00'
+author: Justin
+tags:
+- msdos
+- for
+- dos command line
+modified_time: '2009-10-09T12:27:44.527-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-8927566122962137801
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/10/msdos-iterating-filenames-in-file.html
+---
+
+<div><span class="Apple-style-span" style="font-weight: 800;"><span class="Apple-style-span"  style="font-family:'lucida grande';"><span class="Apple-style-span" style="font-weight: normal;"><div>In an earlier post I covered finding the writable files in a directory, which is something you often need to do when messing around with source control. For example, if there's a writable file in your source folder that isn't checked out, then you know you need to add it before checking in. In fact I have a tool that compares my changelist with the list of writable files, and lets me know if I'm about to break the build when I check in.</div><div><br /></div><div>Anyway I digress. Once you have found the writable files using:</div><div><br /></div><div><b>dir source_folder /a-r-d /s /b > files.txt </b></div><div><br /></div><div>then you may want to run some operation on them; for example make them read only.</div><div><br /></div><div>Here's how to do that with the windows for command (see here for documentation)</div><div><br /></div><div><b>for /F %i in (files.txt) do attrib -R %i</b></div><div><br /></div><div>The for command with the /F option can iterate through a file full of filenames, which is what we generated with the first command, and run the operation after the do instruction.</div><div><br /></div><div>It's actually quite powerful; you can specify comment markers, delimiters, and choose which of a number of columns you want to make into variables.</div><div><br /></div></span></span></span></div>

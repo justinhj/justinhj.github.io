@@ -1,0 +1,12 @@
+---
+layout: post
+title: Copying characters from the line above in emacs
+date: '2008-05-01T11:38:00.000-07:00'
+author: Justin
+tags: 
+modified_time: '2008-05-01T11:42:17.424-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-400969742091382750
+blogger_orig_url: http://justinsboringpage.blogspot.com/2008/05/copying-characters-from-line-above-in.html
+---
+
+The BBC microcomputer had a button called COPY, which when you pressed it would copy the character on the line above the cursor. This was quite handy, and I recently was waiting for a large amount of code to link, and thought I'd have a go at implementing it. <br /><br />There's not a lot to it in fact. This function just remembers the cursor position (using save-excursion) and then goes to the previous line, gets the character after the point, and finally after the save-excursion block I just insert the character.<br /><br /><pre><br />(defun copy-char-above()<br /> "copy the character above point into the buffer"<br /> (interactive)<br /> (let (c)<br />   (save-excursion<br />     (previous-line)<br />     (setq c (char-after)))<br />   (insert (char-to-string c))))<br /></pre><br /><br />Here I just assign the function to a key...<br /><br /><pre><br />(global-set-key [f6] 'copy-char-above)<br /></pre>

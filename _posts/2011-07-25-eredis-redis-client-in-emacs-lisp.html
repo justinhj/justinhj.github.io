@@ -1,0 +1,15 @@
+---
+layout: post
+title: 'eredis: a Redis client in emacs lisp'
+date: '2011-07-25T01:06:00.000-07:00'
+author: Justin
+tags:
+- emacs
+- redis
+modified_time: '2011-07-25T01:24:31.059-07:00'
+thumbnail: http://4.bp.blogspot.com/-vgnyCCDQNKA/Ti0npIdQ6YI/AAAAAAAAFvQ/iYAfeenzv68/s72-c/exampleeredis.png
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-4641705860991542206
+blogger_orig_url: http://justinsboringpage.blogspot.com/2011/07/eredis-redis-client-in-emacs-lisp.html
+---
+
+<a href="http://4.bp.blogspot.com/-vgnyCCDQNKA/Ti0npIdQ6YI/AAAAAAAAFvQ/iYAfeenzv68/s1600/exampleeredis.png" onblur="try {parent.deselectBloggerImageGracefully();} catch(e) {}"><img style="cursor:pointer; cursor:hand;width: 320px; height: 100px;" src="http://4.bp.blogspot.com/-vgnyCCDQNKA/Ti0npIdQ6YI/AAAAAAAAFvQ/iYAfeenzv68/s320/exampleeredis.png" border="0" alt="" id="BLOGGER_PHOTO_ID_5633202296508705154" /></a><br /><div><br /></div>I set up a google code project today for <a href="http://bit.ly/noZp92"><span class="blsp-spelling-error" id="SPELLING_ERROR_0">eredis</span></a>. A <a href="http://redis.io/"><span class="blsp-spelling-error" id="SPELLING_ERROR_1">Redis</span></a> client in <span class="blsp-spelling-error" id="SPELLING_ERROR_2">emacs</span> lisp. <div><br /></div><div>The program consists of a single <span class="blsp-spelling-error" id="SPELLING_ERROR_3">emacs</span> lisp file<a href="http://code.google.com/p/eredis/source/browse/trunk/eredis.el"> <span class="blsp-spelling-error" id="SPELLING_ERROR_4">eredis</span>.<span class="blsp-spelling-error" id="SPELLING_ERROR_5">el</span> </a> </div><div><br /></div><div><span class="blsp-spelling-error" id="SPELLING_ERROR_6">emacs</span> lisp includes facilities for writing network applications. In my code I use `make-network-process' to open a connection to a specified redis server. Then the Redis api is exposed. </div><div><br /></div><div>One nice feature of emacs I have used is org-table-mode. This lets you edit and manage the data in a Redis server in an org table. For example, you can grab all keys matching a pattern and create an org table from the key value pairs, then edit that table. You can then send it back to Redis with interactive commands that send either the whole table, or just the current row back to Redis using mset or set.</div><div><br /></div><div>This work flow is not safe when working with multiple users, if you care about overwriting each others data. For example, I could store the last values you got from Redis in addition to your edited values. When you go to set a new value I first grab it from Redis, check if it has changed since you got it, and if so warn you (showing you the new value). For many work flows this would work well. For example the use case of a group of users editing a shared DB of configuration data. </div><div><br /></div><div> </div><div><br /></div><div><br /></div>

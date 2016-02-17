@@ -1,0 +1,14 @@
+---
+layout: post
+title: Sending mail with emacs in Windows
+date: '2009-02-20T10:31:00.000-08:00'
+author: Justin
+tags:
+- emacs smtp sending mail windows win32
+modified_time: '2009-03-25T09:05:12.372-07:00'
+thumbnail: http://3.bp.blogspot.com/_nkGbjVeC3i4/SZ76_EgKKwI/AAAAAAAACE8/pLWgnmo0Y40/s72-c/pigeon.jpg
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-3608530477966491695
+blogger_orig_url: http://justinsboringpage.blogspot.com/2009/02/sending-mail-with-emacs-in-windows.html
+---
+
+<a onblur="try {parent.deselectBloggerImageGracefully();} catch(e) {}" href="http://3.bp.blogspot.com/_nkGbjVeC3i4/SZ76_EgKKwI/AAAAAAAACE8/pLWgnmo0Y40/s1600-h/pigeon.jpg"><img style="margin: 0pt 10px 10px 0pt; float: right; cursor: pointer; width: 120px; height: 200px;" src="http://3.bp.blogspot.com/_nkGbjVeC3i4/SZ76_EgKKwI/AAAAAAAACE8/pLWgnmo0Y40/s200/pigeon.jpg" alt="" id="BLOGGER_PHOTO_ID_5304953372536351490" border="0" /></a><br />Thanks to a commenter in my earlier blog post for pointing me to this way of sending mail that actually does work:<br /><br /><a href="http://www.emacswiki.org/emacs/GnusMSMTP">http://www.emacswiki.org/emacs/GnusMSMTP</a><br /><br />You need to download msstp from sourceforge and install the exe in your path.<br /><br /><a href="http://sourceforge.net/projects/msmtp/">http://sourceforge.net/projects/msmtp/</a><br /><br />There is one change I needed to make to get this working. In the config file:<br /><br />msmtprc.txt<br /><br />You need to add a line<br /><br />from your.email@address.here<br /><br />Without that I was getting an error number and no email. If you run into a problem like that you can make sure MSSTP is running by trying it from the command line:<br /><br />msmtp -a yourname some@recipient.com<br /><br />Type some mail and hit Ctrl-Z and it should send correctly.<br /><br />Once that is working you can enter gnus within emacs, and send a mail using:<br /><br />M-x message-mail<br /><br />Fill out the fields and type C-c C-c and it should send correctly.<br /><br />A security issue with this is that it doesn't seem to work if you leave your password empty in the configuration file. From the command line it simply prompts you for your password and away you go, but from emacs it just hangs. So if you use this method you're taking the huge risk of having your password in a readable file on the hard drive.  I'll be trying to find a way around that before using this permanently.

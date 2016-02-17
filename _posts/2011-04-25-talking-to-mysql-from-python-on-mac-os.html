@@ -1,0 +1,17 @@
+---
+layout: post
+title: Talking to mysql from Python on Mac OS X 10.6
+date: '2011-04-25T17:40:00.000-07:00'
+author: Justin
+tags:
+- mac osx
+- mysql
+- mysqldb
+- python
+modified_time: '2011-04-25T19:56:15.010-07:00'
+thumbnail: http://2.bp.blogspot.com/-NKqwp2W_YmM/TbY0OvSTHsI/AAAAAAAAFSk/CIPn706RWrU/s72-c/2923859802_c8a8dc9f5a_z.jpg
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-9174874971368109311
+blogger_orig_url: http://justinsboringpage.blogspot.com/2011/04/talking-to-mysql-from-python-on-mac-os.html
+---
+
+<a href="http://2.bp.blogspot.com/-NKqwp2W_YmM/TbY0OvSTHsI/AAAAAAAAFSk/CIPn706RWrU/s1600/2923859802_c8a8dc9f5a_z.jpg" onblur="try {parent.deselectBloggerImageGracefully();} catch(e) {}"><img style="cursor:pointer; cursor:hand;width: 379px; height: 400px;" src="http://2.bp.blogspot.com/-NKqwp2W_YmM/TbY0OvSTHsI/AAAAAAAAFSk/CIPn706RWrU/s400/2923859802_c8a8dc9f5a_z.jpg" border="0" alt="" id="BLOGGER_PHOTO_ID_5599720614497820354" /></a><br /><div><span class="Apple-style-span" ><br /></span></div><div><span class="Apple-style-span" ><br /></span></div><div><span class="Apple-style-span" >image by <a href="http://www.flickr.com/photos/spullara/2923859802/">Sam Pullara</a></span></div><div><br /></div><div>Here's a problem I couldn't solve with Google, although it seems to be a moving target so YMMV. </div><div><br /></div><div>I wanted to do some work driving a MySQL database with Python. On Windows and Linux I've used MySQLdb so I decided to do the same on Mac. </div><div><br /></div><div>For reference I got mysql (client and server) through mac ports.</div><div><br /></div><div><div>mysql5 --version</div><div>mysql5  Ver 14.14 Distrib 5.1.45, for apple-darwin10.4.0 (i386) using readline 6.1</div></div><div><br /></div><div>and Python is the stock version:</div><div><br /></div><div><div>Python 2.6.1 (r261:67515, Jun 24 2010, 21:47:49) </div><div>[GCC 4.2.1 (Apple Inc. build 5646)] on darwin</div></div><div><br /></div><div>First download from here <a href="http://sourceforge.net/projects/mysql-python/">http://sourceforge.net/projects/mysql-python/</a> and extract the file somewhere...</div><div><br /></div><div>mkdir ~/pythondb</div><div>cd ~/pythondb</div><div>tar -vxf ~/Downloads/MySQL-python-1.2.3.tar.gz </div><div><br /></div><div>Then you need open up the site.cfg file and make a change as below. Your mysql_config5 maybe in a different spot. You can find out with the command 'which mysql_config5'.</div><div><br /></div><div></div><blockquote><div># The path to mysql_config.</div><div># Only use this if mysql_config is not on your PATH, or you have some weird</div><div># setup that requires it.</div><div>mysql_config = /opt/local/bin/mysql_config5</div></blockquote><div></div><div>Now execute the following:</div><div><br /></div><div>python setup.py build</div><div>python setup.py install</div><div><br /></div><div>If everything works you can now import MySQLdb in your python program and start interacting with mysql. </div>

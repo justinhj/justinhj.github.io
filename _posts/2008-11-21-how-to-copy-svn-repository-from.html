@@ -1,0 +1,13 @@
+---
+layout: post
+title: How to copy an SVN repository from sourceforge to google code
+date: '2008-11-21T11:43:00.000-08:00'
+author: Justin
+tags:
+- svn google code sourceforge source control
+modified_time: '2009-01-12T07:52:59.844-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-1895669180559976238
+blogger_orig_url: http://justinsboringpage.blogspot.com/2008/11/how-to-copy-svn-repository-from.html
+---
+
+Subversion has a tool called <a href="http://svnbook.red-bean.com/en/1.4/svn.ref.svnsync.html">SVNSYNC</a>  to make it easy to sync from one repository to another. This is great when moving to a different web based server. In this example I'm copying a project I work on from Sourceforge to Google Code. Once done, the google code repository will be an exact mirror, including the complete change history.<br /><br />You also need to set the revision number of the repository to zero. Google code, predictably, makes this easy, by having a button on the source page to do it for you.<br /><br />You need to have your username and password for google code to do this. For the repository you're copying you don't. First you use the initial command to set things up for the copy, then use the sync command to do the actual copy. It does this one revision at a time and takes a while...<br /><br /><pre><br />svnsync init https://lispbuilder.googlecode.com/svn https://lispbuilder.svn.sourceforge.net/svnroot/lispbuilderProject<br />svnsync --username YOURNAME --password YOURPASSWORD sync https://lispbuilder.googlecode.com/svn https://lispbuilder.svn.sourceforge.net/svnroot/lispbuilder<br /></pre>

@@ -1,0 +1,13 @@
+---
+layout: post
+title: Starting a program to run in the background from a DOS prompt
+date: '2012-03-22T12:18:00.002-07:00'
+author: Justin
+tags: 
+modified_time: '2012-03-22T12:22:14.015-07:00'
+thumbnail: http://2.bp.blogspot.com/-I2g1lbJiOyA/T2t64XLipRI/AAAAAAAAGZY/ayVTdlwkiVI/s72-c/6840890854_6035c7d55d_n.jpg
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-4091540649709916014
+blogger_orig_url: http://justinsboringpage.blogspot.com/2012/03/starting-program-to-run-in-background.html
+---
+
+<div class="separator" style="clear: both; text-align: center;"><br /></div><div class="separator" style="clear: both; text-align: center;"><a href="http://2.bp.blogspot.com/-I2g1lbJiOyA/T2t64XLipRI/AAAAAAAAGZY/ayVTdlwkiVI/s1600/6840890854_6035c7d55d_n.jpg" imageanchor="1" style="margin-left: 1em; margin-right: 1em;"><img border="0" src="http://2.bp.blogspot.com/-I2g1lbJiOyA/T2t64XLipRI/AAAAAAAAGZY/ayVTdlwkiVI/s1600/6840890854_6035c7d55d_n.jpg" /></a></div><div class="separator" style="clear: both; text-align: center;"><i>Picture by ro_buk on Flickr</i></div><br /><br />From a bash shell you can run a command in the background by adding an "&amp;" to the end of the command, but how do you do the same thing in Windows?<br /><br />Using the START command lets you run a task in the background (maximised or minimised), or in the foreground.<br /><br />For example the following would run memcached in the background minimized.<br /><br />C:\&gt;start /min D:\platform\memcached.exe<br /><br />Microsoft's documentation is below, but it seems the options have changed. /m does not work but /min does.<br /><br /><a href="http://support.microsoft.com/kb/126410">Microsoft's documentation on START</a><br /><br />

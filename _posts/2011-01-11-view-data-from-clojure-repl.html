@@ -1,0 +1,16 @@
+---
+layout: post
+title: View Data from the Clojure REPL
+date: '2011-01-11T11:09:00.000-08:00'
+author: Justin
+tags:
+- inspect
+- clojure
+- debugging
+modified_time: '2011-01-15T10:07:37.719-08:00'
+thumbnail: http://4.bp.blogspot.com/_nkGbjVeC3i4/TTHh9yXhqbI/AAAAAAAAFIc/TENgl2G5uzI/s72-c/inspect_tree.png
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-2152006006712419999
+blogger_orig_url: http://justinsboringpage.blogspot.com/2011/01/view-data-from-clojure-repl.html
+---
+
+Here's a nice debugging feature in Clojure. The inspect module lets you look at variables in a popup JFrame. The two examples below show how you quickly view data in a table or tree format. This is really handy to quickly view data from the REPL.<br /><br />(require 'clojure.inspector)<br /><br />(clojure.inspector/inspect-tree '(1 (a b) 2 (c d)  3 (e f )))<br /><br /><div><a href="http://4.bp.blogspot.com/_nkGbjVeC3i4/TTHh9yXhqbI/AAAAAAAAFIc/TENgl2G5uzI/s1600/inspect_tree.png"><img src="http://4.bp.blogspot.com/_nkGbjVeC3i4/TTHh9yXhqbI/AAAAAAAAFIc/TENgl2G5uzI/s320/inspect_tree.png" border="0" alt="" id="BLOGGER_PHOTO_ID_5562475466387990962" style="cursor: pointer; width: 320px; height: 273px; " /></a></div><div>(clojure.inspector/inspect-table '((1 2 3) (a b c) (e f g)))<br /><br /><a href="http://4.bp.blogspot.com/_nkGbjVeC3i4/TTHh5GiErVI/AAAAAAAAFIU/yOK5Eudd5Ng/s1600/inspect_table.png"><img src="http://4.bp.blogspot.com/_nkGbjVeC3i4/TTHh5GiErVI/AAAAAAAAFIU/yOK5Eudd5Ng/s320/inspect_table.png" border="0" alt="" id="BLOGGER_PHOTO_ID_5562475385901591890" style="cursor: pointer; width: 320px; height: 156px; " /></a><br /></div>

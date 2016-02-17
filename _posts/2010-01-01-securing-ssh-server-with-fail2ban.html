@@ -1,0 +1,16 @@
+---
+layout: post
+title: Securing an ssh server with fail2ban
+date: '2010-01-01T19:26:00.000-08:00'
+author: Justin
+tags:
+- ubuntu
+- linux
+- ssh. security
+- fail2ban
+modified_time: '2010-01-01T19:55:25.211-08:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-6479120968828439722
+blogger_orig_url: http://justinsboringpage.blogspot.com/2010/01/securing-ssh-server-with-fail2ban.html
+---
+
+There are all kinds of ways to secure an ssh server, with varying degrees of increasing security and decreasing flexibility. For example by limiting your server to only accept connections from certain known IP's, you are secure from random hackers on the internet, but you lose the ability to connect to your machine from anywhere you want to. Perhaps while travelling, for example. <div><br /></div><div><a href="http://www.linuxjournal.com/article/6811">Port knocking</a> and listening on a high numbered non-standard port. make it harder for an attacker to even start trying to hack your connection. But this also requires you connect with a machine that you have the knock program installed on. Again, less convenient, more secure. </div><div><br /></div><div>However, once an attacker does find your port there's nothing to stop brute force password hacking. If you look in your log file, you should see people connecting to your ssh port quite frequently and trying password attacks. </div><div><br /></div><div><div><b>cat /var/log/auth.log</b></div><div><br /></div><div>If you have a secure password then it would require days of brute force hacking to gain access to your ssh account, but even so, if you don't watch your logs then it's perfectly possible somebody will gain access eventually. </div><div><br /></div><div>Brute force attacks can be limited using fail2ban. There's a great article on setting it up <a href="http://www.howtoforge.com/fail2ban_debian_etch">here</a>. This program will scan your auth.log for you, using a regular expression to find failed password attempts. On a specified number of failures from a given IP, it will then modify the iptables on your machine (the firewall), to lock that IP out for a specified time.</div><div><br /></div><div>Now instead of watching your auth.log fill up with reams of failed passwords, you'll see a greatly reduced amount of brute force attacks, and you can watch your fail2ban log file fill up with the IP addresses of hackers.</div><div><br /></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div><div><br /></div></div>

@@ -1,0 +1,16 @@
+---
+layout: post
+title: Installing RPostgreSQL for R on Max OS Yosemite
+date: '2015-04-17T10:12:00.000-07:00'
+author: Justin
+tags:
+- macosx
+- yosemite
+- rpostgresql
+- r
+modified_time: '2015-04-17T10:12:02.144-07:00'
+blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-4857284140990372828
+blogger_orig_url: http://justinsboringpage.blogspot.com/2015/04/installing-rpostgresql-for-r-on-max-os.html
+---
+
+I went through a painful period of digesting wrong answers to this question on Google. In fact most of the answers are just of the type "this is somebody else's problem so we can't help"<br /><br />Anyway this is the eventual sequence of steps I found to install this that works:<br /><br /><pre>brew install postgresql<br />svn checkout http://rpostgresql.googlecode.com/svn/trunk/ rpostgresql-read-only<br />cd rpostgresql-read-only<br />R CMD INSTALL --preclean RPostgreSQL<br /></pre><br />then in R just type&nbsp;library('RPostgreSQL') and you're good to go<br /><br /><br /><br /><br /><br />
