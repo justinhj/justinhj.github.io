@@ -9,7 +9,6 @@
 title: Code is Fun
 email: justinhj@gmail.com
 description: Tips, tricks and whatever I find interesting. Covers emacs, functional programming, python, scala, akka, databases, games and distributed systems
-baseurl: "/blog" # the subpath of your site, e.g. /blog
 url: "http://justinhj.github.io" # the base hostname & protocol for your site
 twitter_username: justinhj
 github_username:  justinhj
