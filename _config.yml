@@ -18,4 +18,4 @@ github_username:  justinhj
 markdown: kramdown
 
 exclude: ["old"]
-include: ["images"]
+include: ["images","css"]
