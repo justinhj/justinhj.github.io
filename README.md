@@ -2,7 +2,12 @@
 
 This is the Jekyll site source code for my technical blog
 
-It's not working
+How to use:
+
+https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/
+
+
+
 
 
 
