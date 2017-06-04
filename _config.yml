@@ -18,3 +18,5 @@ markdown: kramdown
 
 exclude: ["old"]
 include: ["images","css"]
+
+theme: jekyll-theme-architect
