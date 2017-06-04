@@ -13,7 +13,7 @@ layout: default
   </div>
 
   <div>
-    {{ page.tags  }}
+    {{ page.tags | replace: " ","+" }}
   </div>
   
 </article>

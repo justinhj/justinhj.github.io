@@ -8,7 +8,7 @@
 # Site settings
 title: Code is Fun
 email: justinhj@gmail.com
-description: Tips, tricks and whatever I find interesting. Covers emacs, functional programming, python, scala, akka, databases, games and distributed systems
+description: Tips, tricks and whatever I find interesting. Covers emacs, functional and reative programming, python, scala, akka, databases, and distributed systems
 url: "http://justinhj.github.io" # the base hostname & protocol for your site
 twitter_username: justinhj
 github_username:  justinhj

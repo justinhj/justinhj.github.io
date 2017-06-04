@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Future[Either] and monad transformation"
+title:  "Future[Either] and monad transformers"
 date:   2017-06-02 10:00:40 -0000
 tags:
 - scala
@@ -9,7 +9,7 @@ tags:
 - functional programming
 - hamsters
 - scalaz
-- monadtransformers
+- monad transformers
 ---
 
 Future and Either together
