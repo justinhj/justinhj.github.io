@@ -8,7 +8,7 @@
 # Site settings
 title: Functional Justin
 email: justinhj+blog@gmail.com
-description: Justin works on back end server technology for video games. Interests include Scala, CLojure, Common Lisp, Docker, Kubernetes
+description: Justin currently works on server technology for video games. Interests include fp, scala, clojure, common lisp, docker, kubernetes
 url: "http://justinhj.github.io" 
 twitter_username: justinhj
 github_username:  justinhj
