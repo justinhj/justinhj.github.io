@@ -165,6 +165,8 @@ implicit def MWEC(implicit ec: ExecutionContext): Monad[Future] = new Monad[Futu
 
 There's a little bit of extra work going on here, I allow the Monad[Future] to be constructed from an execution context. The reason for that is you need to know which execution context your future is running in. By making the class this way I'm able to pick up an execution context implicitly defined in the same scope.
 
+[Try it out on ScalaFiddle](https://scalafiddle.io/sf/drq65RX/9)
+
 See this [stackoverflow question](http://stackoverflow.com/questions/44039425/specifying-an-execution-context-for-monadfuture-when-using-eithert-in-scalaz-7) (I asked it!) for more detail on this.
 
 Hamsters
