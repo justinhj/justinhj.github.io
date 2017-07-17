@@ -53,77 +53,15 @@ In order to use the Timer we need a `TimerTask` which is a simple `Runnable` obj
 1. User calls futureWithTimeout
 2. We create a promise with which to complete the future
 3. We start a timer task which will run at the timeout
-4. When the timeout occurs we complete the promise with `TimeourException` if it is not already complete
+4. When the timeout occurs we complete the promise with `TimeoutException` if it is not already complete
 5. When the user's future completes we succesfully (or otherwise) complete the `Promise` if it has not alread been completed
 6. Return the Promise's future to the user
 
-{% highlight scala %}
+{% gist 80d477a329f3d352a7a2af32a6fc532d %}
 
-import java.util.concurrent.TimeoutException
-import java.util.{Timer, TimerTask}
+Here's a small test suite showing the two cases for the users future succeeding and the users future timing out:
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.language.postfixOps
-
-object FutureUtil {
-
-  // All Future's that use futureWithTimeout will use the same Timer object
-  // it is thread safe and scales to thousands of active timers
-
-  val timer: Timer = new Timer()
-
-  /**
-    * Returns the result of the provided future within the given time or a timeout exception, whichever is first
-    * This uses Java Timer which runs a single thread to handle all futureWithTimeouts and does not block like a
-    * Thread.sleep would
-    * @param future Caller passes a future to execute
-    * @param timeout Time before we return a Timeout exception instead of future's outcome
-    * @return Future[T]
-    */
-  def futureWithTimeout[T](future : Future[T], timeout : FiniteDuration)(implicit ec: ExecutionContext): Future[T] = {
-
-    // Promise will be fulfilled with either the callers Future or the timer task if it times out
-    var p = Promise[T]
-
-    // and a Timer task to handle timing out
-
-    val timerTask = new TimerTask() {
-      def run() : Unit = {
-        p.synchronized {
-          if(!p.isCompleted) {
-            p.failure(new TimeoutException())
-          }
-        }
-      }
-    }
-
-    // Set the timeout to check in the future
-    timer.schedule(timerTask, timeout.toMillis)
-
-    future.map {
-      result =>
-        p.synchronized {
-          if(!p.isCompleted) {
-            p.success(result)
-            timerTask.cancel()
-          }
-        }
-    }.recover {
-      case e: Exception =>
-        p.synchronized {
-          if (!p.isCompleted) {
-            p.failure(e)
-          }
-        }
-    }
-
-    p.future
-  }
-
-}
-
-{% endhighlight %}
+{% gist 1de64d25af06dd2c38289c680c3d5a3c %}
 
 And finally a quick demo of this in action using Li Haoyi's awesome [Ammonite REPL](http://ammonite.io/#Ammonite-REPL)
 
