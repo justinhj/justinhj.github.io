@@ -8,10 +8,6 @@ layout: default
     <h1 class="post-title" itemprop="name headline">{{ page.title }}</h1>
     <p class="post-meta"><time datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">{{ page.date | date: "%b %-d, %Y" }}</time>{% if page.author %} • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">{{ page.author }}</span></span>{% endif %}</p>
       <div>
-    Tags:
-    {% for tag in page.tags %}
-      {{ tag }}  
-    {% endfor %}
   </div>
 
   </header>
@@ -20,6 +16,13 @@ layout: default
     {{ content }}
   </div>
 
+  <div>
+    Tags:
+    {% for tag in page.tags %}
+      {{ tag }}  
+    {% endfor %}
+  </div>
+  
   <div id="disqus_thread"></div>
 
 <script>
@@ -58,3 +61,5 @@ s.setAttribute('data-timestamp', +new Date());
 <!-- <script id="dsq-count-scr" src="//justinhj-github-io.disqus.com/count.js" async></script> -->
 
 </article>
+
+

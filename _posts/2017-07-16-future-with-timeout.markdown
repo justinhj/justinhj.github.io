@@ -9,6 +9,8 @@ tags:
 - timeout
 ---
 
+Previous post: [Future Either with Cats](/2017/06/18/future-either-with-cats.html)
+
 Future with timeout
 -------------------
 
