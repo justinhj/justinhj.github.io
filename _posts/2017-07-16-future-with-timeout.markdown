@@ -62,6 +62,10 @@ Here's a small test suite showing the two cases for the users future succeeding 
 
 {% gist 1de64d25af06dd2c38289c680c3d5a3c %}
 
+I've add this code to the StackOverflow question about Scala and Future timeouts. If you want to go there and upvote (or downvote) the link is here:
+
+[Scala Futures - built in timeout?](https://stackoverflow.com/questions/16304471/scala-futures-built-in-timeout/45272591#45272591)
+
 And finally a quick demo of this in action using Li Haoyi's awesome [Ammonite REPL](http://ammonite.io/#Ammonite-REPL)
 
 ![Timeout Example](/../images/timeout.gif)
