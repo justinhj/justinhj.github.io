@@ -57,7 +57,7 @@ In order to use the Timer we need a `TimerTask` which is a simple `Runnable` obj
 5. When the user's future completes we succesfully (or otherwise) complete the `Promise` if it has not alread been completed
 6. Return the Promise's future to the user
 
-{% gist 80d477a329f3d352a7a2af32a6fc532d %}
+{% gist e2eb081af1f8a341f957e2f8bc4e9686 %}
 
 Here's a small test suite showing the two cases for the users future succeeding and the users future timing out:
 
