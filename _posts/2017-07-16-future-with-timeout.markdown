@@ -11,9 +11,6 @@ tags:
 
 Previous post: [Future Either with Cats](/2017/06/18/future-either-with-cats.html)
 
-Future with timeout
--------------------
-
 In a small project I'm working on I needed a way to limit the amount of time my program waits for a future, returning a timeout if it takes too long. This functionality is not built into the Scala's standard [Future](http://www.scala-lang.org/api/2.12.x/scala/concurrent/Future.html) and, although you can use `Await` from `scala.concurrent`, this will block your thread which is not always desirable.
 
 I came across several ways to achieve the result such as this post on Nami's Tech Blog [Scala Futures with Timeout](https://nami.me/2015/01/20/scala-futures-with-timeout/)
