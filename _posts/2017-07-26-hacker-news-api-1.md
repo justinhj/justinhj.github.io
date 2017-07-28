@@ -10,7 +10,7 @@ tags:
 - Hacker News
 ---
 
-Previous post: [Future with Timeout](2017/07/16/future-with-timeout.html)
+Previous post: [Future with Timeout](/2017/07/16/future-with-timeout.html)
 
 This is a quick post that will develop code to query [Hacker News](https://news.ycombinator.com/news) stories and users using the provided Firebase [API](https://github.com/HackerNews/API). Although you can access the API using a Firebase client library, I thought it would be fun to develop my own to revisit some of the error handling topics from previous posts and demonstrate a couple of common libraries in the Scala ecosystem.
 
