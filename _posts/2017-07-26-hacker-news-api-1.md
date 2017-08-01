@@ -12,6 +12,8 @@ tags:
 
 Previous post: [Future with Timeout](/2017/07/16/future-with-timeout.html)
 
+Github project related to this post [hnfetch](https://github.com/justinhj/hnfetch)
+
 This is a quick post that will develop code to query [Hacker News](https://news.ycombinator.com/news) stories and users using the provided Firebase [API](https://github.com/HackerNews/API). Although you can access the API using a Firebase client library, I thought it would be fun to develop my own to revisit some of the error handling topics from previous posts and demonstrate a couple of common libraries in the Scala ecosystem.
 
 We will only be concerned with queries, so all we need to pull data down from the API is a HTTP library. I'll use [ScalaJ-HTTP](https://github.com/scalaj/scalaj-http). This is a nice and simple library that is also thread safe, so although it doesn't offer an Asynchronous API, we can use Scala's concurrency library to make it behave like it is.
