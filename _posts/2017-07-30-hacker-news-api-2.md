@@ -12,7 +12,7 @@ tags:
 - typelevel
 ---
 
-Previous post: [Hacker News API part 1](/2017/07/20/hacker-news-api-1.html)
+Previous post: [Hacker News API part 1](/2017/07/26/hacker-news-api-1.html)
 
 Github project related to this post [hnfetch](https://github.com/justinhj/hnfetch)
 
