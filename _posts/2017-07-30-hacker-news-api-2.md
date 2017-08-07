@@ -61,14 +61,19 @@ object HNDataSources {
 
       Query.async({
         (ok, fail) =>
-          HNFetch.getUser(id).map {
-            case Right(user) =>
-              ok(Some(user))
-            case Left(err) =>
-              ok(None)
-          }.recover {
-            case e => fail(e)
-          }
+          HNFetch.getUser(id) onComplete {
+
+            case Success(futSucc) => futSucc match {
+              case Right(item) =>
+                println(s"GOT Item $id")
+                ok(Some(item))
+              case Left(err) =>
+                ok(None)
+            }
+
+            case Failure(e) =>
+              fail(e)
+        }
       }, fetchTimeout)
 
     }
@@ -90,17 +95,20 @@ object HNDataSources {
       Query.async({
         (ok, fail) =>
           println(s"GET Item $id")
-          HNFetch.getItem(id).map {
-            case Right(item) =>
-              println(s"GOT Item $id")
-              ok(Some(item))
-            case Left(err) =>
-              ok(None)
-          }.recover {
-            case e => fail(e)
+          HNFetch.getItem(id) onComplete {
+
+            case Success(futSucc) => futSucc match {
+              case Right(item) =>
+                println(s"GOT Item $id")
+                ok(Some(item))
+              case Left(err) =>
+                ok(None)
+            }
+
+            case Failure(e) =>
+              fail(e)
           }
       }, fetchTimeout)
-    }
 
     // If the data source supports multiple queries (the HN API does not) you can implement it here
     // otherwise you can just tell it to use the single one using this built in function...
@@ -154,5 +162,5 @@ Fetch's big idea is to hide complexity such as caching, rate limiting and other 
 
 This has been a short and sweet introduction to Fetch. It seems like a solid library with a lot of use cases, and a good example of Free Monad's in the wild.
 
-
+Postscript: Thanks to a suggestion from @peterneyens I've update the async datasources to use onComplete rather than map/recover 
 

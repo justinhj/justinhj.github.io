@@ -19,3 +19,5 @@ markdown: kramdown
 exclude: ["old"]
 include: ["images","css"]
 
+gems:
+  - jekyll-mentions
