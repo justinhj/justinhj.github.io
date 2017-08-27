@@ -13,6 +13,8 @@ Github project related to this post [Udashroman](https://bitbucket.org/justinhj/
 
 Several years ago when I was working through the Clojure exercises on [4clojure.org](link.com) I implemented conversion from decimal numbers to roman numerals [LINK?](link) and the same thing in reve [LINK?](link?). Next, when learning how to write Clojurescript web frontends, I implemented a simple web app to do the conversion live as you make changes to either the decimal or roman inputs. The conversion code works very much like the conversion tools you get when searching Google for a conversion between say grams and ozs.
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/vH3eVXAyhbs?rel=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
+
 You can try out the app here [romanclojure](http://heyes-jones.com/romanclojure/roman.html) and the source code is available at [http://github.com/justinhj/cljs-roman](http://github.com/justinhj/cljs-roman)
 
 I decided to port this code to Scala to investigate the [Udash web framework](http://udash.io/) and as an exercise in porting Clojure code to Scala. 
