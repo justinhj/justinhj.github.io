@@ -5,6 +5,7 @@ date:   2017-08-27 00:00:00 -0000
 tags:
 - scala
 - scala.js
+- clojurescript
 - functional programming
 - udash
 - roman numeral conversion
@@ -151,7 +152,11 @@ The interesting part here is the `validation` parameter of the inputs. This is w
 
 # Summary
 
-So there ends the walkthrough of building a simple single page frontend app using Udash. I think with any large framework there is a learning curve and frustration when you want to do something but cannot find out how to do so. Udash has some of that despite the long and detailed manual. Nevertheless I found the experience in general positive and may well reach for Udash in the future when building web frontends. There's a stark difference between writing your web content in Scala vs a templated approach like Play/Twirl and I think it will depend a lot on your own project or team which approach to take.
+So what did I learn by building a simple app with Udash? Firstly I think with any large framework there is a learning curve and frustration when you want to do something but cannot find out how to do so. Udash has some of that despite the long and detailed manual. Nevertheless I found the experience in general positive and may well reach for Udash in the future when building web frontends. There's a stark difference between writing your web content in Scala vs a templated approach like Play/Twirl and I think it will depend a lot on your own project or team which approach to take.
+
+With regards to porting Clojure to Scala I found it fairly straightforward since there is considerable overlap in the Scala and Clojure standard libraries, and both languages have good support for working with collections and various combinators.
+
+
 
 
 
