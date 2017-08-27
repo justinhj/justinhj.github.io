@@ -21,13 +21,13 @@ See the project on Github [Udashroman](https://bitbucket.org/justinhj/udashroman
 
 Several years ago when I was working through the Clojure exercises on [4clojure.org](http://www.4clojure.com) I implemented conversion from decimal numbers to roman numerals [Write Roman Numerals](http://www.4clojure.com/problem/104) and the same thing in reverse [Read Roman Numerals](http://www.4clojure.com/problem/92). Next, when learning how to write Clojurescript web frontends, I implemented a simple web app to do the conversion live as you make changes to either the decimal or roman inputs which is modelled on the conversion UI you may see on Google when converting between pounds and kg and so on.
 
-You can try out this clojurescript version of the app here [romanclojure](http://heyes-jones.com/romanclojure/roman.html) and the source code is available at [http://github.com/justinhj/cljs-roman](http://github.com/justinhj/cljs-roman). The code consists of a single quite concise Clojurescript file [main.cljs](https://github.com/justinhj/cljs-roman/blob/master/src/cljs/roman/main.cljs) 
+You can try out this clojurescript version of the app here [romanclojure](http://heyes-jones.com/romanclojure/roman.html) and the source code is available at [http://github.com/justinhj/cljs-roman](http://github.com/justinhj/cljs-roman). The code consists of a single, quite concise, Clojurescript source file [main.cljs](https://github.com/justinhj/cljs-roman/blob/master/src/cljs/roman/main.cljs) 
 
 # Building an app with Udash
 
-Udash is designed to write rich single page apps and using the provided project generator to create one with some sample pages made it really easy to get started. I did find I had to read almost the entire [Udash guide](http://guide.udash.io/) to get anywhere as I kept running into roadblocks. Everything you need to know is in the documentation, but you won't know where to look unless you've had at least a cursory glance at each page. For example it took me a while to figure out why I was getting compile errors when copying Bootstrap style examples from the manual, when I'd missed an earlier part of the manual that showed how to add the bootstrap part as a separate library in your build.
+Udash is designed to write rich single page apps and using the provided project generator to create one with some sample pages made it really easy to get started although I'd recommend skimming through most of the [Udash guide](http://guide.udash.io/) before you start. 
 
-After creating my project I modified the RoutingRegistryDef which defines the routing for the app so that only my page gets loaded:
+After creating my project I modified the `RoutingRegistryDef` which defines the routing rules to map the URL to the individual views of your application. In my case there is only one page so this is straightforward.
 
 {% highlight scala %}
 
@@ -37,7 +37,9 @@ After creating my project I modified the RoutingRegistryDef which defines the ro
 
 {% endhighlight %}
 
-It's good practise to separate your business logic from UI code to make it more testable, and by not having any dependencies on other libraries it is easy to move into another project if you need to. For that reason I created a companion object `com.justinhj.romanconvert.Convert` which contains functions to convert back and forth between Roman and Decimal. If you compare my original [clojure] code with the new [Scala] code you can see that the original functions ported quite straightforwardly. The only complication I ran into is that the Scala standard library does not have Clojure's `partition` function. You can come close with `???` but it does not allow you to fill in a default value at the ends which is what we needed (TODO explain more) so I made a function `pairUp` specifically for this purpose.
+It is good practise to separate your application's business logic from UI code to make it more testable, and by not having any dependencies on other libraries it is easy to move into another project if you need to. For that reason I created a companion object `com.justinhj.romanconvert.Convert` which contains functions to convert back and forth between Roman and Decimal. If you compare my original [Clojurescript](https://github.com/justinhj/cljs-roman/blob/master/src/cljs/roman/main.cljs) with the new [Scala](https://bitbucket.org/justinhj/udashroman/src/867a30375d44b6d98ce42bfc1e572f65f0dca3ef/src/main/scala/com/justinhj/romanconvert/Convert.scala?at=master&fileviewer=file-view-default) code you can see that the functions converted quite cleanly. The only complication I ran into is that the Scala standard library does not have an exact equivalent of Clojure's `partition` function which I use as part of the conversion.
+
+As an example if you pass in "IX" then I will map that to the pairs `List((1, 10), (10, 0))` and if you pass "XI" I want `List((10, 1), (1, 0))`. In other words we pair each value with the one before it and use 0 as a pad value when we run out at the end. Scala's partition function `sliding` does not allow this default pad value. In order to get around this I instead implemented the function `pairUp` to do exactly what I needed in this case. 
 
 Please be aware that one the goals of 4Clojure puzzles is to solve the problem with as little code as possible as there is a code golf leaderboard for each one. For that reason my original Clojure code has no comments and is not written in what I'd call a maintable style. In porting to Scala I did try to make it more readable and so it is a little more verbose.
 
@@ -58,9 +60,7 @@ Next we need a ViewPresenter `RomanConverterViewPresenter` which is used by Udas
 
 `RomanConverterPresenter` represents the interactive portion of our app and is responsible for validating the data in the model and converting from decimal to roman when the properties change. The method `handleState` is an initialization function called when the state becomes active. It adds a `Validator` to each property. With that in place you can check if an input is valid using the `isValid` method. Interestingly this returns a `Future` indicating that you could perhaps perform some web request or other IO operation without blocking Javascript's single thread.
 
-My validators are fairly simple and only check that your Roman property contains valid Roman numeral characters whilst the decimal one will ensure that you are converting a positive non-zero number less that a certain maximum (since large numbers quickly fill up the screen with M's!).
-
-By hooking up the validators to Twitter bootstraps error indicators we can give a useful visual feedback to the user that the conversion can't go ahead:
+My validators are fairly simple and only check that your Roman property contains valid Roman numeral characters whilst the decimal one will ensure that you are converting a positive non-zero number less that a certain maximum (since large numbers quickly fill up the screen with M's!). As a bonus we can use the validators to modify the class of the inputs to .error which will highlight the field in red as shown below:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/2PnsV4Ph18A?controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
 
@@ -152,9 +152,23 @@ The interesting part here is the `validation` parameter of the inputs. This is w
 
 # Summary
 
-So what did I learn by building a simple app with Udash? Firstly I think with any large framework there is a learning curve and frustration when you want to do something but cannot find out how to do so. Udash has some of that despite the long and detailed manual. Nevertheless I found the experience in general positive and may well reach for Udash in the future when building web frontends. There's a stark difference between writing your web content in Scala vs a templated approach like Play/Twirl and I think it will depend a lot on your own project or team which approach to take.
+My key takeaways from this mini-project are that converting Clojurescript to Scala.js is quite painless, and I will certainly use the Udash web more in future.
 
-With regards to porting Clojure to Scala I found it fairly straightforward since there is considerable overlap in the Scala and Clojure standard libraries, and both languages have good support for working with collections and various combinators.
+Pros
+
+* A large and well documented library
+* Write your entire frontend and backend in the same library in the same language including type checked CSS and HTML
+* Project generator to get started
+
+Cons
+
+* You need to read the whole guide
+* No reference manual so if something is not in the guide you will have to read the source code (this was an issue with ScalaCSS too)
+* Need to know Scala to create the web content (a template approach like Play/Twirl may work better if you work with designers that don't use Scala)
+
+
+
+
 
 
 
