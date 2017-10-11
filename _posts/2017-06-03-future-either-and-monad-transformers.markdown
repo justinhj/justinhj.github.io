@@ -226,7 +226,6 @@ Just for reference the libraries used when writing this post are as follow:
   libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % scalaZVersion,
   "org.scalaz" %% "scalaz-effect" % scalaZVersion,
-  "net.debasishg" %% "redisclient" % "3.4",
   "io.github.scala-hamsters" %% "hamsters" % "1.3.1")
 
 {% endhighlight %}
