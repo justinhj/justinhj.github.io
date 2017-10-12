@@ -21,12 +21,12 @@ Github project related to this post
 
 ![Frontend example](/../images/ux.png)
 
-Last time I presented a simple command line app that used the [Fetch] library to pull data from an online data source (the [Hacker News API]). This new Github repo extends that with the following goals:
+Last time I presented a simple command line app that used the [Fetch](https://github.com/47deg/fetch) library to pull data from an online data source (the [Hacker News API](https://github.com/HackerNews/API)). In the related github repo I've developed that project in the following ways:
 
-- Convert the code from a command line JVM app to a Scala.js app that runs in the browser
-- Create a custom cache so we can query its size and clear it on demand
-- Use [Udash] to create an interactive frontend to operate the fetches
-- Visualize each round of the data fetch using [reftree]
+- Converted the code from a command line JVM app to a Scala.js app that runs in the browser
+- Created a custom cache so we can query its size and clear it on demand
+- Used [Udash](http://udash.io/) to create an interactive frontend to operate the fetches
+- Visualize each round of the data fetch using [reftree](https://github.com/stanch/reftree)
 
 Here's the page hosted on my website
 
