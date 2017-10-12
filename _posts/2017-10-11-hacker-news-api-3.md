@@ -28,17 +28,29 @@ Last time I presented a simple command line app that used the [Fetch](https://gi
 - Used [Udash](http://udash.io/) to create an interactive frontend to operate the fetches
 - Visualize each round of the data fetch using [reftree](https://github.com/stanch/reftree)
 
-Here's the page hosted on my website
+You can check out the project live here
 
 - [http://heyes-jones.com/hnfetch/index.html](http://heyes-jones.com/hnfetch/index.html)
 
-And a short video demonstration
+or watch a short video demonstration
 
 - [https://youtu.be/0jHG8Y3hiog](https://youtu.be/0jHG8Y3hiog)
 
+# What is hnfetchhs and how do you use it?
+
+The idea of this blog post and accompanying github repo is to provide an interactive demo of the Fetch library. The `Stories per page` input field lets you specify how many stories to fetch from the API, whilst the `Page` input chooses the offset. In the background I use the top stories endpoint to get the IDs of all the top stories. The number of top stories known is shown in the title bar. At anytime you can reload the top story IDs using `Refresh Top Stories`.
+
+Hitting the `Fetch Page` button will start a fetch job for the Ids with the current `Page`. So if you are are on page 1 and you have 30 stories per page you will get the top 30 stories as shown on Hacker News right now. 
+
+Once a fetch has been run you can view a diagram of the fetch operation in detail using the `Last Fetch` tab. If you play around with different page numbers and stories per page you can see the cache filling up, and you will see that repeated fetches of stories will result in a Nil fetch with no data to show.
+
+You can also clear the current cache using the `Clear Cache`.
+
+All these tools together make it easy to experiment with the fetch data source and different kinds of caches etc. The rest of the post explains some of the process involved in building this app.
+
 # What is Fetch?
 
-Fetch is inspired by the Haskell library [Haxl](https://github.com/facebook/Haxl) developed at Facebook to simplify the concurrent retrieval of data from multiple sources. You can read more about that [There is no Fork: an Abstraction for Efficient, Concurrent, and Concise Data Access](https://simonmar.github.io/bib/papers/haxl-icfp14.pdf)
+Fetch, an open source project by 47 Degs, is inspired by the Haskell library [Haxl](https://github.com/facebook/Haxl) developed at Facebook to simplify the concurrent retrieval of data from multiple sources. You can read more about that [There is no Fork: an Abstraction for Efficient, Concurrent, and Concise Data Access](https://simonmar.github.io/bib/papers/haxl-icfp14.pdf)
 
 You can read more about Fetch at their documentation page [https://47deg.github.io/fetch/docs.html](https://47deg.github.io/fetch/docs.html)
 
@@ -70,7 +82,7 @@ and is not available to Scala.js since all code must be either compiled from Sca
     "ru.pavkin" %%% "scala-js-momentjs" % "0.9.0"
 ```
 
-## Replace the scalaj-http
+## Replace scalaj-http
 
 Since fetching HTTP pages in my original code uses the ScalaJ HTTP library
 
@@ -78,17 +90,23 @@ Since fetching HTTP pages in my original code uses the ScalaJ HTTP library
   "org.scalaj" %% "scalaj-http" % "2.3.0"
 ```
 
-and this is not available in a scala.js version, I had to look elsewhere. Fortunately Javascript comes with the functionality needed to make requests to a a http endpoint. This is exposed to the Ajax library in scala.js. So removing the scalaj library and replacing the calls with Ajax was all that was needed.
+and this is not available in a scala.js version, I needed to replace it. Fortunately Javascript comes with the functionality needed to make requests to a a http endpoint. This is exposed to the Ajax library in scala.js. So removing the scalaj library and replacing the calls with Ajax was all that was needed.
 
+You can see that this is very simple in the source file `HNFetch.hs` 
+
+```
+ def hnRequest[T](url: String)(implicit r: Reader[T]) : Future[Either[String, T]]
+ ```
+ 
 # Custom DataCache
 
 The DataCache interface in Fetch allows you to update the cache with new elements and to get a particular element from the cache if it is there. In order to write an interactive tool to explore Fetch I wanted to be able to show the number of elements in the cache. I also wanted to be able to empty the cache, but that's straightforward, you just replace the existing cache with a new empty one.
 
-Take a look at the code in `com.justinhj.hnfetch.Cache` for a DataCache capable of returning its size.
+Take a look at the code in `Cache.scala` for a simple DataCache implementation with the size function exposed.
 
 # Udash frontend
 
-The [Udash guide](http://guide.udash.io) tells you everything you need to know to make great interactive frontends entirely in Scala. I've used the Bootstrap add-on to utilize features such as tabbed panes to switch between the stories and the fetch diagram.
+The [Udash guide](http://guide.udash.io) tells you everything you need to know to make great interactive frontends (and two kinds of backends) in a typesafe manner and entirely in Scala. I've used the Bootstrap add-on to utilize features such as tabbed panes to switch between the stories and the fetch diagram.
 
 # Visualizing the Fetch rounds
 
@@ -127,7 +145,7 @@ Here's a sample diagram of the Fetch rounds
 
 ![Fetch diagram](/../images/fetch.png)
 
-Here you can see that each round grabbed at least 8 items (that's the number of items per round my data source specifies) and you can see the time in ms for each one.
+Here you can see that each round grabbed at least 8 items (that's the number of items per round my data source specifies) and you can see the time in ms for each one. One thing to note is that the rounds are actually a queue not a list, but I found the list view was a lot easier to understand visually.
 
 # Next steps
 
