@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Hacker News API Part 3"
-date:   2017-10-08 00:00:00 -0000
+date:   2017-10-11 00:00:00 -0000
 tags:
 - scala
 - functional programming
@@ -18,6 +18,8 @@ Previous post: [Hacker News API part 2](/2017-07-30-hacker-news-api-2.html)
 Github project related to this post 
 
 - [hnfetch](https://github.com/justinhj/hnfetchjs)
+
+![Frontend example](/../images/ux.png)
 
 Last time I presented a simple command line app that used the [Fetch] library to pull data from an online data source (the [Hacker News API]). This new Github repo extends that with the following goals:
 
@@ -38,11 +40,11 @@ And a short video demonstration
 
 Fetch is inspired by the Haskell library [Haxl](https://github.com/facebook/Haxl) developed at Facebook to simplify the concurrent retrieval of data from multiple sources. You can read more about that [There is no Fork: an Abstraction for Efficient, Concurrent, and Concise Data Access](https://simonmar.github.io/bib/papers/haxl-icfp14.pdf)
 
-With Fetch you describe what you want to retrieve by creating your own DataSources that describe how to retreive data from some (usually) remote source. You can set various parameters such as how many items to retrieve at once and whether to run concurrently or sequentially and how long to wait before timing out. When you later ask it to retrieve some data you pass the IDs for that data and it will build a plan made up of a Queue of Rounds which you can then execute. Note that nothing runs until you tell it to. Under the hood Fetch is built using [Free Monads]. Whilst that is a complex topic, as a user of the library it just means that you can declare the job you want done and then choose an "interpreter" to execute it against. In our case we will use the built in [FutureMonadError] which executes the jobs using Scala Futures. There is additional support for things such as Twitter Futures, Monix Tasks or you can run the fetch synchronously using the [Eval](https://typelevel.org/cats/api/cats/Eval.html) Monad from [Cats](https://typelevel.org/cats/).
+You can read more about Fetch at their documentation page [https://47deg.github.io/fetch/docs.html](https://47deg.github.io/fetch/docs.html)
 
 # Converting code to scala.js
 
-This is the first time I've ported code written for the JVM to Scala.js so it was a learning experience but also the shortest part of the project. I created a Udash frontend using the built in project generator and started moving my code into the new project a piece at a time. It involved doing the follow:
+This is the first time I've ported code written for the JVM to Scala.js so it was a learning experience but also the shortest part of the project. I created a Udash frontend using the built in project generator and started moving my code into the new project a piece at a time. It involved doing the following:
 
 ## Change library import paths
 
@@ -86,9 +88,7 @@ Take a look at the code in `com.justinhj.hnfetch.Cache` for a DataCache capable 
 
 # Udash frontend
 
-The [Udash guide](http://guide.udash.io) tells you everything you need to know to make great interactive frontends entirely in Scala. I've used the Bootstrap addon to utilize features such as tabbed panes to switch between the stories and the fetch diagram.
-
-![Frontend example](/../images/ux.png)
+The [Udash guide](http://guide.udash.io) tells you everything you need to know to make great interactive frontends entirely in Scala. I've used the Bootstrap add-on to utilize features such as tabbed panes to switch between the stories and the fetch diagram.
 
 # Visualizing the Fetch rounds
 
@@ -123,7 +123,17 @@ Reftree takes care of the hard part of rendering the view using Javascript's Vis
   
 {% endhighlight %}
 
+Here's a sample diagram of the Fetch rounds
+
 ![Fetch diagram](/../images/fetch.png)
+
+Here you can see that each round grabbed at least 8 items (that's the number of items per round my data source specifies) and you can see the time in ms for each one.
+
+# Next steps
+
+Feel free to fork the code on github and expand it your needs, and as always feel free to contact me at the links above with any questions or comments.
+
+
 
 
 
