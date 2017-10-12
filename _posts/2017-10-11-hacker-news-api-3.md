@@ -13,7 +13,7 @@ tags:
 - scala.js
 ---
 
-Previous post: [Hacker News API part 2](/2017-07-30-hacker-news-api-2.html)
+Previous related post: [Hacker News API part 2](/2017-07-30-hacker-news-api-2.html)
 
 Github project related to this post 
 
@@ -21,7 +21,7 @@ Github project related to this post
 
 ![Frontend example](/../images/ux.png)
 
-Last time I presented a simple command line app that used the [Fetch](https://github.com/47deg/fetch) library to pull data from an online data source (the [Hacker News API](https://github.com/HackerNews/API)). In the related github repo I've developed that project in the following ways:
+In part 2 of this series I presented an interative command line app that used the [Fetch](https://github.com/47deg/fetch) library to pull data from an online data source (the [Hacker News API](https://github.com/HackerNews/API)). In the related github repo I've developed that project in the following ways:
 
 - Converted the code from a command line JVM app to a Scala.js app that runs in the browser
 - Created a custom cache so we can query its size and clear it on demand
@@ -92,7 +92,7 @@ Since fetching HTTP pages in my original code uses the ScalaJ HTTP library
 
 and this is not available in a scala.js version, I needed to replace it. Fortunately Javascript comes with the functionality needed to make requests to a a http endpoint. This is exposed to the Ajax library in scala.js. So removing the scalaj library and replacing the calls with Ajax was all that was needed.
 
-You can see that this is very simple in the source file `HNFetch.hs` 
+You can see the implementation for this in the source file `HNFetch.scala` 
 
 ```
  def hnRequest[T](url: String)(implicit r: Reader[T]) : Future[Either[String, T]]
@@ -148,6 +148,12 @@ Here's a sample diagram of the Fetch rounds
 Here you can see that each round grabbed at least 8 items (that's the number of items per round my data source specifies) and you can see the time in ms for each one. One thing to note is that the rounds are actually a queue not a list, but I found the list view was a lot easier to understand visually.
 
 # Next steps
+
+Some ideas I have for extending the project:
+
+- Do fetch and display of comments for the stories
+- Interactive queries around users, stories and comments 
+- Periodic update of top stories animating the movers on the current page
 
 Feel free to fork the code on github and expand it your needs, and as always feel free to contact me at the links above with any questions or comments.
 
