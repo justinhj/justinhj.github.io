@@ -133,6 +133,7 @@ Here you can see that each round grabbed at least 8 items (that's the number of 
 
 Feel free to fork the code on github and expand it your needs, and as always feel free to contact me at the links above with any questions or comments.
 
+Copyright (C) 2017 Justin-Heyes-Jones - All Rights Reserved
 
 
 
