@@ -13,7 +13,7 @@ tags:
 - scala.js
 ---
 
-Previous related post: [Hacker News API part 2](/2017-07-30-hacker-news-api-2.html)
+Previous related post: [Hacker News API part 2](/2017/07/30/hacker-news-api-2.html)
 
 Github project related to this post 
 
