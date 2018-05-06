@@ -21,6 +21,8 @@ Code referred to here can be found on Github
 
 - [hnfetch](https://github.com/justinhj/hnfetch)
 
+Warning this is a WIP - stay tuned for a better revision
+
 # Hacker News Fetch - Composing programs from Monix Tasks
 
 If you didn't read the previous parts of this series you can do so following the links above, but this post is effectively self contained and is really about composing your programs from Monix tasks and why may want to do that. For more information Monix has fantastic documentation [here](https://monix.io/docs/3x/).
