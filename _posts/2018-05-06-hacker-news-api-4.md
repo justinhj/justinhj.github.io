@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Hacker News API Part 4 - Composing programs with Monix Tasks"
-date:   2017-10-11 00:00:00 -0000
+date:   2018-05-05 00:00:00 -0000
 tags:
 - scala
 - functional programming
@@ -21,7 +21,7 @@ Code referred to here can be found on Github
 
 - [hnfetch](https://github.com/justinhj/hnfetch)
 
-# Hacker News Fetch part 4 
+# Hacker News Fetch - Composing programs from Monix Tasks
 
 If you didn't read the previous parts of this series you can do so following the links above, but this post is effectively self contained and is really about composing your programs from Monix tasks and why may want to do that. For more information Monix has fantastic documentation [here](https://monix.io/docs/3x/).
 
@@ -217,7 +217,7 @@ and the main loop:
 }
 ```
 
-# Conlusions
+# Conlusion
 
 So what did I gain by doing this conversion? The main goal was to learn a bit more about the Monix library especially Task. A wider goal is to explore the idea of isolating side effects in Scala programs. Looking at the old program and the new program you can clearly see that the new one is easier to reason about and more composable and cleaner. 
 
