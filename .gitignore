@@ -10,3 +10,4 @@ Gemfile.lock
 auto-save-list
 tramp
 .\#*
+.DS_store
