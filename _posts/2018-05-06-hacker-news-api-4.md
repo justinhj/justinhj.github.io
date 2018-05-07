@@ -29,6 +29,10 @@ As a Typelevel project Monix has great documentation and high development standa
 
 In this post we go back to part 2 of this series where I made an interactive command line client for viewing Hacker News stories. The first step is to get the list of top stories which is a simple list of story IDs. The I used the [Fetch](http://47deg.github.io/fetch/docs#introduction-0) library from 47Degs to manage the retrieval of each story. Fetch manages the number of concurrent operations you do as well as handling caching. Under the hood Fetch is implemented using Cats [Free](https://typelevel.org/cats/datatypes/freemonad.html)
 
+As you can see in the image there is a bit of diagnostic information in the background showing which threads are happening on. This helps when debugging and configuring code that uses threads.
+
+![HNFetch](/../images/hnfetch.png)
+
 # The Future of Future
 
 As is often the case when looking at old code, maybe especially your own, you see things that make you sad. In this case there are two sad things relating to functional programming and both of them will be fixed by the end of the post. The first sad thing is the use of Future. 
@@ -230,6 +234,8 @@ Not only is the new code easier to read, we now have the parts that make it up a
 # But how cool is Monix, though?
 
 I'm just getting started learning about what the Monix library, but I spent a few minutes playing around in the [Ammonite](http://ammonite.io/) REPL and had a lot of fun. For example Hacker News has a MaxItem API, which tells you the ID of the last posted item (it increase monotonically). So for fun I used the Monix Observer (part of the reactive module) to generate a tick every 30 seconds at which point you can execute a Task. These few lines of code will check Hacker News every 30 seconds and print the latest comment. Pretty fun:
+
+![Live comments](/../images/livecomments.png)
 
 ```
 import monix.eval.Task
