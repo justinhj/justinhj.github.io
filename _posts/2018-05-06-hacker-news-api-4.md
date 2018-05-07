@@ -12,6 +12,8 @@ tags:
 - monix
 ---
 
+# Hacker News API Part 4  - Fun with Monix
+
 Previous related posts: 
 * [Hacker News API part 3](/2017/10/11/hacker-news-api-3.html)
 * [Hacker News API part 2](/2017/07/30/hacker-news-api-2.html)
@@ -20,10 +22,6 @@ Previous related posts:
 Code referred to here can be found on Github 
 
 - [hnfetch](https://github.com/justinhj/hnfetch)
-
-Warning this is a WIP - stay tuned for a better revision
-
-# Hacker News API Part 4  - Fun with Monix
 
 If you didn't read the previous 3 posts about this little learning project (or as my son calls it writing the same boring program over and over), then don't worry because this will be self contained and an introduction to the Monix library and a couple of fun things you can do with it.
 
