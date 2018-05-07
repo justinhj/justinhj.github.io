@@ -16,6 +16,8 @@ Previous post: [Hacker News API part 1](/2017/07/26/hacker-news-api-1.html)
 
 Github project related to this post [hnfetch](https://github.com/justinhj/hnfetch)
 
+**Note**: I've updated this project a lot since this post but you can get the version from this post from this tagged [release](https://github.com/justinhj/hnfetch/tree/blogpost2).
+
 In the last post I demonstrated building a program to fetch data from the Hacker News API using a combination of libraries including scalaj-http and uPickle. This time I will demonstrate a wrapper around the core functionality using the [Fetch](http://47deg.github.io/fetch/docs) library by the cool folk at 47 Degrees.
 
 Fetch is based on the Facebook's Haskell library [Haxl](https://code.facebook.com/posts/302060973291128/open-sourcing-haxl-a-library-for-haskell/) and is designed to reduce the amount of complexity around managing calls to data sources such as caches, databases and web api's. In this article I will show how to turn my simple http calls to the Hacker News [API](https://github.com/HackerNews/API) into Fetch friendly data sources. That will then enable us to take advantage of automatic caching of stories and users, management of how many concurrent calls to make as well as giving us a nice purely functional interface to the data which uses Free Monads.

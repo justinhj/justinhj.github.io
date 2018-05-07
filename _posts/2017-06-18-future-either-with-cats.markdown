@@ -11,6 +11,8 @@ tags:
 - monad transformers
 ---
 
+_Disclaimer_ Monad transformers have some overhead, so make sure you benchmark before and after switching to them
+
 In a [previous post](http://justinhj.github.io/2017/06/02/future-either-and-monad-transformers.html) I was exploring the use of the EitherT to make it easier to work with Either when it is nested in a Future. I'm currently reading the book [Advanced Scala with Cats](http://underscore.io/training/courses/advanced-scala/) and decided to rewrite some of my code using the Cats library instead.
 
 There's also a page on [Herding Cats](http://eed3si9n.com/herding-cats/stacking-future-and-either.html) where Eugene Yokota covers the same ground. I wanted to expand my examples from last post so that they actually execute in a Future so I can map that to my own error handling code in real programs. For example in the Herding Cats blog the demonstration code returns values like this:

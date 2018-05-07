@@ -12,6 +12,8 @@ tags:
 - monad transformers
 ---
 
+_Disclaimer_ Monad transformers have some overhead, so make sure you benchmark before and after switching to them
+
 If Scalaz or Hamster isn't your thing check my next post: [Future Either with Cats](/2017/06/18/future-either-with-cats.html)
 
 When handling errors in Scala the Either type is very useful since it allows us to define the type of our right result (the success) as well as the type of the left (failure) result.
