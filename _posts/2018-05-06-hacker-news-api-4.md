@@ -29,13 +29,13 @@ As a Typelevel project Monix has great documentation and high development standa
 
 In this post, we go back to part 2 of this series where I made an interactive command line client for viewing Hacker News stories. The first step is to get the list of top stories which is a simple list of story IDs. I used the [Fetch](http://47deg.github.io/fetch/docs#introduction-0) library from 47Degs to manage the retrieval of each story. Fetch manages the number of concurrent operations you do as well as handling caching. Under the hood Fetch is implemented using Cats [Free](https://typelevel.org/cats/datatypes/freemonad.html)
 
-As you can see in the image there is a bit of diagnostic information in the background showing which threads are happening on. This helps when debugging and configuring code that uses threads.
+As you can see in the image there is a bit of diagnostic information in the background showing which threads the task is running on. This helps when debugging and configuring multi-threaded code.
 
 ![HNFetch](/../images/hnfetch.png)
 
-# The Future of Future
+As is often the case when looking at old code, maybe especially your own, you see things that make you sad. In this case, there are two sad things relating to functional programming and both of them will be fixed by the end of the post. The first sad thing is the use of Future and the second is the lack of _composablity_.
 
-As is often the case when looking at old code, maybe especially your own, you see things that make you sad. In this case, there are two sad things relating to functional programming and both of them will be fixed by the end of the post. The first sad thing is the use of Future. 
+# The Future of Future
 
 Scala's Future is a simple to use abstraction that lets you work values that typically will take some time to compute. Common examples are fetching some data from a database or networked service. In imperative programming, you would probably have the DB operation start on another thread and ask that thread to 'callback' to you when it's done. Scala's Future provides an ExecutionContext, essentially the instructions and configuration for how to run the Future code. Every Future must have an implicit ExecutionContext in scope, although you can pass one explicitly if you like. 
 
