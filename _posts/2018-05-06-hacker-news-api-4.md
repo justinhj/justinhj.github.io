@@ -41,7 +41,7 @@ Scala's Future is a simple to use abstraction that lets you work values that typ
 
 Once created a Future will usually execute immediately (it could be that it is asked to run on a thread pool that is busy and it will have to wait for a place in the queue.) Once executed it will complete by setting its value (or return an error if it fails). As a user of the Future we must eventually wait for it somehow, for example using the blocking call Await.result. This will wait for the Future to get its value set by a successful operation, or for the Future's error to be set, or finally it the Await operation itself could timeout.
 
-Unfortunately, this eager evaluation of Future means that it is not referentially transparent. As functional programmers we want referential transparency because it makes programs easier to reason about. I found a very nice and succinct demonstration of this problem on Reddit in a [Reddit](https://www.reddit.com/r/scala/comments/3zofjl/why_is_future_totally_unusable/?st=jguak5en&sh=8064a725) by Rob Norris (@tpolecat): 
+Unfortunately, this eager evaluation of Future means that it is not referentially transparent. As functional programmers we want referential transparency because it makes programs easier to reason about. I found a very nice and succinct demonstration of this problem in a [Reddit comment](https://www.reddit.com/r/scala/comments/3zofjl/why_is_future_totally_unusable/?st=jguak5en&sh=8064a725) by Rob Norris (@tpolecat): 
 
 ```
 import scala.concurrent.future
