@@ -37,7 +37,7 @@ As is often the case when looking at old code, maybe especially your own, you se
 
 # The Future of Future
 
-Scala's Future is a simple to use abstraction that lets you work values that typically will take some time to compute. Common examples are fetching some data from a database or networked service. In imperative programming, you would probably have the DB operation start on another thread and ask that thread to 'callback' to you when it's done. Scala's Future provides an ExecutionContext, essentially the instructions and configuration for how to run the Future code. Every Future must have an implicit ExecutionContext in scope, although you can pass one explicitly if you like. 
+Scala's Future is a simple to use abstraction that lets you work with values that typically will take some time to compute. Common examples are fetching some data from a database or calling a remote service endpoint. In imperative programming, you would probably have the DB operation start on another thread and ask that thread to 'callback' to you when it's done. Scala's Future provides an ExecutionContext, essentially the instructions and configuration for how to run the Future code. Every Future must have an implicit ExecutionContext in scope, although you can pass one explicitly if you like. 
 
 Once created a Future will usually execute immediately (it could be that it is asked to run on a thread pool that is busy and it will have to wait for a place in the queue.) Once executed it will complete by setting its value (or return an error if it fails). As a user of the Future we must eventually wait for it somehow, for example using the blocking call Await.result. This will wait for the Future to get its value set by a successful operation, or for the Future's error to be set, or finally it the Await operation itself could timeout.
 
@@ -162,7 +162,7 @@ This is not really related to the process of replacing Future with Task but a re
 
 ## [HNFetch.scala](https://github.com/justinhj/hnfetch/blob/master/src/main/scala/justinhj/hnfetch/HNFetch.scala)
 
-In this code most of the changes were removing Future from functions that can actually be simply synchronous. We'll later let Monix Task handle scheduling them on threads. The one exception is the function geTopItems which will we call as a single Task (the other http gets are made by Fetch itself and will be wrapped by Tasks later). So in refactoring, I've created a Sync (blocking) and a regular (Task wrapped) version of the supported Hacker News API.
+In this code most of the changes were removing Future from functions that can actually be simply synchronous. We'll later let Monix Task handle scheduling them on threads. The one exception is the function `getTopItems` which will we call as a single Task (the other http gets are made by Fetch itself and will be wrapped by Tasks later). So in refactoring, I've created a Sync (blocking) and a regular (Task wrapped) version of the supported Hacker News API.
 
 ```
   def getTopItems(): Task[Either[String, HNItemIDList]] = Task.eval {
@@ -231,9 +231,9 @@ With a few changes, we've turned a simple ugly program that used old-fashioned F
 
 Not only is the new code easier to read, we now have the parts that make it up available to easily make new programs.
 
-# But how cool is Monix, though?
+# A small demo of Monix Reactive
 
-I'm just getting started learning about what the Monix library, but I spent a few minutes playing around in the [Ammonite](http://ammonite.io/) REPL and had a lot of fun. For example, Hacker News has a MaxItem API, which tells you the ID of the last posted item (it increase monotonically). So for fun I used the Monix Observer (part of the reactive module) to generate a tick every 30 seconds at which point you can execute a Task. These few lines of code will check Hacker News every 30 seconds and print the latest comment. Pretty fun:
+I'm just getting started learning about what the Monix library, but I spent a few minutes playing around in the [Ammonite](http://ammonite.io/) REPL and had a lot of fun. For example, Hacker News has a MaxItem API, which tells you the ID of the last posted item (it increase monotonically). So I used the Monix Observer (part of the reactive module) to generate a tick every 30 seconds at which point you can execute a Task. These few lines of code will check Hacker News every 30 seconds and print the latest comment:
 
 ![Live comments](/../images/livecomments.png)
 
