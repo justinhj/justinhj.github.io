@@ -4,7 +4,7 @@
 
 * Radix trees, Dash and Company mode
 
-** Radix trees in Emacs
+** Radix trees
 
 I was reading the [[https://www.gnu.org/software/emacs/news/NEWS.26.1][Emacs 26.1 release notes]] and came across something interesting:
 
@@ -14,181 +14,178 @@ Whilst there is not yet a mention in the info documentation browser, there is of
 
 *** What are radix trees?
 
-Rather than go into the implementation and detailed explanation of Radix trees check them out on [[https://en.wikipedia.org/wiki/Radix_tree][Wikipedia]]. For the purposes of this post let's go with a super imprecise explanation. When you store a map of keys that are associated with some value there are a number of ways to represent that as a data structure. What Radix Trees offer is tat when the key is a sequence of some kind (say a string of characters or a list of numbers) we can store the keys in a much abbreviated format, taking advantage of the shared prefixes amongst many keys. For example most Vancouver phone numbers begin with 778 or 604. Most of the numbers in a radix tree can be stored under one of those three digit prefixes rather than in three levels of tree (7,7,8...)
+ Rather than go into the implementation and detailed explanation of Radix trees check them out on [[https://en.wikipedia.org/wiki/Radix_tree][Wikipedia]]. For the purposes of this post let's go with a super imprecise explanation. When you store a map of keys that are associated with some value there are a number of ways to represent that as a data structure. What Radix Trees offer is tat when the key is a sequence of some kind (say a string of characters or a list of numbers) we can store the keys in a much abbreviated format, taking advantage of the shared prefixes amongst many keys. For example most Vancouver phone numbers begin with 778 or 604. Most of the numbers in a radix tree can be stored under one of those three digit prefixes rather than in three levels of tree (7,7,8...)
 
 *** Exploring radix trees in Emacs
 
-For more clarity lets look at a string example... say we want to store the following keys in a key value store: application, appetizer, applicative, apple.
+ For more clarity lets look at a string example... say we want to store the following keys in a key value store: application, appetizer, applicative, apple.
 
-To start with we need an empty radix tree, which is just defined as nil:
+ To start with we need an empty radix tree, which is just defined as nil:
 
-#+BEGIN_SRC emacs-lisp
+ #+BEGIN_SRC emacs-lisp
 
-(require 'radix-tree)
+ (require 'radix-tree)
 
-radix-tree-empty
-#+END_SRC
+ radix-tree-empty
+ #+END_SRC
 
-You add key/values to the map like this:
+ You add key/values to the map like this:
 
-#+BEGIN_SRC emacs-lisp
-(setq tree-1 (radix-tree-insert radix-tree-empty "application" t))
+ #+BEGIN_SRC emacs-lisp
+ (setq tree-1 (radix-tree-insert radix-tree-empty "application" t))
 
-;; (("application" . t))
-#+END_SRC
+ ;; (("application" . t))
+ #+END_SRC
 
-Note that inserting returns a new tree that contains just the single key "application". For the purposes of our program we don't need to store an actualy value, we're just interested in the keys which represent valid English words, so we just store `t' which is true in Emacs Lisp.
+ Note that inserting returns a new tree that contains just the single key "application". For the purposes of our program we don't need to store an actualy value, we're just interested in the keys which represent valid English words, so we just store `t' which is true in Emacs Lisp.
 
-Next we'll make a new tree by inserting the next word into `tree-1':
+ Next we'll make a new tree by inserting the next word into `tree-1':
 
-#+BEGIN_SRC emacs-lisp
-(setq tree-2 (radix-tree-insert tree-1 "appetizer" t))
+ #+BEGIN_SRC emacs-lisp
+ (setq tree-2 (radix-tree-insert tree-1 "appetizer" t))
 
-;; (("app" ("lication" . t) ("etizer" . t)))
-#+END_SRC
+ ;; (("app" ("lication" . t) ("etizer" . t)))
+ #+END_SRC
 
-As you can see the radix tree split the key up into the shared prefixes between the two words. We can query how many words the tree has in total like this:
+ As you can see the radix tree split the key up into the shared prefixes between the two words. We can query how many words the tree has in total like this:
 
-#+BEGIN_SRC emacs-lisp
-(radix-tree-count tree-2)
+ #+BEGIN_SRC emacs-lisp
+ (radix-tree-count tree-2)
 
-;; 2 (#o2, #x2, ?\C-b)
-#+END_SRC
+ ;; 2 (#o2, #x2, ?\C-b)
+ #+END_SRC
 
-** Reducing a list and the Dash list API
+*** Reducing a list and the Dash list API
 
-We've seen how to add elements one at a time to the tree, but our goal is to take a list of words and add them to a dictionary. For that we will need to use the `seq-reduce' function; a functional programming construct for reducing a sequence to a single value using some function that accumulates results:
+ We've seen how to add elements one at a time to the tree, but our goal is to take a list of words and add them to a dictionary. For that we will need to use the `seq-reduce' function; a functional programming construct for reducing a sequence to a single value using some function that accumulates results:
 
-#+BEGIN_SRC emacs-lisp
-(seq-reduce (lambda (acc it) (radix-tree-insert acc it t)) '("application" "appetizer" "applicative" "apple") radix-tree-empty)
+ #+BEGIN_SRC emacs-lisp
+ (seq-reduce (lambda (acc it) (radix-tree-insert acc it t)) '("application" "appetizer" "applicative" "apple") radix-tree-empty)
 
-;; (("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))
-#+END_SRC
+ ;; (("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))
+ #+END_SRC
 
-In the output you can see that the four words have been neatly split into their shared and non-shared parts.
+ In the output you can see that the four words have been neatly split into their shared and non-shared parts.
 
-`seq-reduce' is fine for our purposes, but when working with Emacs lisp lists I prefer to use [[https://github.com/magnars/dash.el][Dash]] which is a package providing a more modern list API. All Dash functions begin with a dash hence the name. We can replace the code above using Dash as follows:
+ `seq-reduce' is fine for our purposes, but when working with Emacs lisp lists I prefer to use [[https://github.com/magnars/dash.el][Dash]] which is a package providing a more modern list API. All Dash functions begin with a dash hence the name. We can replace the code above using Dash as follows:
 
-#+BEGIN_SRC emacs-lisp
-(require 'dash)
-(-reduce-from (lambda (tree word) (radix-tree-insert tree word t)) radix-tree-empty '("application" "appetizer" "applicative" "apple"))
+ #+BEGIN_SRC emacs-lisp
+ (require 'dash)
+ (-reduce-from (lambda (tree word) (radix-tree-insert tree word t)) radix-tree-empty '("application" "appetizer" "applicative" "apple"))
 
-;; (("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))
-#+END_SRC
+ ;; (("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))
+ #+END_SRC
 
-In English when you refer to a word used earlier in the conversation you will say "it" instead, and this is called anaphora. Dash provides "anaphoric" versions of many of its functions that begin with two dashes that let you abbreviate the lambda form we used above and refer to each item as it. In the case of the `--reduce-from` we get both it and acc (for the accumulated result):
+ In English when you refer to a word used earlier in the conversation you will say "it" instead, and this is called anaphora. Dash provides "anaphoric" versions of many of its functions that begin with two dashes that let you abbreviate the lambda form we used above and refer to each item as it. In the case of the `--reduce-from` we get both it and acc (for the accumulated result):
 
-#+BEGIN_SRC emacs-lisp
-(--reduce-from (radix-tree-insert acc it t) radix-tree-empty '("application" "appetizer" "applicative" "apple"))
+ #+BEGIN_SRC emacs-lisp
+ (--reduce-from (radix-tree-insert acc it t) radix-tree-empty '("application" "appetizer" "applicative" "apple"))
 
-;; (("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))
-#+END_SRC
+ ;; (("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))
+ #+END_SRC
 
-That's nicer! Now we need a function that takes a sequence of words and adds them to a radix tree: 
+ That's nicer! Now we need a function that takes a sequence of words and adds them to a radix tree: 
 
-#+BEGIN_SRC emacs-lisp
+ #+BEGIN_SRC emacs-lisp
 
-(defun list-to-radix-tree(l)
-  (--reduce-from (radix-tree-insert acc it t) radix-tree-empty l))
+ (defun list-to-radix-tree(l)
+   (--reduce-from (radix-tree-insert acc it t) radix-tree-empty l))
 
-(list-to-radix-tree '("application" "appetizer" "applicative" "apple"))
-;; (("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))
-#+END_SRC
+ (setq small (list-to-radix-tree '("application" "appetizer" "applicative" "apple")))
 
-** Reading words from a file
+ ;; (("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))
+ #+END_SRC
 
-Our next step is to load the words for our custom dictionary from a file. The one in the github repo `dictionary.txt` contains 172k words. We can load it and turn it into a list of words, and finally build a radix tree with a few lines of code:
+*** Reading words from a file and making a radix tree
 
-#+BEGIN_SRC emacs-lisp
+ Our next step is to load the words for our custom dictionary from a file. The one in the github repo `dictionary.txt` contains 172k words. We can load it and turn it into a list of words, and finally build a radix tree with a few lines of code:
 
-(defun radix-tree-from-file(file-path)
-  (-> 
-   (with-temp-buffer
-     (insert-file-contents-literally file-path)
-     (buffer-substring-no-properties (point-min) (point-max)))
-   split-string
-   list-to-radix-tree))
+ #+BEGIN_SRC emacs-lisp
 
-(radix-tree-from-file "dictionary.txt")
+ (defun radix-tree-from-file(file-path)
+   (-> 
+    (with-temp-buffer
+      (insert-file-contents-literally file-path)
+      (buffer-substring-no-properties (point-min) (point-max)))
+    split-string
+    list-to-radix-tree))
 
-#+END_SRC
+ (radix-tree-from-file "dictionary.txt")
 
-Note the use of "->" which is a threading macro from Dash. It lets us put a list of operations together and "threads" the result from one step to the next, making things a bit easier to read. You'll see a similar operator in Clojure.
+ #+END_SRC
 
-Hmm, that was kinda slow. When we start using the Company mode we need to load the file and we don't want a delay like that. Let's use the emacs benchmark facility to see just how slow it is:
+ Note the use of "->" which is a threading macro from Dash. It lets us put a list of operations together and "threads" the result from one step to the next, making things a bit easier to read. You'll see a similar operator in Clojure.
 
-#+BEGIN_SRC emacs-lisp
+*** Speeding it up
 
-(require 'benchmark)
-(benchmark-elapse (radix-tree-from-file "dictionary.txt"))
+ Hmm, that was kinda slow. When we start using the Company mode we need to load the file and we don't want a delay like that. Let's use the emacs benchmark facility to see just how slow it is:
 
-;; 6.021951
+ #+BEGIN_SRC emacs-lisp
 
-#+END_SRC
+ (require 'benchmark)
+ (benchmark-elapse (radix-tree-from-file "dictionary.txt"))
 
-Six seconds is a bit too much. How about we just write the radix tree to a file instead, then load that? First we need to write the tree to a string using `print1-to-string', then we can stick that in a buffer and write it to a file.
+ ;; 6.021951
 
-#+BEGIN_SRC emacs-lisp
+ #+END_SRC
 
-(defun write-text-to-file(text file-path)
-  (save-excursion
-    (let ((buffer (find-file file-path)))
-      (switch-to-buffer buffer)
-      (erase-buffer)
-      (insert text)
-      (save-buffer)
-      (kill-buffer))))
+ Six seconds is a bit too much. How about we just write the radix tree to a file instead, then load that? First we need to write the tree to a string using `print1-to-string', then we can stick that in a buffer and write it to a file.
 
-(setq dictionary (radix-tree-from-file "dictionary.txt"))
+ #+BEGIN_SRC emacs-lisp
 
-(write-text-to-file (prin1-to-string dictionary) "dictionary.el")
+ (defun write-text-to-file(text file-path)
+   (save-excursion
+     (let ((buffer (find-file file-path)))
+       (switch-to-buffer buffer)
+       (erase-buffer)
+       (insert text)
+       (save-buffer)
+       (kill-buffer))))
 
-#+END_SRC
+ (setq dictionary (radix-tree-from-file "dictionary.txt"))
 
-Now let's see how much faster it is to simply load the data structure rather than build it:
+ (write-text-to-file (prin1-to-string dictionary) "dictionary.el")
 
-#+BEGIN_SRC emacs-lisp
+ ;; (write-text-to-file (prin1-to-string small) "dictionary.el")
 
-(defun tree-from-file(file-path)
-  (save-excursion 
-    (let* ((buffer (find-file file-path))
-           (tree (read buffer))
-           (kill-buffer buffer))
-      tree)))
+ #+END_SRC
 
-(benchmark-elapse
-  (progn
-    (setq loaded-dictionary (tree-from-file "dictionary.el"))
-    t))
+ Now let's see how much faster it is to simply load the data structure rather than build it:
 
-#+END_SRC
+ #+BEGIN_SRC emacs-lisp
 
-Great! Now we have a way to quickly load the radix tree, the next step is to be able to find all the keys given a prefix. `radix-tree-subtree' does the job, returning a subtree rooted at the given prefix. Given the relevant subtree we can then iterate all of the keys and values using the function `radix-tree-iter-mappings'. Here we use the destructive `!cons' (also from dash) to build up a list of all the keys, which we then return. This is now all the functionality we need to return for our auto-complete functionality:
+ (defun tree-from-file(file-path)
+   (save-excursion 
+     (let* ((buffer (find-file file-path))
+            (tree (read buffer)))
+       (kill-buffer buffer)
+       tree)))
 
-#+BEGIN_SRC emacs-lisp
+ (benchmark-elapse
+   (progn
+     (setq loaded-dictionary (tree-from-file "dictionary.el"))
+     t))
 
-(defun radix-tree-keys(subtree prefix)
-  (let (keys '())
-    (radix-tree-iter-mappings (radix-tree-subtree subtree prefix)
-			      (lambda (key val)
-				(!cons (concat prefix key) keys)))
-    keys))
+ ;; 0.198365
 
-(radix-tree-keys loaded-dictionary "antidi")
+ #+END_SRC
 
-;; ("antidiscrimination" "antidilution" "antidiarrheal" "antidiabetic")
+ Great! The first time we run the program it will take 6 seconds to build, but subsequently we can load the radix tree data from disk which takes 0.2 seconds. The next step is to be able to find all the keys given a prefix. `radix-tree-subtree' does the job, returning a subtree rooted at the given prefix. Given the relevant subtree we can then iterate all of the keys and values using the function `radix-tree-iter-mappings'. Here we use the destructive `!cons' (also from dash) to build up a list of all the keys, which we then return. This is now all the functionality we need to return for our auto-complete functionality:
 
-#+END_SRC
+ #+BEGIN_SRC emacs-lisp
 
+ (defun radix-tree-keys(subtree prefix)
+   (let (keys '())
+     (radix-tree-iter-mappings (radix-tree-subtree subtree prefix)
+			       (lambda (key val)
+				 (!cons (concat prefix key) keys)))
+     keys))
 
+ (radix-tree-keys loaded-dictionary "antidi")
 
+ ;; ("antidiscrimination" "antidilution" "antidiarrheal" "antidiabetic")
 
+ #+END_SRC
 
-
-
-
-
-
-
-
+** Company Mode
 
