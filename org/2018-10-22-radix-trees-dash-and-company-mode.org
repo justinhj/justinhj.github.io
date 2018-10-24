@@ -189,3 +189,57 @@ Whilst there is not yet a mention in the info documentation browser, there is of
 
 ** Company Mode
 
+[[http://company-mode.github.io][Company Mode]] (Company comes from "complete anything") is one of the two most popular completion frameworks for emacs (the other being [[https://github.com/auto-complete/auto-complete][Auto-Complete]]). In order to make our own custom dictionary auto completion we just need to implement a single function to implement a "backend".
+
+Here's the code, I'll work through each part below:
+
+The best documentation for how to write a backend is in the docstring for `company-backends' so I'd recommend reading that in full to see the capabilities of Company mode.
+
+C-h v company-backends
+
+#+BEGIN_SRC emacs-lisp
+
+(require 'company)
+
+(defun custom-dictionary-company-backend (command &optional arg &rest ignored)
+  "Company mode backend for a custom dictionary stored as a radix tree."
+  (case command
+    ('init    
+     (unless (boundp 'custom-dictionary-company--words-tree)
+         (setq custom-dictionary-company--words-tree (tree-from-file "dictionary.el"))))
+    ('prefix
+     (company-grab-word))
+    ('candidates
+     (radix-tree-keys custom-dictionary-company--words-tree (downcase arg)))
+    ('ignore-case
+     'keep-prefix)))
+  
+;; (provide 'custom-dictionary-company-backend) 
+
+;; [1]
+(push 'custom-dictionary-company-backend company-backends)
+
+;; [2]
+;; (unintern 'custom-dictionary-company--words-tree)
+
+#+END_SRC
+
+These few lines are, believe it or not, all you need to make our custom dictionary backend work! We are just making a callback which implements the Company mode API by sending us commands for us to handle. Let's look at each one:
+
+`init' - Init is called when company mode is initially enabled. This could be when emacs loads, or if you enable manually it will be called whenever you enable it. It could be called multiple times in a session so keep that in mind when implementing. In this case our implementation checks whether we loaded the dictionary or not. If we did then nothing happens, otherwise we load it.
+`prefix' - This is the text the user has typed so far that we want to complete. I call the built in function `company-grab-word' which does what you'd expect in most cases. You can write your own depending on your needs.
+`candidates' - We are given `arg' which contains the word to be completed and must return the list of candidates that will show up in the menu for the user to pick from. We simply use radix-tree-keys to get the list of words based on the prefix. Note that we make the completion to lower case as we want to match words ignoring that the user may have capitalized the word.
+`ignore-case' - We return a special response `keep-prefix' which maintains the users original capitalization.
+
+Notes:
+
+[1] This push command is what you need to make your backend active.
+[2] If you change the dictionary and want to reset it without restarting emacs then use unintern to remove the symbol then restart company-mode.
+
+** Final notes
+
+So that's all folks. Check out the accompanying bitbucket repo if you want to download the code.
+
+
+
+
