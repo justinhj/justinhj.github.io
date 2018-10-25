@@ -1,6 +1,22 @@
 #+TITLE: Radix trees, Dash and Company mode
 #+AUTHOR: Justin Heyes-Jones
 #+DATE: 2018
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:auto
+#+OPTIONS: html-preamble:t html-scripts:t html-style:t
+#+OPTIONS: html5-fancy:nil tex:t
+#+HTML_DOCTYPE: xhtml-strict
+#+HTML_CONTAINER: div
+#+DESCRIPTION:
+#+KEYWORDS:
+#+HTML_LINK_HOME:
+#+HTML_LINK_UP:
+#+HTML_MATHJAX:
+#+HTML_HEAD:
+#+HTML_HEAD_EXTRA:
+#+SUBTITLE:
+#+INFOJS_OPT:
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.1 (<a href="http://orgmode.org">Org</a> mode 9.1.6)
+#+LATEX_HEADER:
 
 * Radix trees, Dash and Company mode
 
@@ -239,7 +255,3 @@ Notes:
 ** Final notes
 
 So that's all folks. Check out the accompanying bitbucket repo if you want to download the code.
-
-
-
-
