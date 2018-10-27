@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2018-10-24 Wed 16:38 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Radix trees, Dash and Company mode</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Justin Heyes-Jones" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2017 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Radix trees, Dash and Company mode</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org058bd8b">1. Radix trees, Dash and Company mode</a>
+<ul>
+<li><a href="#org354625a">1.1. Radix trees</a>
+<ul>
+<li><a href="#orgedbbbb3">1.1.1. What are radix trees?</a></li>
+<li><a href="#org47cd6b9">1.1.2. Exploring radix trees in Emacs</a></li>
+<li><a href="#orgc913cd9">1.1.3. Reducing a list and the Dash list API</a></li>
+<li><a href="#org488f816">1.1.4. Reading words from a file and making a radix tree</a></li>
+<li><a href="#org28cda24">1.1.5. Speeding it up</a></li>
+</ul>
+</li>
+<li><a href="#org6f5567b">1.2. Company Mode</a></li>
+<li><a href="#org249c0f8">1.3. Final notes</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org058bd8b" class="outline-2">
+<h2 id="org058bd8b"><span class="section-number-2">1</span> Radix trees, Dash and Company mode</h2>
+<div class="outline-text-2" id="text-1">
+</div>
+<div id="outline-container-org354625a" class="outline-3">
+<h3 id="org354625a"><span class="section-number-3">1.1</span> Radix trees</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+I was reading the <a href="https://www.gnu.org/software/emacs/news/NEWS.26.1">Emacs 26.1 release notes</a> and came across something interesting:
+</p>
+
+<p>
+<code>New Elisp data-structure library 'radix-tree'</code>
+</p>
+
+<p>
+Whilst there is not yet a mention in the info documentation browser, there is of course documentation for each of the functions in the single file radix-tree.el which implements this new data strcuture. In this post I'll show how to use radix trees, along with company mode (complete anything), to automatically complete English words while typing.
+</p>
+</div>
+
+<div id="outline-container-orgedbbbb3" class="outline-4">
+<h4 id="orgedbbbb3"><span class="section-number-4">1.1.1</span> What are radix trees?</h4>
+<div class="outline-text-4" id="text-1-1-1">
+<p>
+Rather than go into the implementation and detailed explanation of Radix trees check them out on <a href="https://en.wikipedia.org/wiki/Radix_tree">Wikipedia</a>. For the purposes of this post let's go with a super imprecise explanation. When you store a map of keys that are associated with some value there are a number of ways to represent that as a data structure. What Radix Trees offer is tat when the key is a sequence of some kind (say a string of characters or a list of numbers) we can store the keys in a much abbreviated format, taking advantage of the shared prefixes amongst many keys. For example most Vancouver phone numbers begin with 778 or 604. Most of the numbers in a radix tree can be stored under one of those three digit prefixes rather than in three levels of tree (7,7,8&#x2026;)
+</p>
+</div>
+</div>
+
+<div id="outline-container-org47cd6b9" class="outline-4">
+<h4 id="org47cd6b9"><span class="section-number-4">1.1.2</span> Exploring radix trees in Emacs</h4>
+<div class="outline-text-4" id="text-1-1-2">
+<p>
+For more clarity lets look at a string example&#x2026; say we want to store the following keys in a key value store: application, appetizer, applicative, apple.
+</p>
+
+<p>
+To start with we need an empty radix tree, which is just defined as nil:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(<span style="color: #FBDE2D;">require</span> '<span style="color: #4c83ff;">radix-tree</span>)
+
+radix-tree-empty
+</pre>
+</div>
+
+<p>
+You add key/values to the map like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(<span style="color: #FBDE2D;">setq</span> tree-1 (radix-tree-insert radix-tree-empty <span style="color: #61CE3C;">"application"</span> t))
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">(("application" . t))</span>
+</pre>
+</div>
+
+<p>
+Note that inserting returns a new tree that contains just the single key "application". For the purposes of our program we don't need to store an actualy value, we're just interested in the keys which represent valid English words, so we just store `t' which is true in Emacs Lisp.
+</p>
+
+<p>
+Next we'll make a new tree by inserting the next word into `tree-1':
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(<span style="color: #FBDE2D;">setq</span> tree-2 (radix-tree-insert tree-1 <span style="color: #61CE3C;">"appetizer"</span> t))
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">(("app" ("lication" . t) ("etizer" . t)))</span>
+</pre>
+</div>
+
+<p>
+As you can see the radix tree split the key up into the shared prefixes between the two words. We can query how many words the tree has in total like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(radix-tree-count tree-2)
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">2 (#o2, #x2, ?\C-b)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc913cd9" class="outline-4">
+<h4 id="orgc913cd9"><span class="section-number-4">1.1.3</span> Reducing a list and the Dash list API</h4>
+<div class="outline-text-4" id="text-1-1-3">
+<p>
+We've seen how to add elements one at a time to the tree, but our goal is to take a list of words and add them to a dictionary. For that we will need to use the `seq-reduce' function; a functional programming construct for reducing a sequence to a single value using some function that accumulates results:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(seq-reduce (<span style="color: #FBDE2D;">lambda</span> (acc it) (radix-tree-insert acc it t)) '(<span style="color: #61CE3C;">"application"</span> <span style="color: #61CE3C;">"appetizer"</span> <span style="color: #61CE3C;">"applicative"</span> <span style="color: #61CE3C;">"apple"</span>) radix-tree-empty)
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">(("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))</span>
+</pre>
+</div>
+
+<p>
+In the output you can see that the four words have been neatly split into their shared and non-shared parts.
+</p>
+
+<p>
+`seq-reduce' is fine for our purposes, but when working with Emacs lisp lists I prefer to use <a href="https://github.com/magnars/dash.el">Dash</a> which is a package providing a more modern list API. All Dash functions begin with a dash hence the name. We can replace the code above using Dash as follows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(<span style="color: #FBDE2D;">require</span> '<span style="color: #4c83ff;">dash</span>)
+(-reduce-from (<span style="color: #FBDE2D;">lambda</span> (tree word) (radix-tree-insert tree word t)) radix-tree-empty '(<span style="color: #61CE3C;">"application"</span> <span style="color: #61CE3C;">"appetizer"</span> <span style="color: #61CE3C;">"applicative"</span> <span style="color: #61CE3C;">"apple"</span>))
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">(("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))</span>
+</pre>
+</div>
+
+<p>
+In English when you refer to a word used earlier in the conversation you will say "it" instead, and this is called anaphora. Dash provides "anaphoric" versions of many of its functions that begin with two dashes that let you abbreviate the lambda form we used above and refer to each item as it. In the case of the `&#x2013;reduce-from` we get both it and acc (for the accumulated result):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(<span style="color: #FBDE2D;">--reduce-from</span> (radix-tree-insert acc it t) radix-tree-empty '(<span style="color: #61CE3C;">"application"</span> <span style="color: #61CE3C;">"appetizer"</span> <span style="color: #61CE3C;">"applicative"</span> <span style="color: #61CE3C;">"apple"</span>))
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">(("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))</span>
+</pre>
+</div>
+
+<p>
+That's nicer! Now we need a function that takes a sequence of words and adds them to a radix tree: 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(<span style="color: #FBDE2D;">defun</span> <span style="color: #ff1493;">list-to-radix-tree</span>(l)
+  (<span style="color: #FBDE2D;">--reduce-from</span> (radix-tree-insert acc it t) radix-tree-empty l))
+
+(<span style="color: #FBDE2D;">setq</span> small (list-to-radix-tree '(<span style="color: #61CE3C;">"application"</span> <span style="color: #61CE3C;">"appetizer"</span> <span style="color: #61CE3C;">"applicative"</span> <span style="color: #61CE3C;">"apple"</span>)))
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">(("app" ("l" ("icati" ... ...) ("e" . t)) ("etizer" . t)))</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org488f816" class="outline-4">
+<h4 id="org488f816"><span class="section-number-4">1.1.4</span> Reading words from a file and making a radix tree</h4>
+<div class="outline-text-4" id="text-1-1-4">
+<p>
+Our next step is to load the words for our custom dictionary from a file. The one in the github repo `dictionary.txt` contains 172k words. We can load it and turn it into a list of words, and finally build a radix tree with a few lines of code:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(<span style="color: #FBDE2D;">defun</span> <span style="color: #ff1493;">radix-tree-from-file</span>(file-path)
+  (<span style="color: #FBDE2D;">-&gt;</span> 
+   (<span style="color: #FBDE2D;">with-temp-buffer</span>
+     (insert-file-contents-literally file-path)
+     (buffer-substring-no-properties (point-min) (point-max)))
+   split-string
+   list-to-radix-tree))
+
+(radix-tree-from-file <span style="color: #61CE3C;">"dictionary.txt"</span>)
+
+</pre>
+</div>
+
+<p>
+Note the use of "-&gt;" which is a threading macro from Dash. It lets us put a list of operations together and "threads" the result from one step to the next, making things a bit easier to read. You'll see a similar operator in Clojure.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org28cda24" class="outline-4">
+<h4 id="org28cda24"><span class="section-number-4">1.1.5</span> Speeding it up</h4>
+<div class="outline-text-4" id="text-1-1-5">
+<p>
+Hmm, that was kinda slow. When we start using the Company mode we need to load the file and we don't want a delay like that. Let's use the emacs benchmark facility to see just how slow it is:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(<span style="color: #FBDE2D;">require</span> '<span style="color: #4c83ff;">benchmark</span>)
+(benchmark-elapse (radix-tree-from-file <span style="color: #61CE3C;">"dictionary.txt"</span>))
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">6.021951</span>
+
+</pre>
+</div>
+
+<p>
+Six seconds is a bit too much. How about we just write the radix tree to a file instead, then load that? First we need to write the tree to a string using `print1-to-string', then we can stick that in a buffer and write it to a file.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(<span style="color: #FBDE2D;">defun</span> <span style="color: #ff1493;">write-text-to-file</span>(text file-path)
+  (<span style="color: #FBDE2D;">save-excursion</span>
+    (<span style="color: #FBDE2D;">let</span> ((buffer (find-file file-path)))
+      (switch-to-buffer buffer)
+      (erase-buffer)
+      (insert text)
+      (save-buffer)
+      (kill-buffer))))
+
+(<span style="color: #FBDE2D;">setq</span> dictionary (radix-tree-from-file <span style="color: #61CE3C;">"dictionary.txt"</span>))
+
+(write-text-to-file (prin1-to-string dictionary) <span style="color: #61CE3C;">"dictionary.el"</span>)
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">(write-text-to-file (prin1-to-string small) "dictionary.el")</span>
+
+</pre>
+</div>
+
+<p>
+Now let's see how much faster it is to simply load the data structure rather than build it:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(<span style="color: #FBDE2D;">defun</span> <span style="color: #ff1493;">tree-from-file</span>(file-path)
+  (<span style="color: #FBDE2D;">save-excursion</span> 
+    (<span style="color: #FBDE2D;">let*</span> ((buffer (find-file file-path))
+           (tree (read buffer)))
+      (kill-buffer buffer)
+      tree)))
+
+(benchmark-elapse
+  (<span style="color: #FBDE2D;">progn</span>
+    (<span style="color: #FBDE2D;">setq</span> loaded-dictionary (tree-from-file <span style="color: #61CE3C;">"dictionary.el"</span>))
+    t))
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">0.198365</span>
+
+</pre>
+</div>
+
+<p>
+Great! The first time we run the program it will take 6 seconds to build, but subsequently we can load the radix tree data from disk which takes 0.2 seconds. The next step is to be able to find all the keys given a prefix. `radix-tree-subtree' does the job, returning a subtree rooted at the given prefix. Given the relevant subtree we can then iterate all of the keys and values using the function `radix-tree-iter-mappings'. Here we use the destructive `!cons' (also from dash) to build up a list of all the keys, which we then return. This is now all the functionality we need to return for our auto-complete functionality:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(<span style="color: #FBDE2D;">defun</span> <span style="color: #ff1493;">radix-tree-keys</span>(subtree prefix)
+  (<span style="color: #FBDE2D;">let</span> (keys '())
+    (radix-tree-iter-mappings (radix-tree-subtree subtree prefix)
+                              (<span style="color: #FBDE2D;">lambda</span> (key val)
+                                (<span style="color: #FBDE2D;">!cons</span> (concat prefix key) keys)))
+    keys))
+
+(radix-tree-keys loaded-dictionary <span style="color: #61CE3C;">"antidi"</span>)
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">("antidiscrimination" "antidilution" "antidiarrheal" "antidiabetic")</span>
+
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org6f5567b" class="outline-3">
+<h3 id="org6f5567b"><span class="section-number-3">1.2</span> Company Mode</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+<a href="http://company-mode.github.io">Company Mode</a> (Company comes from "complete anything") is one of the two most popular completion frameworks for emacs (the other being <a href="https://github.com/auto-complete/auto-complete">Auto-Complete</a>). In order to make our own custom dictionary auto completion we just need to implement a single function to implement a "backend".
+</p>
+
+<p>
+Here's the code, I'll work through each part below:
+</p>
+
+<p>
+The best documentation for how to write a backend is in the docstring for `company-backends' so I'd recommend reading that in full to see the capabilities of Company mode.
+</p>
+
+<p>
+C-h v company-backends
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(<span style="color: #FBDE2D;">require</span> '<span style="color: #4c83ff;">company</span>)
+
+(<span style="color: #FBDE2D;">defun</span> <span style="color: #ff1493;">custom-dictionary-company-backend</span> (command <span style="color: #D8FA3C;">&amp;optional</span> arg <span style="color: #D8FA3C;">&amp;rest</span> ignored)
+  <span style="color: #61CE3C;">"Company mode backend for a custom dictionary stored as a radix tree."</span>
+  (<span style="color: #FBDE2D;">case</span> command
+    ('init    
+     (<span style="color: #FBDE2D;">unless</span> (boundp 'custom-dictionary-company--words-tree)
+         (<span style="color: #FBDE2D;">setq</span> custom-dictionary-company--words-tree (tree-from-file <span style="color: #61CE3C;">"dictionary.el"</span>))))
+    ('prefix
+     (company-grab-word))
+    ('candidates
+     (radix-tree-keys custom-dictionary-company--words-tree (downcase arg)))
+    ('ignore-case
+     'keep-prefix)))
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">(provide 'custom-dictionary-company-backend) </span>
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">[1]</span>
+(<span style="color: #FBDE2D;">push</span> 'custom-dictionary-company-backend company-backends)
+
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">[2]</span>
+<span style="color: #8B8989; font-style: italic;">;; </span><span style="color: #8B8989; font-style: italic;">(unintern 'custom-dictionary-company--words-tree)</span>
+
+</pre>
+</div>
+
+<p>
+These few lines are, believe it or not, all you need to make our custom dictionary backend work! We are just making a callback which implements the Company mode API by sending us commands for us to handle. Let's look at each one:
+</p>
+
+<p>
+`init' - Init is called when company mode is initially enabled. This could be when emacs loads, or if you enable manually it will be called whenever you enable it. It could be called multiple times in a session so keep that in mind when implementing. In this case our implementation checks whether we loaded the dictionary or not. If we did then nothing happens, otherwise we load it.
+`prefix' - This is the text the user has typed so far that we want to complete. I call the built in function `company-grab-word' which does what you'd expect in most cases. You can write your own depending on your needs.
+`candidates' - We are given `arg' which contains the word to be completed and must return the list of candidates that will show up in the menu for the user to pick from. We simply use radix-tree-keys to get the list of words based on the prefix. Note that we make the completion to lower case as we want to match words ignoring that the user may have capitalized the word.
+`ignore-case' - We return a special response `keep-prefix' which maintains the users original capitalization.
+</p>
+
+<p>
+Notes:
+</p>
+
+<p>
+[1] This push command is what you need to make your backend active.
+[2] If you change the dictionary and want to reset it without restarting emacs then use unintern to remove the symbol then restart company-mode.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org249c0f8" class="outline-3">
+<h3 id="org249c0f8"><span class="section-number-3">1.3</span> Final notes</h3>
+<div class="outline-text-3" id="text-1-3">
+<p>
+So that's all folks. Check out the accompanying bitbucket repo if you want to download the code.
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Date: 2018</p>
+<p class="author">Author: Justin Heyes-Jones</p>
+<p class="date">Created: 2018-10-24 Wed 16:38</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

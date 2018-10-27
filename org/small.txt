@@ -1,0 +1,5 @@
+app
+apple
+application
+appetizer
+applicative
