@@ -213,7 +213,7 @@ First, the code, I'll explain each part below:
   (case command
     ('init    
      (unless (boundp 'company-custom-dictionary--words-tree)
-         (setq compant-custom-dictionary--words-tree (tree-from-file "dictionary.el"))))
+         (setq company-custom-dictionary--words-tree (tree-from-file "dictionary.el"))))
     ('prefix
      (company-grab-word))
     ('candidates
@@ -238,6 +238,10 @@ The few lines above are, believe it or not, all you need to make our custom dict
 - `candidates` - We are given `arg` which contains the word to be completed and must return the list of candidates that will show up in the menu for the user to pick from. We simply use radix-tree-keys to get the list of words based on the prefix. Note that we make the completion to lower case as we want to match words ignoring that the user may have capitalized the word.
 - `ignore-case` - We return a special response `keep-prefix' which maintains the users original capitalization.
 
+## A note on case matching
+
+In this example I wanted the user dictionary to use only lower case letters. Capitalization is up to then up to the user; if you want to capitalize a word you can do so and it will match correctly. If instead you want a dictionary where case is important (perhaps function calls in a camel case API) you can set `ignore-case` to `nil` and remove the call to `downcase` when generating the candidates.
+
 # Final notes
 
 So that's all folks! This is a fairly simple auto complete mode, but you can easily modify the code to come up with your own based on your needs. For example: 
@@ -245,3 +249,7 @@ So that's all folks! This is a fairly simple auto complete mode, but you can eas
 - Common mispelled words list (Do you have trouble with necessary or disappoint? Add all your most hated words to the list)
 - Domain words. Do you work in a domain with specialist terminology not in a dictionary?
 - Phone numbers, server names, IP addresses and so on
+
+# Corrections
+
+Thanks to Reddit user MCHerb for pointing out a couple of things including a typo which have been corrected in this update.
