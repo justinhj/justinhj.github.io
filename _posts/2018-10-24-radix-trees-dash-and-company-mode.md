@@ -208,6 +208,11 @@ First, the code, I'll explain each part below:
 
 (require 'company)
 
+(defun get-candidates (prefix)
+  "Given a prefix return a list of matching words that begin with it"
+  (when (> (length prefix) 2)
+    (radix-tree-keys company-custom-dictionary--words-tree (downcase prefix))))
+
 (defun company-custom-dictionary (command &optional arg &rest ignored)
   "Company mode backend for a custom dictionary stored as a radix tree."
   (case command
@@ -234,9 +239,11 @@ First, the code, I'll explain each part below:
 The few lines above are, believe it or not, all you need to make our custom dictionary backend work! We are just making a callback which implements the Company mode API by sending us commands for us to handle. Let's look at each one:
 
 - `init` Init is called when company mode is initially enabled. This could be when emacs loads, or if you enable manually it will be called whenever you enable it. It could be called multiple times in a session so keep that in mind when implementing. In this case our implementation checks whether we loaded the dictionary or not. If we did then nothing happens, otherwise we load it.
-- `prefix` - This is the text the user has typed so far that we want to complete. I call the built in function `company-grab-word` which does what you'd expect in most cases. You can write your own depending on your needs.
+- `prefix` - This is the text the user has typed so far that we want to complete. I call the built in function `company-grab-word` which does what you'd expect in most cases. You can write your own depending on your needs. I also check if there are any potential candidates. If not we should return nil that enables other company backends further on in the list to try and match.
 - `candidates` - We are given `arg` which contains the word to be completed and must return the list of candidates that will show up in the menu for the user to pick from. We simply use radix-tree-keys to get the list of words based on the prefix. Note that we make the completion to lower case as we want to match words ignoring that the user may have capitalized the word.
 - `ignore-case` - We return a special response `keep-prefix' which maintains the users original capitalization.
+
+Note that we don't want the performance penalty of returning the entire dictionary when matching an empty string, or a couple of characters, so the function `get-candidates` handles only words greater than 3 in length.
 
 ## A note on case matching
 
@@ -252,4 +259,4 @@ So that's all folks! This is a fairly simple auto complete mode, but you can eas
 
 # Corrections
 
-Thanks to Reddit user MCHerb for pointing out a couple of things including a typo which have been corrected in this update.
+Thanks to Reddit user MCHerb for pointing out a couple of things including a typo which have been corrected in this update, and Herbert Jones for noticing and fixing a potential bug with matching words not in the dictionary. See the comments below for more.
