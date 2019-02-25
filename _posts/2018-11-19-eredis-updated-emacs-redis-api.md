@@ -10,8 +10,6 @@ tags:
 - elisp
 ---
 
-## Eredis - An updated Emacs Redis API
-
 In July 2011 I released an emacs lisp client for the Redis in-memory data structure store. You can install either from the Melpa package or just clone from Github. The current version at time of writing is 0.9.6 and you will need that or later for some of the examples below to work.
 
 In my spare time over the last few weeks I have been steadily improving eredis by fixing bugs, adding support for multiple connections, modernizing the use of emacs lisp and adding some features like iterating and mapping over all the keys in the Redis DB.
