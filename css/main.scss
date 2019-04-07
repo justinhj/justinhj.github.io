@@ -15,8 +15,9 @@ $base-line-height: 1.5;
 $spacing-unit:     30px;
 
 $text-color:       #111;
-$background-color: #fdfdfd;
 $brand-color:      #2a7ae2;
+$background-image: linear-gradient(to right, #dddddd, #eeeeee 5%, #ffffff, #eeeeee 95%, #dddddd 100%);
+$background-color: #fdfdfd;
 
 $grey-color:       #828282;
 $grey-color-light: lighten($grey-color, 40%);
