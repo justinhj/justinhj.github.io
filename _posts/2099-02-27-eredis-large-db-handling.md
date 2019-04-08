@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Processing large Redis databases with Eredis in Emacs Lisp"
-date:   2019-02-23 00:00:00 -0000
+date:   2099-02-23 00:00:00 -0000
 tags:
 - emacs
 - functional programming
