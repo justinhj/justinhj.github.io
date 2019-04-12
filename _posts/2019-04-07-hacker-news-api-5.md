@@ -36,9 +36,9 @@ The example code consists of three example programs. The first is based on my pr
 
 ## Showing front page stories
 
-`ShowStories.scala` is one of the examples include that simply gets the top stories (a list of story IDs ranked by their position on the Hacker News page) and then displays them in the console...
+[ShowStories.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/main/scala/examples/ShowStories.scala) is one of the examples include that simply gets the top stories (a list of story IDs ranked by their position on the Hacker News page) and then displays them in the console...
 
-```
+```scala
     val runtime = new LiveRuntime {}
 
     val program = (for (
@@ -56,7 +56,7 @@ The example code consists of three example programs. The first is based on my pr
 
 The showPagesLoop asks the user for a page number and continues looping until the user enters something that is not a number:
 
-```
+```scala
   def showPagesLoop(topItems: HNItemIDList) : ZIO[Env, Throwable, Unit] = {
 
     val itemsPerPage = 5
@@ -85,7 +85,9 @@ An Environment for the runtime is an aggregation of the modules that make up you
 
 Blocking is module that allows blocking operations to use a special threadpool, so that blocking calls don't deplete threads from your main thread pool. Effects can be made to run on the blocking pool just by wrapping them as follows:
 
-```
+[HttpClient.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/main/scala/org/justinhj/httpclient/HttpClient.scala)
+
+```scala
   blocking(ZIO.effect(requestSync(url)))
 ```
 
@@ -93,8 +95,8 @@ Blocking is module that allows blocking operations to use a special threadpool, 
 
 The nice thing about HttpClient being a module is that I can test my code without a web connection, or without hitting the real Hacker News by swapping the real implementation with a test one. You can see that in action in the test suite:
 
-`HNApiTest.scala` - sample test suite
-```
+[HNApiTest.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/test/scala/org/justinhj/HNApiTest.scala) - sample test suite
+```scala
   // The test http runtime
   trait HttpClientTest extends HttpClient {
 
@@ -123,7 +125,9 @@ This concept of swapping out modules can be useful for testing different databas
 
 ZIO allows a large number of concurrent operations by using an implementation of green threads called Fibres. The API is straightforward. For example in this function that retrieves an item and them recursively retrieves its 'kids' (for example kids of a comment are nested comments, kids of a news story are the top level comments on that story) and we use the function `foreachParN(8)` to split the jobs across up to 8 individual fibres. This gives you control over the amount of active fibres in each part of your application.
 
-```
+[HNApi.scala](https://github.com/justinhj/ziohnapi/blob/2a7e5d634813afd43f6c9e306807c69186138c28/src/main/scala/org/justinhj/hnapi/HNApi.scala#L126)
+
+```scala
   def getItemAndKidsList(parentId: Int) : ZIO[Env, Throwable, List[HNItem]] =
     for(
       itemResponse <- httpclient.get(getItemURL(parentId));
@@ -134,8 +138,9 @@ ZIO allows a large number of concurrent operations by using an implementation of
 
 This function is used in the code below to show all the comments for a given news story (by its ID):
 
-`ShowStoryComments`
-```
+[ShowStoryComments.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/main/scala/examples/ShowStoryComments.scala)
+
+```scala
     val program = (for (
       itemId <- getItemId;
       itemsAndKids <- getItemAndKids(itemId);
@@ -151,8 +156,9 @@ This function is used in the code below to show all the comments for a given new
 
 Another feature of ZIO is the scheduler data type. Again, the API is composed of simple operations that you can compose together to make more complex overall behaviours. In this simple example we grab the latest story or comment submitted to Hacker News every 10 seconds until the user quits.
 
-`LastItem.scala`
-```
+[LastItem.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/main/scala/examples/LastItem.scala)
+
+```scala
     val showLastItem = for (
       maxItemResponse <- httpclient.get(getMaxItemURL);
       maxItem <- parseMaxItemResponse(maxItemResponse);
