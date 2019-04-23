@@ -121,9 +121,9 @@ The nice thing about HttpClient being a module is that I can test my code withou
 
 This concept of swapping out modules can be useful for testing different databases, different JSON parsers and so on.
 
-## Fibres
+## Fibers
 
-ZIO allows a large number of concurrent operations by using an implementation of green threads called Fibres. The API is straightforward. For example in this function that retrieves an item and them recursively retrieves its 'kids' (for example kids of a comment are nested comments, kids of a news story are the top level comments on that story) and we use the function `foreachParN(8)` to split the jobs across up to 8 individual fibres. This gives you control over the amount of active fibres in each part of your application.
+ZIO allows a large number of concurrent operations by using an implementation of green threads called Fibers. The API is straightforward. For example in this function that retrieves an item and them recursively retrieves its 'kids' (for example kids of a comment are nested comments, kids of a news story are the top level comments on that story) and we use the function `foreachParN(8)` to split the jobs across up to 8 individual fibers. This gives you control over the amount of active fibers in each part of your application.
 
 [HNApi.scala](https://github.com/justinhj/ziohnapi/blob/2a7e5d634813afd43f6c9e306807c69186138c28/src/main/scala/org/justinhj/hnapi/HNApi.scala#L126)
 
@@ -179,5 +179,9 @@ ZIO is easy to use and very powerful, a great combination. Even though the appli
 I am just getting started with ZIO and any feedback on my example program and post, good or bad, is welcome. You can contact me via Twitter or Email at the top of the page, or open a Github issue.
 
 Thanks for getting to the end!
+
+## Post script
+
+Thanks for all the great feedback on this article! I have now changed all occurences of the word Fibre with Fiber. I accidentally used the British spelling of the word which is inconsistent with the spelling in Zio itself.
 
 Copyright (C) 2019 Justin-Heyes-Jones - All Rights Reserved
