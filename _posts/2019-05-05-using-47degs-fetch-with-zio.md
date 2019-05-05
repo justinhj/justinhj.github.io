@@ -82,12 +82,13 @@ Since `getTopItems` handles errors using `Either[String, A]` I use a couple of Z
 
 We are now using, on the surface, ZIO's runtime and types, to call into Fetch and have it do work for us even though there is no explicit support for Scalaz in general, and ZIO in particular, in the Fetch library. Quite magical! All we need to make this work is some implicit conversion that lets ZIO take care of converting our ZIO structures to and and from Cats Effect ones:
 
+[FrontPageWithFetchZio.scala](https://github.com/justinhj/hnfetch/blob/zio-cats-effect/src/main/scala/examples/FrontPageWithFetchZio.scala)
 ```scala
 import scalaz.zio.interop.catz._
 import scalaz.zio.interop.catz.implicits._
 ```
 
-You can see the whole program here [FrontPageWithFetchZio.scala](https://github.com/justinhj/hnfetch/blob/zio-cats-effect/src/main/scala/examples/FrontPageWithFetchZio.scala)
+You can read about this in ZIO's documentation here: [ZIO Cats Effect interop](https://scalaz.github.io/scalaz-zio/interop/catseffect.html)
 
 ## Combinators - sequence and traverse
 
