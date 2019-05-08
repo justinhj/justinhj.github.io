@@ -26,7 +26,7 @@ This post is an update to an ongoing series. See previous post here:
 
 - [https://github.com/47deg/fetch/releases/tag/v1.0.0](https://github.com/47deg/fetch/releases/tag/v1.0.0)
 
-There are a few interesting changes in this release but most notable is the move to using Cats Effect. Previously, Fetch operated under the good using `FetchMonadError`, a monadic type which you can implement in order to manage how your Fetch is interpreted at runtime. Twitter Futures, vanilla Scala Future's and Monix Task were supported.
+There are a few interesting changes in this release but most notable is the move to using Cats Effect. Previously, Fetch operated under the hood using `FetchMonadError`, a monadic type which you can implement in order to manage how your Fetch is interpreted at runtime. Twitter Futures, vanilla Scala Future's and Monix Task were supported.
 
 As functional programming libraries start to standardise on a common API for effects, it makes it possible for library authors to implement their code in terms of a generic effect type, and then for the user, who may also be attached to a particular library, to provide their runtime and effect of choice.
 
