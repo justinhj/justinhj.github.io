@@ -8,15 +8,17 @@ tags:
 - monoid
 ---
 
-The code in this post can be found in a complete Scala project here:
+This post is aimed at Scala or Java programmers who may be interested in pure functional programming and learning how to use Cats and Scalaz. The source code referred to can be found here:
 
 - [https://github.com/justinhj/monoid-demo](https://github.com/justinhj/monoid-demo)
 
-## Algebraic Structures
+## Purely Algebraic Structures, yikes?
 
-In Scala, when practising pure functional programming, we borrow ideas from mathematics in order to describe algebraic relationships. Unfortunately, mathematical terms like Monad, Monoid and Functor, tend to give the impression we're dealing with something complicated. In fact, these algebraic structures are quite simple, and just like when we expand our vocabulary in a human language, we are able to express ourselves more richly and concisely in programming languages when we share these patterns with our compilers, and with other engineers.
+Cats and Scalaz consist of data types and type classes. Examples of data types are more pure or enhanced versions of Scala's standard ones such as Option and Either, as well as some more specific such as NonEmptyList. Each data type can implement instances of one or more type classes. Type classes represent the operations of pure algebraic structures, and these structures have laws that control how those operations must work. 
 
-In this post, I'll talk about Semigroups and Monoids; the definition, their laws and an example of how they can be used in a real program. If you're a Scala or Java programmer with some interest in pure functional programming, I hope you find this interesting. 
+If that sounds rather abstract, that's ok, this post will work up to a real world example of using Monoids in production software and show you how to implement your own as well as test that your instances obey the Monoid laws. Semigroup and Monoid have precise meanings from group theory and category theory. By adopting the vocabulary and learning what these structures represent we equip ourselves with a vocabulary to communicate ideas more succinctly and more accurately to other programmers and your compiler. Having said that you don't need to know much about category theory to adopt and use the common patterns in Scalaz and Cats.
+
+## Semigroups and Monoids
 
 A semigroup is simply a type that has a binary associative operation. Which means we have a function taking two arguments of the same type and returning a single result, also of the same type. Some examples:
 
@@ -44,14 +46,6 @@ multiply(1,multiply(2,3))
 // res2: Int = 6
 ```
 
-To be a semigroup the function must obey some laws. It is by adhering to these laws that an algebraic structure allows us to make assumptions about its behaviour. 
-
-However, once you put aside the unfamiliar words, these things are not only quite simple, but they give our programs a principled theoretic grounding. Just like when we extend our vocabulary, we can communicate our ideas with precision and more conscisely.
-
-Monoids, for example, are one of the simplest algebraic sturctures. They describe the 
-
-...
-
 Another example that follows the Monoid pattern is joining strings together. Take the following strings:
 
 `"Hello" "," "World" "!"`
@@ -78,7 +72,49 @@ a bcd
 abcd
 ```
 
-This means that programs working with monoids know that they can rearrange the append operations to be more efficient, to run them in parallel and so on.
+Semigroups then, have a combine operation that combines two things of the same type into a single thing of the same type. And it must adhere to this rule:
+
+`op(op(x,y), z) == op(x, op(y,z))`
+
+Monoids have an additional operation that just returns zero. Zero is some value that can be combined with other values without changing them. Here are some examples to make it clear:
+
+Integer addition - the zero value is 0
+```
+3 + 0 == 3
+0 + 3 == 3
+```
+
+Logication or - the zero value is true
+```
+true || true == true
+false || true == true
+```
+
+String append - the zero value is the empty string ""
+```
+"Justin" ++ "" = "Justin"
+```
+
+## Monoids in Scala
+
+As I mentioned earlier, we can describe Monoids as a Scala type class which means we will encode its operations as a trait, similar to a Java interface. Note that this implementation is completely abstract:
+
+```scala
+val intMultiply = new Monoid[Int] {
+    def zero = 1
+	def op(a: Int, b: Int) : Int = (a * b)
+}
+
+intMultiply.op(10,20) 
+// res1: Int = 200
+
+intMultiply.op(10,intMultiply.zero) 
+res2: Int = 10
+```
+
+Whilst nothing stops us from creating our own, we can use the pure functional libraries definition of Monoid instead. This gives us premade instances for many common types as well, syntactic sugar to make working with Monoids more concise, a bunch of useful functions that we can use with monoids like fold and even automated tests that verify our own instances obey the laws.
+
+
 
 ## Monoids in the wild
 
