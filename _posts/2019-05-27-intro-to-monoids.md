@@ -1,4 +1,4 @@
----
+pl---
 layout: post
 title:  "Putting Monoids together"
 date:   2019-05-27 00:00:00 -0000
@@ -100,6 +100,14 @@ String append - the zero value is the empty string ""
 As I mentioned earlier, we can describe Monoids as a Scala type class which means we will encode its operations as a trait, similar to a Java interface. Note that this implementation is completely abstract:
 
 ```scala
+trait SemiGroup[A] {
+	def op(a: A, b: A) : A
+}
+
+trait Monoid[A] extends SemiGroup[A] {
+	def zero : A
+}
+
 val intMultiply = new Monoid[Int] {
     def zero = 1
 	def op(a: Int, b: Int) : Int = (a * b)
@@ -109,12 +117,32 @@ intMultiply.op(10,20)
 // res1: Int = 200
 
 intMultiply.op(10,intMultiply.zero) 
-res2: Int = 10
+//res2: Int = 10
 ```
 
 Whilst nothing stops us from creating our own, we can use the pure functional libraries definition of Monoid instead. This gives us premade instances for many common types as well, syntactic sugar to make working with Monoids more concise, a bunch of useful functions that we can use with monoids like fold and even automated tests that verify our own instances obey the laws.
 
+Let's have a look at Scalaz for example:
 
+```scala
+import scalaz._, Scalaz._
+
+val l1 = 10 |+| 20 |+| 30 
+//res1: Int = 60 
+
+Foldable[List].fold(l1)
+//res2: Int = 60
+```
+
+In the example we first use the Monoid combine function using the syntax helper |+| and in the second we use the Scalaz foldable instance for list to do the same job. It knows that we have an implicit monoid instance for adding integers so it uses that.
+
+So addition is the default monoid instance for integers but we could also define multiplication (or any other associative operation) and use that instead. For example, Scalaz has a Tag feature which lets us change the datatype of a thing at compile time only, and it can then pick up a different monoid implementation.
+
+```scala
+l1.foldMap{a => Tags.Multiplication(a)}
+// res3: Int @@ Tags.Multiplication = 6000
+//res24: Int = 60
+```
 
 ## Monoids in the wild
 
@@ -131,7 +159,8 @@ For example we represent the players resources using integer ids:
  
  A player with just some gold would have an inventory like this:
  
- ```scala
+
+```scala
 val inventory = Map(2 -> 1000)
  ```
 
