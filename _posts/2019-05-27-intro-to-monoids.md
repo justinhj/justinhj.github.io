@@ -141,8 +141,9 @@ So addition is the default monoid instance for integers but we could also define
 ```scala
 l1.foldMap{a => Tags.Multiplication(a)}
 // res3: Int @@ Tags.Multiplication = 6000
-//res24: Int = 60
 ```
+
+Whilst these examples are trivial and unlikely to be used in real programs, they serve to illustrate the point that Monoid instances 
 
 ## Monoids in the wild
 
