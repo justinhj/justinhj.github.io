@@ -1,15 +1,17 @@
-pl---
+---
 layout: post
-title:  "Putting Monoids together"
-date:   2019-05-27 00:00:00 -0000
+title:  Monoids for Production"
+date:   2019-06-09 00:00:00 -0000
 tags:
 - scala
 - functional programming
-- monoid
+- monoids
+- pure functional programming
 ---
 
-This post is aimed at Scala or Java programmers who may be interested in pure functional programming and learning how to use Cats and Scalaz. The source code referred to can be found here:
+This post introduces Monoids, first as an abstraction and then as used in some production code to simplify a real programming task. We'll also see how to use Monoid implementations in both the Scalaz and Cats libraries and how to easily write tests that ensure your own instances of Monoids are 'lawful'.
 
+_Example source code_
 - [https://github.com/justinhj/monoid-demo](https://github.com/justinhj/monoid-demo)
 
 ## Purely Algebraic Structures, yikes?
