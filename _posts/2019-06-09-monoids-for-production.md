@@ -1,7 +1,7 @@
 ---
 layout: post
-title:  Monoids for Production"
-date:   2019-06-09 00:00:00 -0000
+title:  Monoids for Production
+date:   2019-06-05 00:00:00 -0000
 tags:
 - scala
 - functional programming
@@ -14,17 +14,17 @@ This post introduces Monoids, first as an abstraction and then as used in some p
 _Example source code_
 - [https://github.com/justinhj/monoid-demo](https://github.com/justinhj/monoid-demo)
 
-## Purely Algebraic Structures, yikes?
+## Why algebraic structures?
 
-Cats and Scalaz consist of data types and type classes. Examples of data types are more pure or enhanced versions of Scala's standard ones such as Option and Either, as well as some more specific such as NonEmptyList. Each data type can implement instances of one or more type classes. Type classes represent the operations of pure algebraic structures, and these structures have laws that control how those operations must work. 
+New words can make something simple sound like something complex, but the trade off is that we can use terms that have a precise meaning in other discplines such as group theory and category theory, and implement them in such a way that we can provide the same guarantees and expressive power that they have in the mathematical world to our own progams. We will talk about Semigroups and Monoids here, and both concepts encode simple operations that we do everyday, whether we program in C# or Python or Java. 
 
-If that sounds rather abstract, that's ok, this post will work up to a real world example of using Monoids in production software and show you how to implement your own as well as test that your instances obey the Monoid laws. Semigroup and Monoid have precise meanings from group theory and category theory. By adopting the vocabulary and learning what these structures represent we equip ourselves with a vocabulary to communicate ideas more succinctly and more accurately to other programmers and your compiler. Having said that you don't need to know much about category theory to adopt and use the common patterns in Scalaz and Cats.
+I encourage you to 
 
-## Semigroups and Monoids
+## Semigroups
 
-A semigroup is simply a type that has a binary associative operation. Which means we have a function taking two arguments of the same type and returning a single result, also of the same type. Some examples:
+A semigroup is an algebra that has a binary associative operation; a function that takes two values of the same type and combines them into a single value.
 
-Integer addition forms a semigroup:
+Integer addition, for example, forms a semigroup:
 
 ```scala
 def plus(a: Int, b: Int) : Int = a + b
@@ -36,7 +36,7 @@ plus(1,plus(2,3))
 // res2: Int = 6
 ```
 
-Note that as long as we don't change the order in which the things are added together, we get the same result. It is this property, associativity, that makes addition with integers a semigroup. Multiplication works the same way:
+Note that as long as we don't change the order in which the additions are performed, we get the same result. It is this property, associativity, that makes addition with integers a semigroup. Multiplication works the same way:
 
 ```scala
 def multiply(a: Int, b: Int) : Int = a * b
@@ -48,11 +48,11 @@ multiply(1,multiply(2,3))
 // res2: Int = 6
 ```
 
-Another example that follows the Monoid pattern is joining strings together. Take the following strings:
+Another example that follows the Semigroup pattern is joining strings together. Take the following strings:
 
 `"Hello" "," "World" "!"`
 
-As long as we don't rearrange the strings, we can append them in any order we like and get the same final result
+As long as we don't rearrange the strings, we can append them in any order we like and get the same final result. Imagine 4 strings a,b,c and d:
 
 ```
 a b c d
@@ -74,11 +74,13 @@ a bcd
 abcd
 ```
 
-Semigroups then, have a combine operation that combines two things of the same type into a single thing of the same type. And it must adhere to this rule:
+We can do the actual operation in any order and get the same result, which is captured by the property:
 
 `op(op(x,y), z) == op(x, op(y,z))`
 
-Monoids have an additional operation that just returns zero. Zero is some value that can be combined with other values without changing them. Here are some examples to make it clear:
+## Monoids
+
+Monoids have an additional operation that just returns zero. Zero is some value that can be combined with other values without changing the original value. Here are some examples:
 
 Integer addition - the zero value is 0
 ```
