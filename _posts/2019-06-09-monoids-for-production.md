@@ -7,18 +7,21 @@ tags:
 - functional programming
 - monoids
 - pure functional programming
+- scalaz
+- typelevel
+- cats
 ---
 
-This post introduces Monoids, first as an abstraction and then as used in some production code to simplify a real programming task. We'll also see how to use Monoid implementations in both the Scalaz and Cats libraries and how to easily write tests that ensure your own instances of Monoids are 'lawful'.
+This post introduces Monoids, first at an abstract level and then as implemented in Scala and the Scalaz or Cats pure functional programming libraries. Next I'll show how I used Monoids in a game server backend to handle the players "ProductionItems" (things that produce things over time like a farm that produces food or a drill that produces oil). Finally, I'll show how to easily use automated tests that ensure your own instances of Monoids are 'lawful'.
+
+![ProductionItems](/../images/madlands_production.jpg)
 
 _Example source code_
 - [https://github.com/justinhj/monoid-demo](https://github.com/justinhj/monoid-demo)
 
-## Why algebraic structures?
+## Why category theory?
 
-New words can make something simple sound like something complex, but the trade off is that we can use terms that have a precise meaning in other discplines such as group theory and category theory, and implement them in such a way that we can provide the same guarantees and expressive power that they have in the mathematical world to our own progams. We will talk about Semigroups and Monoids here, and both concepts encode simple operations that we do everyday, whether we program in C# or Python or Java. 
-
-I encourage you to 
+New words, especially from mathematics, can put people off learning about things. Often though, the pay off is that we can use terms that have a precise meaning, and implement them in such a way that we can provide the same guarantees and expressive power that they have in the mathematical world to our own progams. This lets us communicate better with our compilers and other programmers, what our intentions are.
 
 ## Semigroups
 
@@ -78,9 +81,11 @@ We can do the actual operation in any order and get the same result, which is ca
 
 `op(op(x,y), z) == op(x, op(y,z))`
 
+This property is useful because we know that we can do optimisations. If we have long lists of integers we can divide them into smaller ones, run the appends in parallel, and the combine the results. We can use a left fold or a right fold without worrying about the order of operations. 
+
 ## Monoids
 
-Monoids have an additional operation that just returns zero. Zero is some value that can be combined with other values without changing the original value. Here are some examples:
+Monoids have an additional operation called zero. Zero is some value that can be combined with other values without changing the original value. Here are some examples:
 
 Integer addition - the zero value is 0
 ```
@@ -99,9 +104,32 @@ String append - the zero value is the empty string ""
 "Justin" ++ "" = "Justin"
 ```
 
+Why do we need a zero value? It's useful because operations like fold need an initial value to start with. The signature of Scalas standard library fold for lists looks like this:
+
+```scala
+def fold[A1 >: A](z: A1)(op: (A1, A1) => A1): A1
+
+List(1,2,3,4,5).fold(0){_ + _} 
+// res24: Int = 15
+```
+
+Here the `z` is the starting or zero value, and `op` is the combine operation from semigroup. What that means is we can run a fold on anything that is a Monoid:
+
+```scala
+// From Foldable[List]
+def fold[M](t: F[M])(implicit evidence$2: scalaz.Monoid[M]): M
+```
+
+Here we see that there is no need to pass in our own zero value or combine operation, having a Monoid implementation for the type in scope is good enough allowing us to write:
+
+```scala
+@ Foldable[List].fold(List(1,2,3,4,5)) 
+res26: Int = 15
+```
+
 ## Monoids in Scala
 
-As I mentioned earlier, we can describe Monoids as a Scala type class which means we will encode its operations as a trait, similar to a Java interface. Note that this implementation is completely abstract:
+In Scala we can implement Monoids as a Scala type class. We will encode its operations as a trait, similar to a Java interface. Note that this implementation is completely abstract:
 
 ```scala
 trait SemiGroup[A] {
@@ -124,7 +152,7 @@ intMultiply.op(10,intMultiply.zero)
 //res2: Int = 10
 ```
 
-Whilst nothing stops us from creating our own, we can use the pure functional libraries definition of Monoid instead. This gives us premade instances for many common types as well, syntactic sugar to make working with Monoids more concise, a bunch of useful functions that we can use with monoids like fold and even automated tests that verify our own instances obey the laws.
+Whilst nothing stops us from creating our own, we'll use the Scalaz and Cats Monoid implementations instead. This gives us premade instances for many common types, syntactic sugar to make working with Monoids more concise, a bunch of useful functions that we can use with monoids like fold and even automated tests that verify our own instances obey the laws.
 
 Let's have a look at Scalaz for example:
 
@@ -134,20 +162,26 @@ import scalaz._, Scalaz._
 val l1 = 10 |+| 20 |+| 30 
 //res1: Int = 60 
 
-Foldable[List].fold(l1)
+Foldable[List].fold(List(10,20,30))
 //res2: Int = 60
 ```
 
-In the example we first use the Monoid combine function using the syntax helper |+| and in the second we use the Scalaz foldable instance for list to do the same job. It knows that we have an implicit monoid instance for adding integers so it uses that.
+In the example we first use the Monoid combine function using the syntax helper `|+|` and in the second we use the Scalaz `foldable` instance for list to do the same job. There is a Monoid instance defined for integer that implements addition, so that is used.
 
-So addition is the default monoid instance for integers but we could also define multiplication (or any other associative operation) and use that instead. For example, Scalaz has a Tag feature which lets us change the datatype of a thing at compile time only, and it can then pick up a different monoid implementation.
+We could also define multiplication (or any other associative operation) and use that instead. For example, Scalaz has a Tag feature which lets us change the datatype of a thing at compile time only, and it can then pick up a different monoid implementation. `Tags.Multiplication` is a tag for numbers that has a Monoid instance that multiplies:
 
 ```scala
 l1.foldMap{a => Tags.Multiplication(a)}
 // res3: Int @@ Tags.Multiplication = 6000
 ```
 
-Whilst these examples are trivial and unlikely to be used in real programs, they serve to illustrate the point that Monoid instances 
+Note that we use `foldMap` instead of `fold` here because we need to map a function over the list to add the multiplication tag.
+
+Let's make a custom semigroup for finding the maximum of a list of numbers:
+
+```scala
+
+```
 
 ## Monoids in the wild
 
