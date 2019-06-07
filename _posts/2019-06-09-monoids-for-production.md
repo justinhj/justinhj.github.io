@@ -147,13 +147,13 @@ l1.foldMap{a => Tags.Multiplication(a)}
 // res3: Int @@ Tags.Multiplication = 6000
 ```
 
-Whilst these examples are trivial and unlikely to be used in real programs, they serve to illustrate the point that Monoid instances 
+Note that we could also just put a locally scoped implicit that had the multiplication instance, but that would break type class coherence. See FP for Mortals for more on Tags and type class coherence.
 
-## Monoids in the wild
+## Monoids in Production
 
-Maybe so far this seems a little too abstract. You already know how to append strings and sum numbers, why bother with all this fancy abstraction? Well, first of all we saw above how having a Monoid implementation enables us to use a wider range of combinators like folds and traversals; our intentions are made clearer with less code. When it comes to our application business objects, that may have more complicated append methods and be nested in multiple data structures, we can see that the expressive power of Monoids is a great advantage over an imperative solution. Let's take a look at a real example.
+You already know how to append strings and add numbers, why bother with all this fancy abstraction? Well, first of all we saw above how having a Monoid implementation enables us to use a wider range of combinators like folds and traversals; our intentions are made clearer with less code. When it comes to our application business objects, that may have more complicated append methods and be nested in multiple data structures, we can see that the expressive power of Monoids is a great advantage over an imperative solution. Let's take a look at a real example.
 
-Recently I worked with a team of Scala developers on a backend for a China based gaming company IGG. In many MMOG (massively multiplayer online games) you manage a city that contains plots of farm land that produce food, oil and so on. On the backend we need to store the things that the player owns in a database. When in memory we represent the
+In many MMOG (massively multiplayer online games) you manage a city that contains plots of farm land that produce food, oil and so on. On the backend we need to store the things that the player owns in a database. When in memory we represent the
  inventory as a map, where the keys are the types of resources we own, and the values are the quantity.
  
 For example we represent the players resources using integer ids:
