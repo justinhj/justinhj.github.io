@@ -23,6 +23,8 @@ _Example source code_
 
 New words, especially from mathematics, can put people off learning about things. Often though, the pay off is that we can use terms that have a precise meaning, and implement them in such a way that we can provide the same guarantees and expressive power that they have in the mathematical world to our own progams. This lets us communicate better with our compilers and other programmers, what our intentions are.
 
+To read more on pure functional programming in Scala I recommend three books: Functional Programming in Scala [^1] FP for Mortals [^2] and Advanced Scala [^3].
+
 ## Semigroups
 
 A semigroup is an algebra that has a binary associative operation; a function that takes two values of the same type and combines them into a single value.
@@ -177,10 +179,21 @@ l1.foldMap{a => Tags.Multiplication(a)}
 
 Note that we use `foldMap` instead of `fold` here because we need to map a function over the list to add the multiplication tag. We could also just put a locally scoped implicit monoid for multiplication, but that would break type class coherence. See FP for Mortals for more on Tags and type class coherence. In Cats there is no Tags mechanism so you must find other ways to get your alternate implementations in scope.
 
-Let's make a custom semigroup for finding the maximum of a list of numbers:
+Finally one more example from the sample code `MaxMonoid.scala`, a Monoid instance for the maximum of two numbers.
 
 ```scala
+implicit val maxIntMonoid : Monoid[Int] = Monoid.instance[Int]({case (a : Int,b :  Int) => Math.max(a,b)} , Int.MinValue)
 
+val testAppend =  10 |+| 20
+// res1: 20
+```
+
+Once defined for Int we can then use the fold over a list:
+
+```scala
+val ilist = List[Int](1,2,3,4,5,4,3,2,1,-10,1,2,3)
+Foldable[List].fold(ilist)
+// res1: 5
 ```
 
 ## Monoids in Production
@@ -227,8 +240,10 @@ Map(1 -> "Hello") |+| Map(1 -> " ") |+| Map(1 -> "World")
 //  Map(1 -> "Hello World")
 ```
 
+### The End
 
+Thank you for reading this post, please let me know via the links at the top if you have any questions or comments!
 
-
- 
-
+[^1]: [Functional Programming in Scala](https://www.manning.com/books/functional-programming-in-scala) (the Red Book) by Runar Bjarnsen and Paul Chiusano covers functional programming from first principles as you build your own implementations of immutable lists and options, before showing how to develop useful libraries in a pure functional style. Examples include a json parser and concurrency library. Next we are guided through all of the most common type classes like Functor, Monad, Applicative... what are their laws, what operations can be implemented. Finally we are shown how to control side effects using the IO Monad and the book ends with a sophisticated streaming IO implementation. Manning Publications now have a "livebook" version of the book where you can complete the (essential) exercises directly on the web page as you read.
+[^2]: [Functional Programming for Mortals](https://leanpub.com/fpmortals) by Sam Haliday is a practical and principiled guide to building systems with Scala using Scalaz. A real world example application is developed throughout the book, which also functions as a manual to Scalaz, demonstrating each type class in some realistic scenario. It will also appeal to Star Wars fans as Sam helpfully tells us what symbols like `|+|`, `<+>` and `@@` represent both in Scalaz and in the Star Wars universe. Whilst aimed at mortals it will require some experience in Scala to hit the ground running.
+[^3]: [Advanced Scala for Cats](https://books.underscore.io/scala-with-cats/scala-with-cats.html) by Noel Walsh and Dave Gurnell is a lighter book than the other two but covers the common type classes clearly and concisely. Rather than covering one big example application, small but realistic examples are given for the various features. Obviously from the title this focuses on the Cats library. Like the red book, this also contains exercises, althought they are not as rigorous or as difficult. This book accompanies Underscores training course.

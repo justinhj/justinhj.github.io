@@ -19,5 +19,5 @@ markdown: kramdown
 exclude: ["old"]
 include: ["images","css"]
 
-plugins:
+plugins_dir:
   - jekyll-mentions
