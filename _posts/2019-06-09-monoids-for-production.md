@@ -12,20 +12,22 @@ tags:
 - cats
 ---
 
-This post introduces Monoids, first at an abstract level and then as implemented in Scala and the Scalaz or Cats pure functional programming libraries. Next I'll show how I used Monoids in a game server backend to handle the players "ProductionItems" (things that produce things over time like a farm that produces food or a drill that produces oil). Finally, I'll show how to easily use automated tests that ensure your own instances of Monoids are 'lawful'.
+This post introduces Monoids, first at an abstract level and then as implemented in Scala and the Scalaz or Cats pure functional programming libraries. Next, I'll show how I used Monoids in production code, on a video game backend, to simplify the code that handles player items that are produced over time.
 
 ![ProductionItems](/../images/madlands_production.jpg)
 
-_Example source code_
+_The code for this post can be found here:_
 - [https://github.com/justinhj/monoid-demo](https://github.com/justinhj/monoid-demo)
 
-## Why category theory?
+### Category Theory and Scala
 
-New words, especially from mathematics, can put people off learning about things. Often though, the pay off is that we can use terms that have a precise meaning, and implement them in such a way that we can provide the same guarantees and expressive power that they have in the mathematical world to our own progams. This lets us communicate better with our compilers and other programmers, what our intentions are.
+If you've already read a few Monoid tutorials, you may want to skip to [Monoids in Production](#production).
 
-To read more on pure functional programming in Scala I recommend three books: Functional Programming in Scala [^1] FP for Mortals [^2] and Advanced Scala [^3].
+Lifting abstract algebraic structures like Semigroup and Monoid from mathematics can make simple concepts sound complicated. While it would be tempting to come up with new words that sound more familiar, it pays for us to adopt these terms because they let us talk precisely about the things in terms of their operations and laws. It is useful for us to have a shared vocabulary with which we can communicate to other programmers and our compilers, what our types can, and cannot, do.
 
-## Semigroups
+To read more on pure functional programming in Scala I recommend Functional Programming in Scala [^1]. A newer book that focuses on Scalaz and building a web application is also really good: Functional Programming for Mortals [^2] Finally, for getting started with Cats there is Advanced Scala [^3].
+
+### Semigroups
 
 A semigroup is an algebra that has a binary associative operation; a function that takes two values of the same type and combines them into a single value.
 
@@ -85,14 +87,43 @@ We can do the actual operation in any order and get the same result, which is ca
 
 This property is useful because we know that we can do optimisations. If we have long lists of integers we can divide them into smaller ones, run the appends in parallel, and the combine the results. We can use a left fold or a right fold without worrying about the order of operations. 
 
+```scala
+Foldable[List].foldLeft(List(1,2,3), 0){_ |+| _} 
+//res1: Int = 6
+Foldable[List].foldRight(List(1,2,3), 0){_ |+| _}
+//res2: Int = 6
+```
+
+Note that to fold a list we need the list, a binary operation to combine each element, and a "zero" value. Without a zero value it's impossible to combine all the elements of the list into an accumulator. For example if we have a list with a single item, the first step of the foldLeft would be:
+
+```scala
+Foldable[List].foldLeft(List(1), ???){_ |+| _} 
+??? |+| 1
+```
+
+If we had a zero value available for the type our semigroup is defined for, we could run a fold using that zero value instead of passing it ourselves. The syntax would then be simply:
+
+```scala
+Foldable[List].fold(List(1,2,3)) 
+//res1: Int = 6
+```
+
+By adding a way to get a zero for a type, we turn a semigroup into a monoid.
+
 ## Monoids
 
-Monoids have an additional operation called zero. Zero is some value that can be combined with other values without changing the original value. Here are some examples:
+Although it's called zero, it is not always the number zero. Zero is some value that can be combined with other values without changing the original value. Here are some examples:
 
-Integer addition - the zero value is 0
+Integer addition - the zero value is actually 0
 ```
 3 + 0 == 3
 0 + 3 == 3
+```
+
+Integer multiplication - the zero value is now 1
+```
+3 * 1 == 3
+1 * 3 == 3
 ```
 
 Logication or - the zero value is true
@@ -106,32 +137,9 @@ String append - the zero value is the empty string ""
 "Justin" ++ "" = "Justin"
 ```
 
-Why do we need a zero value? It's useful because operations like fold need an initial value to start with. The signature of Scalas standard library fold for lists looks like this:
+### Monoids in Scala
 
-```scala
-def fold[A1 >: A](z: A1)(op: (A1, A1) => A1): A1
-
-List(1,2,3,4,5).fold(0){_ + _} 
-// res24: Int = 15
-```
-
-Here the `z` is the starting or zero value, and `op` is the combine operation from semigroup. What that means is we can run a fold on anything that is a Monoid:
-
-```scala
-// From Foldable[List]
-def fold[M](t: F[M])(implicit evidence$2: scalaz.Monoid[M]): M
-```
-
-Here we see that there is no need to pass in our own zero value or combine operation, having a Monoid implementation for the type in scope is good enough allowing us to write:
-
-```scala
-@ Foldable[List].fold(List(1,2,3,4,5)) 
-res26: Int = 15
-```
-
-## Monoids in Scala
-
-In Scala we can implement Monoids as a Scala type class. We will encode its operations as a trait, similar to a Java interface. Note that this implementation is completely abstract:
+In Scala we can implement Monoids as a Scala type class, a way to extend the behaviour of existing types. We will encode its operations as a trait. Note that this is an abstract definition. We will then define instances of Monoids that make concrete versions of the operations.
 
 ```scala
 trait SemiGroup[A] {
@@ -141,7 +149,11 @@ trait SemiGroup[A] {
 trait Monoid[A] extends SemiGroup[A] {
 	def zero : A
 }
+```
 
+And a sample instance implementation:
+
+```scala
 val intMultiply = new Monoid[Int] {
     def zero = 1
 	def op(a: Int, b: Int) : Int = (a * b)
@@ -154,7 +166,7 @@ intMultiply.op(10,intMultiply.zero)
 //res2: Int = 10
 ```
 
-Whilst nothing stops us from creating our own, we'll use the Scalaz and Cats Monoid implementations instead. This gives us premade instances for many common types, syntactic sugar to make working with Monoids more concise, a bunch of useful functions that we can use with monoids like fold and even automated tests that verify our own instances obey the laws.
+In our production code, we'll use the Scalaz and Cats Monoid implementations instead of rolling our own. This gives us premade instances for many common types, syntactic sugar to make working with Monoids more concise, a bunch of useful combinators that we can use like fold and even automated law tests that verify our own instances obey the laws.
 
 Let's have a look at Scalaz for example:
 
@@ -179,7 +191,7 @@ l1.foldMap{a => Tags.Multiplication(a)}
 
 Note that we use `foldMap` instead of `fold` here because we need to map a function over the list to add the multiplication tag. We could also just put a locally scoped implicit monoid for multiplication, but that would break type class coherence. See FP for Mortals for more on Tags and type class coherence. In Cats there is no Tags mechanism so you must find other ways to get your alternate implementations in scope.
 
-Finally one more example from the sample code `MaxMonoid.scala`, a Monoid instance for the maximum of two numbers.
+Finally one more example from my sample code `MaxMonoid.scala`, a Monoid instance for the maximum of two numbers:
 
 ```scala
 implicit val maxIntMonoid : Monoid[Int] = Monoid.instance[Int]({case (a : Int,b :  Int) => Math.max(a,b)} , Int.MinValue)
@@ -196,7 +208,8 @@ Foldable[List].fold(ilist)
 // res1: 5
 ```
 
-## Monoids in Production
+<a name="production"></a>
+### Monoids in Production 
 
 You already know how to append strings and add numbers, why bother with all this fancy abstraction? Well, first of all we saw above how having a Monoid implementation enables us to use a wider range of combinators like folds and traversals; our intentions are made clearer with less code. When it comes to our application business objects, that may have more complicated append methods and be nested in multiple data structures, we can see that the expressive power of Monoids is a great advantage over an imperative solution. Let's take a look at a real example.
 
@@ -240,9 +253,11 @@ Map(1 -> "Hello") |+| Map(1 -> " ") |+| Map(1 -> "World")
 //  Map(1 -> "Hello World")
 ```
 
-### The End
+### Summary
 
-Thank you for reading this post, please let me know via the links at the top if you have any questions or comments!
+This has been a small sample of how Monoids can help simplify your code, and make easier to compose. Thank you for reading this post, please let me know via the links at the top if you have any questions or comments!
+
+### Footnotes
 
 [^1]: [Functional Programming in Scala](https://www.manning.com/books/functional-programming-in-scala) (the Red Book) by Runar Bjarnsen and Paul Chiusano covers functional programming from first principles as you build your own implementations of immutable lists and options, before showing how to develop useful libraries in a pure functional style. Examples include a json parser and concurrency library. Next we are guided through all of the most common type classes like Functor, Monad, Applicative... what are their laws, what operations can be implemented. Finally we are shown how to control side effects using the IO Monad and the book ends with a sophisticated streaming IO implementation. Manning Publications now have a "livebook" version of the book where you can complete the (essential) exercises directly on the web page as you read.
 [^2]: [Functional Programming for Mortals](https://leanpub.com/fpmortals) by Sam Haliday is a practical and principiled guide to building systems with Scala using Scalaz. A real world example application is developed throughout the book, which also functions as a manual to Scalaz, demonstrating each type class in some realistic scenario. It will also appeal to Star Wars fans as Sam helpfully tells us what symbols like `|+|`, `<+>` and `@@` represent both in Scalaz and in the Star Wars universe. Whilst aimed at mortals it will require some experience in Scala to hit the ground running.
