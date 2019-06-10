@@ -25,7 +25,7 @@ If you've already read a few Monoid tutorials, you may want to skip to [Monoids 
 
 Lifting abstract algebraic structures like Semigroup and Monoid from mathematics can make simple concepts sound complicated. While it would be tempting to come up with new words that sound more familiar, it pays for us to adopt these terms because they let us talk precisely about the things in terms of their operations and laws. It is useful for us to have a shared vocabulary with which we can communicate to other programmers and our compilers, what our types can, and cannot, do.
 
-To read more on pure functional programming in Scala I recommend Functional Programming in Scala [^1]. A newer book that focuses on Scalaz and building a web application is also really good: Functional Programming for Mortals [^2] Finally, for getting started with Cats there is Advanced Scala [^3].
+To read more on pure functional programming in Scala some great books are: `Functional Programming in Scala` [^1], `Functional Programming for Mortals`[^2] and `Advanced Scala with Cats` [^3].
 
 ### Semigroups
 
@@ -194,24 +194,35 @@ Note that we use `foldMap` instead of `fold` here because we need to map a funct
 Finally one more example from my sample code `MaxMonoid.scala`, a Monoid instance for the maximum of two numbers:
 
 ```scala
+import scalaz.Foldable
+import scalaz.Monoid
+import scalaz.std.list._
+import scalaz.syntax.semigroup._
+
 implicit val maxIntMonoid : Monoid[Int] = Monoid.instance[Int]({case (a : Int,b :  Int) => Math.max(a,b)} , Int.MinValue)
 
 val testAppend =  10 |+| 20
 // res1: 20
 ```
 
-Once defined for Int we can then use the fold over a list:
+Scalaz provides a function `instance` that takes two arguments; the combine operation and the zero value for a type, so we can easily define a new Monoid instance. Note that we can't import all of `scalaz._` like we did before because we don't want to bring in the instance for `Monoid[Int]`. Once defined we can then use the fold over a list to find the max:
 
 ```scala
-val ilist = List[Int](1,2,3,4,5,4,3,2,1,-10,1,2,3)
-Foldable[List].fold(ilist)
+val l1 = List[Int](1,2,3,4,5,4,3,2,1,-10,1,2,3)
+Foldable[List].fold(l1)
 // res1: 5
 ```
+
+Take a look at this post by Adam Warksi at Software Mill for more examples of Monoids and what you can do with fold:
+
+[https://softwaremill.com/beautiful-folds-in-scala/](https://softwaremill.com/beautiful-folds-in-scala/)
 
 <a name="production"></a>
 ### Monoids in Production 
 
 You already know how to append strings and add numbers, why bother with all this fancy abstraction? Well, first of all we saw above how having a Monoid implementation enables us to use a wider range of combinators like folds and traversals; our intentions are made clearer with less code. When it comes to our application business objects, that may have more complicated append methods and be nested in multiple data structures, we can see that the expressive power of Monoids is a great advantage over an imperative solution. Let's take a look at a real example.
+
+#### Taking Inventory
 
 In many MMOG (massively multiplayer online games) you manage a city that contains plots of farm land that produce food, oil and so on. On the backend we need to store the things that the player owns in a database. When in memory we represent the
  inventory as a map, where the keys are the types of resources we own, and the values are the quantity.
@@ -223,39 +234,72 @@ For example we represent the players resources using integer ids:
 3. Corn
  
  A player with just some gold would have an inventory like this:
- 
-
-```scala
-val inventory = Map(2 -> 1000)
- ```
-
-Now using one of the pure fp libraries, Scalaz or Cats, we can import the relavent libraries and we will get Monoid instances for some types. At least those types for which a lawful Monoid makes sense; happily a Map is one such type. So when we want to add or subtract resources from the player we can do so by using Monoid combine:
 
 ```scala
 import cats._
 import cats.data._
 import cats.implicits._
 
-val updatedInventory = inventory.combine(Map(1 -> 20)).combine(Map(3 -> 20)).combine(Map(2 -> -400)) 
-// Map(1 -> 20, 2 -> 600, 3 -> 20)
-```
+val inventory = Map(2 -> 1000)
+ ```
 
-In this example we reduced the gold by 400 and granted the player 20 of two types of resources. Because there is an implementation of map for Monoid, we don't have to write our own code to manage iterating over the map, creating missing item keys, summing the values, this is all taken care of. The `|+|` syntax makes it much more readble too:
+Imagine that the player buys 1000 Oil and 1000 Corn and this will cost 200 gold. We could write some code that iterates over the players inventory map and updates the new values, create new keys as necessary for items the player didn't have. But fortunately because there is a Monoid instance for Map, we can simply combine the player inventory map with the purchases and costs map to get the new inventory:
 
 ```scala
-val updatedInventory = inventory |+| Map(1 -> 20) |+| Map(3 -> 20) |+| Map(2 -> -400)`
+val updatedInventory = inventory.combine(Map(1 -> 1000)).combine(Map(3 -> 1000)).combine(Map(2 -> -200)) 
+//res2: Map(1 -> 20, 2 -> 600, 3 -> 20)
 ```
 
-Note that the values in the map must have a Monoid instance (in this case the monoid implements int addition). For example we could combine two maps of string values and they would be appended:
+In this example we reduced the gold by 200 and granted the player 1000 of two types of resources. In fact we could simplify to just adding two maps together:
+
+```scala
+val updatedInventory = inventory |+| Map(1 -> 1000, 3 -> 1000, 2 -> -200) 
+//res3: updatedInventory: Map[Int, Int] = Map(1 -> 1000, 3 -> 1000, 2 -> 800)
+```
+
+The implementation of Map for Monoid gathers togethers the values with the same key and appends them with Monoid, meaning anything with a Monoid can be combined.
 
 ```scala
 Map(1 -> "Hello") |+| Map(1 -> " ") |+| Map(1 -> "World")
-//  Map(1 -> "Hello World")
+//res1: Map(1 -> "Hello World")
 ```
+
+We can also fold it like this:
+
+```scala
+Foldable[List].fold(List(Map(1 -> "Hello"),Map(1 -> " "),Map(1 -> "World"))) 
+//res1: Map[Int, String] = Map(1 -> "Hello World")
+```
+
+#### Produced Items
+
+We stored the players inventory as a Map, and we can easily use Monoids to perform operations on inventories as well as lists of items and currencies. But also in our game the players had resources that increased or decreased over time. For example if you have a Level 1 Oil drill it produces oil at 10 units an hour. Over 10 hours it would accumulate 100 units of oil.
+
+![OilProduction](/../images/oilproduction.png)
+
+What we don't want to do is have to constantly update the players production item count at some discrete interal. For one, that would be very costly on our servers, and for another we may want to show the resources increasing or descreasing in real time on the client.
+
+In order to model this we can simply store the starting amount (this will be zero for a new oil drill), and the players rate of production. We also store the time the production began (when the oil drill is built).
+
+With these three variables we can always calculate the current amount of the resource by the simple formula:
+
+`current_amount = initial_amount + (time_passed * production_rate)`
+
+Storing production items in this way means we can calculate the current value at any time to display it. Note that we can adjust the initial amount whenever we want by a positive or negative amount, and things will work out. But if we change the production rate then we need to update a few things. Firstly we calculate a new initial amount (the current amount from the calculation above). Then we store the current time, and adjust the production rate to the new one.
+
+Whilst this is all straighforward, it complicates the adding and removing of items from the players inventory. We want to be able to remove 200 gold and add some resources just as we did before, and ideally we shouldn't have to worry about things like what time it is and production rates.
+
+Of course the solution is to model this by creating a Monoid instance for produced items, and that is what we did:
+
+
 
 ### Summary
 
 This has been a small sample of how Monoids can help simplify your code, and make easier to compose. Thank you for reading this post, please let me know via the links at the top if you have any questions or comments!
+
+For more reading on Monoids check the books below. There is also a very nice conference talk by Markus Haulck that shows some really nice composition with Monoids:
+
+[When Everything Fits: The Beauty of Composition - Markus Hauck](https://youtu.be/sHV4qhbZHgo)
 
 ### Footnotes
 
