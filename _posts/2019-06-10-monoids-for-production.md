@@ -12,9 +12,15 @@ tags:
 - cats
 ---
 
-This post introduces Monoids, first at an abstract level and then as implemented in Scala and the Scalaz or Cats pure functional programming libraries. Next, I'll show how I used Monoids in production code, on a video game backend, to simplify the code that handles player items that are produced over time.
+What's in this post?
 
-![ProductionItems](/../images/madlands_production.jpg)
+* Why use category theory in Scala?
+* Quick intro to Semigroups and Monoids
+* How to implement Monoids in Scala
+* Using the Cats and/or Scalaz libraries to work with Monoids
+* An example of Monoids in production code
+* Testing the Monoid laws of your Monoid instances
+* Bonus footnotes: Mini reviews of some Functional Programming in Scala books
 
 _The code for this post can be found here:_
 - [https://github.com/justinhj/monoid-demo](https://github.com/justinhj/monoid-demo)
@@ -85,7 +91,7 @@ We can do the actual operation in any order and get the same result, which is ca
 
 `op(op(x,y), z) == op(x, op(y,z))`
 
-This property is useful because we know that we can do optimisations. If we have long lists of integers we can divide them into smaller ones, run the appends in parallel, and the combine the results. We can use a left fold or a right fold without worrying about the order of operations. 
+This property is useful because we know that we can do optimisations. If we have long lists of integers we can divide them into smaller ones, run the appends in parallel, and then combine the results. We can use a left fold or a right fold without worrying about the order of operations. 
 
 ```scala
 Foldable[List].foldLeft(List(1,2,3), 0){_ |+| _} 
@@ -94,7 +100,7 @@ Foldable[List].foldRight(List(1,2,3), 0){_ |+| _}
 //res2: Int = 6
 ```
 
-Note that to fold a list we need the list, a binary operation to combine each element, and a "zero" value. Without a zero value it's impossible to combine all the elements of the list into an accumulator. For example if we have a list with a single item, the first step of the foldLeft would be:
+Note that to fold a list we need the list, a binary operation to combine each element, and a "zero" value. Without a zero value, it's impossible to combine all the elements of the list into an accumulator. For example, if we have a list with a single item, the first step of the foldLeft would be:
 
 ```scala
 Foldable[List].foldLeft(List(1), ???){_ |+| _} 
@@ -139,7 +145,7 @@ String append - the zero value is the empty string ""
 
 ### Monoids in Scala
 
-In Scala we can implement Monoids as a Scala type class, a way to extend the behaviour of existing types. We will encode its operations as a trait. Note that this is an abstract definition. We will then define instances of Monoids that make concrete versions of the operations.
+In Scala, we can implement Monoids as a Scala type class, a way to extend the behaviour of existing types. We will encode its operations as a trait. Note that this is an abstract definition. We will then define instances of Monoids that make concrete versions of the operations.
 
 ```scala
 trait SemiGroup[A] {
@@ -224,10 +230,13 @@ You already know how to append strings and add numbers, why bother with all this
 
 #### Taking Inventory
 
-In many MMOG (massively multiplayer online games) you manage a city that contains plots of farm land that produce food, oil and so on. On the backend we need to store the things that the player owns in a database. When in memory we represent the
+![ProductionItems](/../images/madlands_production.jpg)
+- Image from Madlands - a former online iOS and Android game
+
+In many MMOG (massively multiplayer online games) you manage a city that contains plots of farmland that produce food, oil and so on. On the backend we need to store the things that the player owns in a database. When in memory we represent the
  inventory as a map, where the keys are the types of resources we own, and the values are the quantity.
  
-For example we represent the players resources using integer ids:
+For example we represent the players' resources using integer ids:
 
 1. Oil
 2. Gold
@@ -243,7 +252,7 @@ import cats.implicits._
 val inventory = Map(2 -> 1000)
  ```
 
-Imagine that the player buys 1000 Oil and 1000 Corn and this will cost 200 gold. We could write some code that iterates over the players inventory map and updates the new values, create new keys as necessary for items the player didn't have. But fortunately because there is a Monoid instance for Map, we can simply combine the player inventory map with the purchases and costs map to get the new inventory:
+Imagine that the player buys 1000 Oil and 1000 Corn and this will cost 200 gold. We could write some code that iterates over the players' inventory map and updates the new values, create new keys as necessary for items the player didn't have. But fortunately because there is a Monoid instance for Map, we can simply combine the player inventory map with the purchases and costs map to get the new inventory:
 
 ```scala
 val updatedInventory = inventory.combine(Map(1 -> 1000)).combine(Map(3 -> 1000)).combine(Map(2 -> -200)) 
@@ -277,7 +286,7 @@ We stored the players inventory as a Map, and we can easily use Monoids to perfo
 
 ![OilProduction](/../images/oilproduction.png)
 
-What we don't want to do is have to constantly update the players production item count at some discrete interal. For one, that would be very costly on our servers, and for another we may want to show the resources increasing or descreasing in real time on the client.
+What we don't want to do is have to constantly update the players production item count at some discrete interal. For one, that would be very costly on our servers, and for another we may want to show the resources increasing or decreasing in real time on the client.
 
 In order to model this we can simply store the starting amount (this will be zero for a new oil drill), and the players rate of production. We also store the time the production began (when the oil drill is built).
 
@@ -287,7 +296,7 @@ With these three variables we can always calculate the current amount of the res
 
 Storing production items in this way means we can calculate the current value at any time to display it. Note that we can adjust the initial amount whenever we want by a positive or negative amount, and things will work out. But if we change the production rate then we need to update a few things. Firstly we calculate a new initial amount (the current amount from the calculation above). Then we store the current time, and adjust the production rate to the new one.
 
-Whilst this is all straighforward, it complicates the adding and removing of items from the players inventory. We want to be able to remove 200 gold and add some resources just as we did before, and ideally we shouldn't have to worry about things like what time it is and production rates.
+Whilst this is all straightforward, it complicates the adding and removing of items from the players inventory. We want to be able to remove 200 gold and add some resources just as we did before, and ideally we shouldn't have to worry about things like what time it is and production rates.
 
 Of course the solution is to model this by creating a Monoid instance for produced items, and that is what we did. There are two implementations and two demo programs to show the Scalaz and Cats implementations which have minor differences and caveats.
 
@@ -363,7 +372,7 @@ val listOfInventories = Foldable[List].fold(List(inventory1, inventory2, invento
 // )
 ```
 
-### Testing issues with time
+### The test of time
 
 As promised we return to the Clock data type. This is implemented in `production.Clock.scala` and provides the following simple function to get the time:
 
@@ -381,7 +390,7 @@ val now = clock.currentTimeMillis
 val pi = ProducedItem(10, now - Clock.oneHourMillis, 10)
 ```
 
-### Proving your Monoid instance is Lawful
+### Checking Monoids are lawful
 
 The beauty of functional programming is we can build up solid foundations like this, and then go ahead and compose more complex programs from our simple lawful data types. But one caveat, did we implement a lawful Monoid? In order to make sure, I have include tests in both Scalaz and Cats style to show you how to use each library's law checking facilities.
 
@@ -394,7 +403,7 @@ class ProducedItemLawTestsCats extends CatsSuite {
 }
 ```
 
-With the correct imports and library dependencies you can now access `MonoidTests[ProducedItem].monoid` which will contain tests for each of the Monoid laws. It will in addition use Scalacheck to generate emany random instances of your classes to give a thorough empirical testing of whether the laws hold. Of course this check will not guarantee that your laws hold but it will certainly help you feel confident. Ultimately Scala leaves it as an exercise to the programmer to ensure that the laws are valid and automated testing is no substitute for your own reasoning. Note that in order to generate the tests we need an `Eq` instance for our data type which allows them to be tested for equality. We can automatically generate one that just compares each field of the class:
+With the correct imports and library dependencies you can now access `MonoidTests[ProducedItem].monoid` which will contain tests for each of the Monoid laws. It will in addition use Scalacheck to generate many random instances of your classes to give thorough empirical testing of whether the laws hold. Of course this check will not guarantee that your laws hold but it will certainly help you feel confident. Ultimately Scala leaves it as an exercise to the programmer to ensure that the laws are valid and automated testing is no substitute for your own reasoning. Note that in order to generate the tests we need an `Eq` instance for our data type which allows them to be tested for equality. We can automatically generate one that just compares each field of the class:
 
 ```scala
 implicit val eqProducedItem : Eq[ProducedItem] = Eq.fromUniversalEquals
@@ -455,12 +464,11 @@ And rerunning the tests we can see the tests are now all green!
 
 Check the Scalaz tests to see very similar code in action.
 
-### Summary
+### The End
 
 This has been a small sample of how Monoids can help simplify your code, and make easier to compose. Thank you for reading this post, please let me know via the links at the top if you have any questions or comments!
 
-For more reading on Monoids check the books below. There is also a very nice conference talk by Markus Haulck that shows some really nice composition with Monoids:
-
+For more reading on Monoids check the books below. I also highly recommend this conference talk by Markus Haulck that shows some nice composition tricks Monoids
 [When Everything Fits: The Beauty of Composition - Markus Hauck](https://youtu.be/sHV4qhbZHgo)
 
 ### Footnotes
