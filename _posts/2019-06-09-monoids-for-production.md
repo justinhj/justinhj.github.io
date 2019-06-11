@@ -289,9 +289,171 @@ Storing production items in this way means we can calculate the current value at
 
 Whilst this is all straighforward, it complicates the adding and removing of items from the players inventory. We want to be able to remove 200 gold and add some resources just as we did before, and ideally we shouldn't have to worry about things like what time it is and production rates.
 
-Of course the solution is to model this by creating a Monoid instance for produced items, and that is what we did:
+Of course the solution is to model this by creating a Monoid instance for produced items, and that is what we did. There are two implementations and two demo programs to show the Scalaz and Cats implementations which have minor differences and caveats.
 
+```scala
+case class ProducedItem(snapshotAmount: Long, snapshotTime: Long, amountPerHour: Double) {
+    def currentAmount(implicit clock: Clock) = 
+        snapshotAmount + (((clock.currentTimeMillis - snapshotTime) / Clock.oneHourMillis) * amountPerHour).toLong
+}
+```
 
+Here you can see the amount and time of the last snapshot as well as the production rate `amountPerHour`. The player's current amount is no longer a static field, but a function that calculates the current amount based on the snapshot data. Note that we are passing in a Clock object implicitly. We'll see why later but for now you just need to know that a clock is a datatype that lets us get the time so we can make the calculation.
+
+```scala
+
+    implicit def monoidProducedItemOps(implicit clock : Clock) = new Monoid[ProducedItem] {
+        def empty = ProducedItem(0, 0, 0)
+        def combine(p1: ProducedItem, p2: ProducedItem) : ProducedItem = {
+            val p1A = p1.currentAmount
+            val p2A = p2.currentAmount
+    
+            ProducedItem(p1A + p2A, clock.currentTimeMillis, Math.max(Math.abs(p1.amountPerHour), Math.abs(p2.amountPerHour)))
+        }
+    }
+	
+```
+
+Next we implement the Monoid instance for our new data type. The `zero` function is simply a ProducedItem with a snapshot at time zero, zero amount of stuff and zero production rate. While the `combine` (or `append` for scalaz) function is a bit more involved. It must calculate the current amount of both `ProducedItem`s. The new snapshot value will be the sum of those `p1A + p1A`. The new time snapshot will be right now, which we get from the clock, and the new production rate is simply the production rate with the most magnitude.
+
+Just to explain that a little; in our use case production items always have the same production rate for the same player. Whenever the production rate changes for an item, we update all items of that type. So typically we will always have the same value on each side of a produced item type. However the zero value has no way to know the production rate, so simply taking the biggest one does what we need. You need to pay attention to details like this on your own Monoid instances to make sure the combine operation makes sense with respect to your business logic.
+
+Now we have all we need to start adding ProducedItems (there are example programs in the source code, or you can do the following at the Scala console to try it out).
+
+```scala
+import cats.syntax.monoid._
+import cats.instances.map._
+import org.justinhj.production._
+import org.justinhj.production.productioncats.ProducedItem
+import org.justinhj.production.productioncats.ProducedItem._
+
+implicit val clock = FixedClock(System.currentTimeMillis + Clock.oneHourMillis)
+val now = clock.currentTimeMillis
+	
+val inventory1 = Map(
+    1 -> ProducedItem(10, now - Clock.oneHourMillis, 10),
+	2 -> ProducedItem(10, now - Clock.oneHourMillis, 5))
+	
+val inventory2 = Map(
+	1 -> ProducedItem(-5, 0, 0),
+	2 -> ProducedItem(-5, 0, 0),
+	3 -> ProducedItem(1, 0, 0))
+
+val inventory3 = Map(
+    3 -> ProducedItem(1, 0, 0))
+	
+val addInventories = inventory1 |+| inventory2 |+| inventory3 
+// addInventories: Map[Int, ProducedItem] = Map(
+//  1 -> ProducedItem(15L, 1560220015450L, 10.0),
+//  2 -> ProducedItem(10L, 1560220015450L, 5.0),
+//  3 -> ProducedItem(2L, 1560220015450L, 0.0)
+```
+
+Now we can easily combine our ProducedItem structures, and of course we now use other combinators like fold:
+
+```scala
+import cats.Foldable
+import cats.instances.list._
+
+val listOfInventories = Foldable[List].fold(List(inventory1, inventory2, inventory3)) 
+// listOfInventories: Map[Int, ProducedItem] = Map(
+//   2 -> ProducedItem(10L, 1560220015450L, 5.0),
+//   1 -> ProducedItem(15L, 1560220015450L, 10.0),
+//   3 -> ProducedItem(2L, 1560220015450L, 0.0)
+// )
+```
+
+### Testing issues with time
+
+As promised we return to the Clock data type. This is implemented in `production.Clock.scala` and provides the following simple function to get the time:
+
+```scala
+trait Clock {
+    def currentTimeMillis : Long
+  }
+```
+
+There are two implementations; firstly there is a SystemClock, so called because it returns the system time. This one will be used in production so that your players corn grows correctly. The second is FixedClock which always returns the same time. This is to make testing easier. We want to be able to start our corn growing then check if it grew the right amount an hour later, and of course we don't want the tests to run in real time. To get around this if you check my test classes such as `org.justinhj.production.ProducedItemTestCats` you can see that I that I make a fixed time clock with the current time and then set my test items to have a snapshot time of one hour ago. Having strict control over time like this is vital to testing time and date related logic in a principled way.
+
+```scala
+implicit val clock = FixedClock(System.currentTimeMillis)
+val now = clock.currentTimeMillis
+val pi = ProducedItem(10, now - Clock.oneHourMillis, 10)
+```
+
+### Proving your Monoid instance is Lawful
+
+The beauty of functional programming is we can build up solid foundations like this, and then go ahead and compose more complex programs from our simple lawful data types. But one caveat, did we implement a lawful Monoid? In order to make sure, I have include tests in both Scalaz and Cats style to show you how to use each library's law checking facilities.
+
+In this example we will use Cats. Instructions for this are here [https://typelevel.org/cats/typeclasses/lawtesting.html](https://typelevel.org/cats/typeclasses/lawtesting.html) but you can also follow my working example in the code.
+
+```scala
+class ProducedItemLawTestsCats extends CatsSuite {
+  implicit val clock = FixedClock(System.currentTimeMillis + Clock.oneHourMillis)
+  checkAll("ProducedItem.MonoidLaws", MonoidTests[ProducedItem].monoid)
+}
+```
+
+With the correct imports and library dependencies you can now access `MonoidTests[ProducedItem].monoid` which will contain tests for each of the Monoid laws. It will in addition use Scalacheck to generate emany random instances of your classes to give a thorough empirical testing of whether the laws hold. Of course this check will not guarantee that your laws hold but it will certainly help you feel confident. Ultimately Scala leaves it as an exercise to the programmer to ensure that the laws are valid and automated testing is no substitute for your own reasoning. Note that in order to generate the tests we need an `Eq` instance for our data type which allows them to be tested for equality. We can automatically generate one that just compares each field of the class:
+
+```scala
+implicit val eqProducedItem : Eq[ProducedItem] = Eq.fromUniversalEquals
+```
+
+Now we can run our test suite and bask in the glory of our own brilliance...
+
+```
+[info] - ProducedItem.MonoidLaws.monoid.left identity *** FAILED ***
+[info]   GeneratorDrivenPropertyCheckFailedException was thrown during property evaluation.
+[info]    (Discipline.scala:14)
+[info]     Falsified after 0 successful property evaluations.
+[info]     Location: (Discipline.scala:14)
+[info]     Occurred when passed generated values (
+[info]       arg0 = ProducedItem(4960954082650183831,1,1.5706606739076523E-208)
+[info]     )
+[info]     Label of failing property:
+[info]       Expected: ProducedItem(4960954082650183831,1,1.5706606739076523E-208)
+[info]   Received: ProducedItem(4960954082650183831,1560221194037,1.5706606739076523E-208)
+```
+
+Oh, no! What happened? It seems our laws do not hold, for left and right identity and other things besides. Well thinking about things a little more, when we combine a ProducedItem with the zero value, it should not change the original item.
+
+```scala
+val now = 1560221355576L
+val oneHourAgo = 1560217755576L
+ProducedItem(10, oneHourAgo, 10) |+| Monoid[ProducedItem].empty 
+// ProducedItem = ProducedItem(20L, 1560221355576L, 10.0)
+```
+
+Well we can see that this is not correct. When we combined the two items we took a new snapshot and the time changed to now! So we changed the equality from true to false and broke the identity law. But we are not really being fair to ourselves, because at the beginning of this exercise we came up with a data structure that helps us represent items that increase or decrease over time, and in doing so we introduced these new variables. On the other hand from a business logic point of view, two produced items are the same if (and only if) their current amounts are the same. We don't care about production rate or snapshot time or event current snapshot value. 
+
+Let's rewrite our equals check to take this insight into account:
+
+```scala
+implicit def eqProducedItem(implicit clock : Clock) = new Eq[ProducedItem] {
+    def eqv(x: ProducedItem, y: ProducedItem): Boolean = {
+        x.currentAmount == y.currentAmount
+	}
+}
+```
+
+And rerunning the tests we can see the tests are now all green!
+
+``` 
+[info] ProducedItemLawTestsCats:
+[info] - ProducedItem.MonoidLaws.monoid.associative
+[info] - ProducedItem.MonoidLaws.monoid.collect0
+[info] - ProducedItem.MonoidLaws.monoid.combine all
+[info] - ProducedItem.MonoidLaws.monoid.combineAllOption
+[info] - ProducedItem.MonoidLaws.monoid.is id
+[info] - ProducedItem.MonoidLaws.monoid.left identity
+[info] - ProducedItem.MonoidLaws.monoid.repeat0
+[info] - ProducedItem.MonoidLaws.monoid.repeat1
+[info] - ProducedItem.MonoidLaws.monoid.repeat2
+[info] - ProducedItem.MonoidLaws.monoid.right identity
+```
+
+Check the Scalaz tests to see very similar code in action.
 
 ### Summary
 
