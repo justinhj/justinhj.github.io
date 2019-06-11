@@ -425,7 +425,7 @@ Now we can run our test suite and bask in the glory of our own brilliance...
 [info]   Received: ProducedItem(4960954082650183831,1560221194037,1.5706606739076523E-208)
 ```
 
-Oh, no! What happened? It seems our laws do not hold, for left and right identity and other things besides. Well thinking about things a little more, when we combine a ProducedItem with the zero value, it should not change the original item.
+Oh, no! What happened? It seems our laws do not hold, for left and right identity and other things besides. After a little thought it becomes clear, when we combine a ProducedItem with the zero value it should not change the original item.
 
 ```scala
 val now = 1560221355576L
@@ -434,7 +434,7 @@ ProducedItem(10, oneHourAgo, 10) |+| Monoid[ProducedItem].empty
 // ProducedItem = ProducedItem(20L, 1560221355576L, 10.0)
 ```
 
-Well we can see that this is not correct. When we combined the two items we took a new snapshot and the time changed to now! So we changed the equality from true to false and broke the identity law. But we are not really being fair to ourselves, because at the beginning of this exercise we came up with a data structure that helps us represent items that increase or decrease over time, and in doing so we introduced these new variables. On the other hand from a business logic point of view, two produced items are the same if (and only if) their current amounts are the same. We don't care about production rate or snapshot time or event current snapshot value. 
+Clearly, we can see that this is not correct. When we combined the two items we took a new snapshot and the time changed to now! So we changed the equality from true to false and broke the identity laws. At the beginning of this exercise we came up with a data structure that helps us represent items that increase or decrease over time, and in doing so we introduced these new variables. On the other hand from a business logic point of view, two produced items are the same if (and only if) their current amounts are the same. We don't care about production rate or snapshot time or event current snapshot value. 
 
 Let's rewrite our equals check to take this insight into account:
 
@@ -466,7 +466,7 @@ Check the Scalaz tests to see very similar code in action.
 
 ### The End
 
-This has been a small sample of how Monoids can help simplify your code, and make easier to compose. Thank you for reading this post, please let me know via the links at the top if you have any questions or comments!
+This has been a small sample of how Monoids can help simplify your code, and make it more composable. Thank you for reading this post, please let me know via the links at the top if you have any questions or comments!
 
 For more reading on Monoids check the books below. I also highly recommend this conference talk by Markus Haulck that shows some nice composition tricks Monoids
 [When Everything Fits: The Beauty of Composition - Markus Hauck](https://youtu.be/sHV4qhbZHgo)
