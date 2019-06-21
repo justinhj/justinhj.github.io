@@ -11,12 +11,12 @@ tags:
 - cats
 ---
 
-This post is aimed at the Scala programmer with some experience pure functional programming. We will look at Comonads, a type class closely related to Monads, firstly from an abstract point of view and then a more concrete example, implementing Conway's Game of Life and animating in the terinal. 
+This post is aimed at the Scala programmer with some experience pure functional programming and [Cats](http://TODO.com). We will look at Comonads, a type class closely related to Monads, firstly from an abstract point of view and then a more concrete example that allows us to do things like image processing and implementing Conway's Game of Life animated in the terminal.
 
 _The code for this post can be found here:_
-- [https://github.com/justinhj/comonad](https://github.com/justinhj/comonad)
+- [https://github.com/justinhj/comonad](https://github.com/justinhj/comonad) TODO
 
-### Monads
+## Monads
 
 To explain comonads, a good place to start is how they relate to monads. In order to get from monad to comonad, we define operations that are the `dual` of those in monad. By dual, we mean that the direction of the data flows is reversed.
 
@@ -103,7 +103,7 @@ map[Int,Int](List(1,2,3), a => a + 1)
 //List[Int] = List(2, 3, 4)
 ```
 
-### Comonads
+## Comonads
 
 From an abstract point of view Monads allow us to chain effects, and to life pure values into effects. Let's now consider Comonads and their dual operations.
 
@@ -128,4 +128,135 @@ nel1.extract
 // Int = 1
 ```
 
-Extract is quite simple to understand, but `coflatMap` is a bit of a brain teaser. 
+I found `extract` is simple to understand, but `coflatMap` takes some mental gymnastics to follow. Before we consider that, let's look at `coflatten`, the dual of `flatten`. Remember that `flatten` made it easy for us to implement `flatMap` which requires a way to reduce a nested structure by one level. As you can see from the type signature, a `coflatten` takes a value `A` in a context and returns it in a nested context.
+
+```scala
+def coflatten[A](fa: F[A]): F[F[A]]
+```
+
+When implementing Comonad's for our own data types we need to make a decision on how to take a structure and create a nested version of it. This is not totally arbitrary, as Comonads have a set of laws like Monads, and so our implementation must satisfy those laws. As we'll see shortly, a way to make a lawful Comonad for NonEmptyList is for the `coflatten` to create a `NonEmptyList[NonEmptyList[A]]]` which is the list of all of the original list and all of it's suffixes (or tails).
+
+```scala
+val nel1 = NonEmptyList.of(1,2,3,4,5)  
+//NonEmptyList[Int] = NonEmptyList(1, List(2, 3, 4, 5))
+
+nel1.coflatten 
+// NonEmptyList[NonEmptyList[Int]] = NonEmptyList(
+//  NonEmptyList(1, List(2, 3, 4, 5)),
+//  List(NonEmptyList(2, List(3, 4, 5)), NonEmptyList(3, List(4, 5)), NonEmptyList(4, List(5)), NonEmptyList(5, List()))
+// )
+```   
+   
+One of the comonad laws [TODO link](TODO) is the left identity which specifies `fa.coflatMap(_.extract) <-> fa`. (All of the laws can be checked using the ComonadLaws in Cats) TODO. You can see that this makes sense in terms of the implementation of NonEmptyList above. 
+
+Once we have the `coflatten` implementation for a type we can implement `coflatMap`. Based on the signature `def coflatMap[A, B](fa: F[A])(f: F[A] => B): F[B]` you can see that, just like `extract`, we have just reverse the direction of data flow from `A => F[B]` to `F[A] => B`. That means the caller of the function is going provide a function that gets to look at each suffix of the NonEmptyList and comvine that to a single value of type `B`. Those values are returned to the user in a new NonEmptyList. For example taking the size of a NonEmptyList matches the type signature.
+
+```scala
+NonEmptyList.of(1,2, 3, 4, 5).coflatMap(_.size) 
+//NonEmptyList[Int] = NonEmptyList(5, List(4, 3, 2, 1))
+```
+
+Notice that when you flatMap a list, the mapping part looks at the list one element at a time, transforming it to a list. When you coflatMap a list you're looking at the list and all of its tails one by one, collapsing each of them down into a single value.
+
+### Comonad laws
+
+The following laws must be obeyed by a Comonad.
+
+Left identity states that when we coflatmap an `F[A]` using the extract function, we get the `F[A]` back. Demonstrating this with NonEmptyList below shows how it works; now the reasoning behind having all the suffixes of a list makes sense as the coflatten operation. Since extract takes the head, we are essentially taking all the heads of all the tails, which returns the original list.
+
+```scala
+val nel1 = NonEmptyList.of(1,2,3,4,5) 
+
+nel1.coflatMap(_.extract) == nel1 
+// Boolean = true
+
+Right identity states that coflatMapping using some function `f`, then calling extract gives the same result as simply calling `f(a)`.
+
+```scala
+nel1.coflatMap(a => a.size).extract == nel1.size 
+// Boolean = true
+```
+
+Finally, there is an associativity law (a similar one exists for Monad's flatMap) `fa.coflatMap(f).coflatMap(g) <-> fa.coflatMap(x => g(x.coflatMap(f)))`.
+
+```scala
+// fa.coflatMap(f).coflatMap(g) <-> fa.coflatMap(x => g(x.coflatMap(f)))
+// TODO need simple f and g
+```
+
+Cats contains implementations of checks for these laws which can be found here: [https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala](https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala)
+
+## Comonads for image processing
+
+Finally, I'll show the development of a data type `FocusedGrid` which consists of a 2d grid of values of some type `A` and a focus point which will be a Tuple2[Int, Int]. This focus point specifies a row and column of the grid. 
+
+```scala
+  case class FocusedGrid[A](focus: Tuple2[Int,Int], grid : Vector[Vector[A]])
+```
+
+Next we implement the Comanad (and Functor) operations for our new type.
+
+```scala
+  implicit val focusedGridComonad = new Comonad[FocusedGrid] {
+    override def map[A, B](fa: FocusedGrid[A])(f: A => B) : FocusedGrid[B] = {
+      FocusedGrid(fa.focus, fa.grid.map(row => row.map(a => f(a))))
+    }
+
+    override def coflatten[A](fa: FocusedGrid[A]): FocusedGrid[FocusedGrid[A]] = {
+      val grid = fa.grid.mapWithIndex((row, ri) => 
+        row.mapWithIndex((col, ci) => 
+          FocusedGrid((ri,ci), fa.grid)))
+      FocusedGrid((0,0), grid)
+    }
+
+    // Gives us all of the possible foci for this grid
+    def coflatMap[A, B](fa: FocusedGrid[A])(f: FocusedGrid[A] => B): FocusedGrid[B] = {
+     val grid = coflatten(fa).grid.map(_.map(col => f(col)))
+      FocusedGrid(fa.focus,  grid)
+    }
+
+    // extract simply returns the A at the focus
+    def extract[A](fa: FocusedGrid[A]): A = fa.grid(fa.focus._1)(fa.focus._2)
+  }
+```
+
+As you can see, `extract` is the simplest operation and simply returns the grid value at the focus.
+
+Looking at the type signature for `coflatten` you can see that it does what we expect; creates a FocusedGrid of FocusedGrid's. We iterate through each row and column using mapWithIndex so that we can set the appropriate focus at each point. For a small grid the output looks like this. Note that the grid itself will not be duplicated in memory for each Vector, just a reference will be added. What is different at each row and column is the focus.
+
+```scala
+FocusedGrid((0,0), Vector(Vector(5,3,0),Vector(3,1,0),Vector(0,0,0))).coflatten
+
+FocusedGrid(
+  (0, 0),
+  Vector(
+    Vector(
+      FocusedGrid((0, 0), Vector(Vector(5, 3, 0), Vector(3, 1, 0), Vector(0, 0, 0))),
+      FocusedGrid((0, 1), Vector(Vector(5, 3, 0), Vector(3, 1, 0), Vector(0, 0, 0))),
+      FocusedGrid((0, 2), Vector(Vector(5, 3, 0), Vector(3, 1, 0), Vector(0, 0, 0)))
+    ),
+    Vector(
+      FocusedGrid((1, 0), Vector(Vector(5, 3, 0), Vector(3, 1, 0), Vector(0, 0, 0))),
+      FocusedGrid((1, 1), Vector(Vector(5, 3, 0), Vector(3, 1, 0), Vector(0, 0, 0))),
+      FocusedGrid((1, 2), Vector(Vector(5, 3, 0), Vector(3, 1, 0), Vector(0, 0, 0)))
+    ),
+    Vector(
+      FocusedGrid((2, 0), Vector(Vector(5, 3, 0), Vector(3, 1, 0), Vector(0, 0, 0))),
+      FocusedGrid((2, 1), Vector(Vector(5, 3, 0), Vector(3, 1, 0), Vector(0, 0, 0))),
+      FocusedGrid((2, 2), Vector(Vector(5, 3, 0), Vector(3, 1, 0), Vector(0, 0, 0)))
+    )
+  )
+)
+```
+
+Once we have `coflatten` the implementation of `coflatMap` follows in a straightforward manner by simply executing `coflatten` then `map`. 
+
+Now that FocusedGrid is a Comonad, what can we do with it. Well note the function signature for the passed in function is `FocusedGrid[A] => B`. That means we can write a function that looks at the whole grid and lets do a calculation _from the point of view of the focus_ and create a single value from that `B`, which will be the new value of the final grid at that position.
+
+
+
+## References
+
+https://bartoszmilewski.com/2017/01/02/comonads/
+https://eli-jordan.github.io/2018/02/16/life-is-a-comonad/
+https://leanpub.com/fpmortals/read#leanpub-auto-co-things
