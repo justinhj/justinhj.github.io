@@ -253,7 +253,70 @@ Once we have `coflatten` the implementation of `coflatMap` follows in a straight
 
 Now that FocusedGrid is a Comonad, what can we do with it. Well note the function signature for the passed in function is `FocusedGrid[A] => B`. That means we can write a function that looks at the whole grid and lets do a calculation _from the point of view of the focus_ and create a single value from that `B`, which will be the new value of the final grid at that position.
 
+That lets us do things like image processing. For example to smooth an image (or any noisy data set) we can set each grid element to the average of itself and its neighbours. We can implement localSum as a function that takes a FocusedGrid of Int and returns a single Int as follows.
 
+```scala
+  // Get the sum of the values around the focus
+  def localSum(fg : FocusedGrid[Int]) : Int = {  
+    val points = List(-1,0,1)
+    Applicative[List].map2(points,points){case (a : Tuple2[Int,Int]) => identity(a)}.filter{
+      case (0,0) => false
+      case _ => true
+    }.map(coord => getAt(fg, coord |+| fg.focus)).sum
+  }
+```
+
+The helper function getAt takes care of handling when we go over the edges of the grid and simply returns zero in those cases. In my example code you can run the program with any png file and it will run the box filter over it to produce the smoothed version. Other filters can be implemented with the same technique such as a Guassian filter. More details here. [TODO](TODO).
+
+##  Comonads for Life
+
+With a couple of small changes our image processing algorithm can be put to work to simulate the ... see [TODO](conways game of life wiki)
+
+In order to animate the game in presentable manner in a regular terminal we can use a combination of unicode characters, ansi control commands and the Cats Show typeclass.
+
+```scala
+  implicit def focusedGridShow[A : Show] = new Show[FocusedGrid[A]] {
+    def show(fg: FocusedGrid[A]): String = {
+      fg.grid.map{
+        row => row.iterator.map(_.show).mkString("")
+      }.mkString("\n")
+    }
+  }
+```
+
+We need a simple function to convert the 0's and 1's of our life simulation with more attractive characters.
+
+```scala
+ def prettify(i : Int) : Char = {
+    i match {
+      case 1 => 0x2593.toChar
+      case 0 => 0x2591.toChar
+    }
+  }
+  
+FocusedGrid((0,0), Vector(Vector(1,1,1),Vector(1,1,0),Vector(0,0,0))).map(prettify).show 
+▓▓▓
+▓▓░
+░░░
+```
+
+Since Conway's rules of life involve simply counting the number of neighbours, our localSum function already does that since the cells are only 1's or 0's. So we can make a single simulation step function in terms of localSum as follows.
+
+```scala
+  def conwayStep(fg: FocusedGrid[Int]) : Int = {
+    val liveNeighbours = localSum(fg)
+    val live = getAt(fg, fg.focus)
+
+    if(live == 1) {
+      if(liveNeighbours >= 2 && liveNeighbours <=3) 1 else 0
+    }
+    else {
+      if(liveNeighbours == 3) 1 else 0 
+    }
+  }
+```
+
+Note that the function getAt here is written to handle wrapping 
 
 ## References
 
