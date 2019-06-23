@@ -58,7 +58,7 @@ Aside from map, Monads must implement `pure` which lifts a pure value of type `A
 // List[Int] = List(10)
 ```
 
-`flatmap`, as you can see from the types, takes a pure value `A` in a context `F` and applies a user supplied function to it. The function has the signature `A => F[B]`; in other words functions that take a pure value and lift them into the context. The return value is the new pure value `B` lifted into that same `F` context.
+`flatmap`, as you can see from the types, takes a pure value `A` in a context `F` and applies a user supplied function to it. The function has the signature `A => F[B]`; in other words functions that take a pure value and lifts them into the context. The return value is the new pure value `B` lifted into that same `F` context.
 
 Concretely, imagine a function that takes an integer and returns the digits of the string as a list. That function would match the signature `A => F[B]`.
 
