@@ -151,7 +151,7 @@ nel1.coflatten
    
 One of the comonad laws is the left identity which specifies `fa.coflatten(_.extract) <-> fa`. (All of the laws can be checked using the [ComonadLaws](https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala) in Cats). You can see that this makes sense in terms of the implementation of NonEmptyList above. 
 
-Once we have the `coflatten` implementation for a type we can implement `coflatMap`. Based on the signature `def coflatMap[A, B](fa: F[A])(f: F[A] => B): F[B]` you can see that, just like `extract`, we have just reverse the direction of data flow from `A => F[B]` to `F[A] => B`. That means the caller of the function is going provide a function that gets to look at each suffix of the NonEmptyList and comvine that to a single value of type `B`. Those values are returned to the user in a new NonEmptyList. For example taking the size of a NonEmptyList matches the type signature.
+Once we have the `coflatten` implementation for a type we can implement `coflatMap`. Based on the signature `def coflatMap[A, B](fa: F[A])(f: F[A] => B): F[B]` you can see that, just like `extract`, we have just reverse the direction of data flow from `A => F[B]` to `F[A] => B`. That means the caller of the function is going provide a function that gets to look at each suffix of the NonEmptyList and combine that to a single value of type `B`. Those values are returned to the user in a new NonEmptyList. For example taking the size of a NonEmptyList matches the type signature.
 
 ```scala
 NonEmptyList.of(1,2, 3, 4, 5).coflatMap(_.size) 
@@ -264,7 +264,7 @@ The full implementation can be found here: [FocusedGrid.scala](https://github.co
 
 We can map image data directly to our FocusedGrid data type, and then use it to do image processing. A simple example is a box filter, which can be used to smooth out noise in images. In this implementation, which you can find in the file [ImageProcessor.scala](https://github.com/justinhj/comonad/blob/blog-final-1/src/main/scala/org/justinhj/ImageProcessor.scala), we will load an image file, copy the image data to a FocusedGrid, and then write the filter using the function signature `FocusedGrid[(Int,Int,Int) => (Int,Int,Int)`. Note that we represent image pixels as a tuple containing the red, green and blue components.
 
-Here's the implemetation of boxfilter. You pass in the width of the filter and it will then average the pixels for a square of the provide width (and height) and set each pixel to that average. The function `localSum` handles the summing the values found around the current focus, and then we create the new pixel by dividing to get the mean.
+Here's the implementation of boxfilter. You pass in the width of the filter and it will then average the pixels for a square of the provide width (and height) and set each pixel to that average. The function `localSum` handles the summing the values found around the current focus, and then we create the new pixel by dividing to get the mean.
 
 ```scala
   def boxFilter(width: Int): FocusedGrid[(Int, Int, Int)] => (Int, Int, Int) = { fg =>
@@ -333,7 +333,7 @@ FocusedGrid((0,0), Vector(Vector(1,1,1),Vector(1,1,0),Vector(0,0,0))).map(pretti
 
 Note that code for life has a slightly different implementation of `localSum` which does not include the current focus point, we only want to know about the neighbours. Apart from that the code is very similar to the image processing example, since if we use 0 for dead and 1 for living, we can count living neighbours using `localSum`.
 
-With everything in place we can implement the core of the game of life algorith with just a few lines of code.
+With everything in place we can implement the core of the game of life algorithm with just a few lines of code.
 
 ```scala
   def conwayStep(fg: FocusedGrid[Int]) : Int = {
