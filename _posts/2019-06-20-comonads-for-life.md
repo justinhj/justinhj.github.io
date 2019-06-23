@@ -11,10 +11,12 @@ tags:
 - cats
 ---
 
-This post is aimed at the Scala programmer with some experience pure functional programming and [Cats](http://TODO.com). We will look at Comonads, a type class closely related to Monads, firstly from an abstract point of view and then a more concrete example that allows us to do things like image processing and implementing Conway's Game of Life animated in the terminal.
+![Comonads](/../images/comonads.jpg "Comonads")
+
+This post is aimed at the Scala programmer with some experience pure functional programming with the Cats fp library: [https://typelevel.org/cats/](https://typelevel.org/cats/). We will look at Comonads, a type class closely related to Monads, firstly from an abstract point of view and progressing to a a couple of practical, yet simple, examples of using Comonads for interesting applications.
 
 _The code for this post can be found here:_
-- [https://github.com/justinhj/comonad](https://github.com/justinhj/comonad) TODO
+- [https://github.com/justinhj/comonad](https://github.com/justinhj/comonad/tree/blog-final-1)
 
 ## Monads
 
@@ -147,7 +149,7 @@ nel1.coflatten
 // )
 ```   
    
-One of the comonad laws [TODO link](TODO) is the left identity which specifies `fa.coflatMap(_.extract) <-> fa`. (All of the laws can be checked using the ComonadLaws in Cats) TODO. You can see that this makes sense in terms of the implementation of NonEmptyList above. 
+One of the comonad laws is the left identity which specifies `fa.coflatten(_.extract) <-> fa`. (All of the laws can be checked using the [ComonadLaws](https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala) in Cats). You can see that this makes sense in terms of the implementation of NonEmptyList above. 
 
 Once we have the `coflatten` implementation for a type we can implement `coflatMap`. Based on the signature `def coflatMap[A, B](fa: F[A])(f: F[A] => B): F[B]` you can see that, just like `extract`, we have just reverse the direction of data flow from `A => F[B]` to `F[A] => B`. That means the caller of the function is going provide a function that gets to look at each suffix of the NonEmptyList and comvine that to a single value of type `B`. Those values are returned to the user in a new NonEmptyList. For example taking the size of a NonEmptyList matches the type signature.
 
@@ -160,44 +162,47 @@ Notice that when you flatMap a list, the mapping part looks at the list one elem
 
 ### Comonad laws
 
-The following laws must be obeyed by a Comonad.
-
-Left identity states that when we coflatmap an `F[A]` using the extract function, we get the `F[A]` back. Demonstrating this with NonEmptyList below shows how it works; now the reasoning behind having all the suffixes of a list makes sense as the coflatten operation. Since extract takes the head, we are essentially taking all the heads of all the tails, which returns the original list.
+In this section I'll demonstrate each of the Comonad laws in code using `NonEmptyList`.
 
 ```scala
-val nel1 = NonEmptyList.of(1,2,3,4,5) 
-
-nel1.coflatMap(_.extract) == nel1 
-// Boolean = true
-
-Right identity states that coflatMapping using some function `f`, then calling extract gives the same result as simply calling `f(a)`.
+val fa = NonEmptyList.of(1,2,3,4) 
+// fa: NonEmptyList[Int] = NonEmptyList(1, List(2, 3, 4))
+```
+Left identity: `fa.coflatten.extract == fa`
 
 ```scala
-nel1.coflatMap(a => a.size).extract == nel1.size 
+fa.coflatten.extract == fa 
 // Boolean = true
 ```
 
-Finally, there is an associativity law (a similar one exists for Monad's flatMap) `fa.coflatMap(f).coflatMap(g) <-> fa.coflatMap(x => g(x.coflatMap(f)))`.
+Right identity: `fa.coflatmap(extract) == fa`
 
 ```scala
-// fa.coflatMap(f).coflatMap(g) <-> fa.coflatMap(x => g(x.coflatMap(f)))
-// TODO need simple f and g
+fa.coflatMap(_.extract) == fa 
+// Boolean = true
 ```
 
-Cats contains implementations of checks for these laws which can be found here: [https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala](https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala)
-
-## Comonads for image processing
-
-Finally, I'll show the development of a data type `FocusedGrid` which consists of a 2d grid of values of some type `A` and a focus point which will be a Tuple2[Int, Int]. This focus point specifies a row and column of the grid. 
+Associativity: `fa.coflatten.coflatten == fa.coflatmap(coflatten)`
 
 ```scala
-  case class FocusedGrid[A](focus: Tuple2[Int,Int], grid : Vector[Vector[A]])
+fa.coflatten.coflatten == fa.coflatMap(_.coflatten) 
+// Boolean = true
 ```
 
-Next we implement the Comanad (and Functor) operations for our new type.
+Cats contains implementations of checks for these laws which can be found here: [https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala](https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala) You can checkout my last post for how to setup a Scalacheck test for your own datatypes using Cats [Monoids for Production](/2019/06/10/monoids-for-production.html)
+
+## Image processing with a Comonad
+
+I created a data type, `FocusedGrid`, which consists of a 2d grid of values of some type `A` and a focus point which will be a `Tuple2[Int, Int]`. This focus point specifies a row and column of the grid. 
 
 ```scala
-  implicit val focusedGridComonad = new Comonad[FocusedGrid] {
+case class FocusedGrid[A](focus: Tuple2[Int,Int], grid : Vector[Vector[A]])
+```
+
+Next we implement the Comomad (and Functor) operations for our new type.
+
+```scala
+implicit val focusedGridComonad = new Comonad[FocusedGrid] {
     override def map[A, B](fa: FocusedGrid[A])(f: A => B) : FocusedGrid[B] = {
       FocusedGrid(fa.focus, fa.grid.map(row => row.map(a => f(a))))
     }
@@ -217,12 +222,12 @@ Next we implement the Comanad (and Functor) operations for our new type.
 
     // extract simply returns the A at the focus
     def extract[A](fa: FocusedGrid[A]): A = fa.grid(fa.focus._1)(fa.focus._2)
-  }
+}
 ```
 
-As you can see, `extract` is the simplest operation and simply returns the grid value at the focus.
+`extract` is the simplest operation and simply returns the grid value at the focus.
 
-Looking at the type signature for `coflatten` you can see that it does what we expect; creates a FocusedGrid of FocusedGrid's. We iterate through each row and column using mapWithIndex so that we can set the appropriate focus at each point. For a small grid the output looks like this. Note that the grid itself will not be duplicated in memory for each Vector, just a reference will be added. What is different at each row and column is the focus.
+Looking at the type signature for `coflatten` you can see that it does what we expect; creates a FocusedGrid of FocusedGrids. We iterate through each row and column using `mapWithIndex` so that we can set the appropriate focus at each point. Note that the grid itself will not be duplicated in memory for each Vector, just a reference will be added. What is different at each row and column is the focus. Here's an example of a coflattened FocusedGrid.
 
 ```scala
 FocusedGrid((0,0), Vector(Vector(5,3,0),Vector(3,1,0),Vector(0,0,0))).coflatten
@@ -249,28 +254,54 @@ FocusedGrid(
 )
 ```
 
-Once we have `coflatten` the implementation of `coflatMap` follows in a straightforward manner by simply executing `coflatten` then `map`. 
+Once `coflatten` is available, the implementation of `coflatMap` follows by simply executing `coflatten` then `map`. Notice how this is the reverse of Monad's flatmap, which maps first and then flattens.
 
-Now that FocusedGrid is a Comonad, what can we do with it. Well note the function signature for the passed in function is `FocusedGrid[A] => B`. That means we can write a function that looks at the whole grid and lets do a calculation _from the point of view of the focus_ and create a single value from that `B`, which will be the new value of the final grid at that position.
+Now that FocusedGrid is a Comonad, what can we do with it? Note the function signature for `f` is `FocusedGrid[A] => B`. That means we can write a function that looks at the whole grid and lets do a calculation _from the point of view of the focus_ and create a single value of type `B`, which will be the new value of the final grid at that position.
 
-That lets us do things like image processing. For example to smooth an image (or any noisy data set) we can set each grid element to the average of itself and its neighbours. We can implement localSum as a function that takes a FocusedGrid of Int and returns a single Int as follows.
+The full implementation can be found here: [FocusedGrid.scala](https://github.com/justinhj/comonad/blob/blog-final-1/src/main/scala/org/justinhj/FocusedGrid.scala)
+
+### Image smoothing
+
+We can map image data directly to our FocusedGrid data type, and then use it to do image processing. A simple example is a box filter, which can be used to smooth out noise in images. In this implementation, which you can find in the file [ImageProcessor.scala](https://github.com/justinhj/comonad/blob/blog-final-1/src/main/scala/org/justinhj/ImageProcessor.scala), we will load an image file, copy the image data to a FocusedGrid, and then write the filter using the function signature `FocusedGrid[(Int,Int,Int) => (Int,Int,Int)`. Note that we represent image pixels as a tuple containing the red, green and blue components.
+
+Here's the implemetation of boxfilter. You pass in the width of the filter and it will then average the pixels for a square of the provide width (and height) and set each pixel to that average. The function `localSum` handles the summing the values found around the current focus, and then we create the new pixel by dividing to get the mean.
 
 ```scala
-  // Get the sum of the values around the focus
-  def localSum(fg : FocusedGrid[Int]) : Int = {  
-    val points = List(-1,0,1)
-    Applicative[List].map2(points,points){case (a : Tuple2[Int,Int]) => identity(a)}.filter{
-      case (0,0) => false
-      case _ => true
-    }.map(coord => getAt(fg, coord |+| fg.focus)).sum
+  def boxFilter(width: Int): FocusedGrid[(Int, Int, Int)] => (Int, Int, Int) = { fg =>
+    val widthSqr = width * width
+    val sum = localSum(fg, (255, 255, 255), width)
+    ((sum._1 / widthSqr).toInt, (sum._2 / widthSqr).toInt, (sum._3 / widthSqr).toInt)
   }
 ```
 
-The helper function getAt takes care of handling when we go over the edges of the grid and simply returns zero in those cases. In my example code you can run the program with any png file and it will run the box filter over it to produce the smoothed version. Other filters can be implemented with the same technique such as a Guassian filter. More details here. [TODO](TODO).
+Here is the original image and some smoothed examples at various box filter sizes:
 
-##  Comonads for Life
+![Original](/../images/girl.png "Original")
 
-With a couple of small changes our image processing algorithm can be put to work to simulate the ... see [TODO](conways game of life wiki)
+![Filter size 5](/../images/girlsmoothed5.png "Filter size 5")
+
+![Filter size 15](/../images/girlsmoothed15.png "Filter size 15")
+
+We can do any image transformation that requires access to the whole image to make some per-pixel change. Here's another example to mirror the image along the vertical axis.
+
+```scala
+  def mirrorHorizontal(fg: FocusedGrid[(Int, Int, Int)]): (Int, Int, Int) = {
+    val mirrorX = (fg.grid(0).size - 1) - fg.focus._2
+    fg.grid(fg.focus._1)(mirrorX)
+  }
+```
+
+One of the benefits of functional programming is composability. We can sequence coflatMaps and maps together to generate new images. For example we would smooth and flip an image using `focusedGrid.coflatMap(boxFilter(9)).coflatMap(mirrorHorizontal)`, which gives the following image.
+
+![Sequence](/../images/processedgirl.png "Sequence")
+
+## Comonads for (Conway's) Life
+
+Code for this section can be found here: [Conway.scala](https://github.com/justinhj/comonad/blob/blog-final-1/src/main/scala/org/justinhj/Conway.scala) 
+
+![Conway](/../images/conway.gif "Conway Gliders")
+
+With a couple of small changes our image processing algorithm can be put to work to simulate the zero player game Conway's Life. See the [Wiki for Conway's Life](http://www.conwaylife.com/wiki/Main_Page) for more details. For a TL;DR the game involves a starting grid of cells which are alive (0) or dead (1). At each step we count the neighbours of each cell to see if it will be alive or dead in the next generation.
 
 In order to animate the game in presentable manner in a regular terminal we can use a combination of unicode characters, ansi control commands and the Cats Show typeclass.
 
@@ -284,7 +315,7 @@ In order to animate the game in presentable manner in a regular terminal we can 
   }
 ```
 
-We need a simple function to convert the 0's and 1's of our life simulation with more attractive characters.
+We need a simple function to convert the 0's and 1's of our life simulation with more attractive characters. By using `map` to apply the `prettify` then showing the grid we get a more pleasing representation than the zeros and ones.
 
 ```scala
  def prettify(i : Int) : Char = {
@@ -300,7 +331,9 @@ FocusedGrid((0,0), Vector(Vector(1,1,1),Vector(1,1,0),Vector(0,0,0))).map(pretti
 ░░░
 ```
 
-Since Conway's rules of life involve simply counting the number of neighbours, our localSum function already does that since the cells are only 1's or 0's. So we can make a single simulation step function in terms of localSum as follows.
+Note that code for life has a slightly different implementation of `localSum` which does not include the current focus point, we only want to know about the neighbours. Apart from that the code is very similar to the image processing example, since if we use 0 for dead and 1 for living, we can count living neighbours using `localSum`.
+
+With everything in place we can implement the core of the game of life algorith with just a few lines of code.
 
 ```scala
   def conwayStep(fg: FocusedGrid[Int]) : Int = {
@@ -316,10 +349,27 @@ Since Conway's rules of life involve simply counting the number of neighbours, o
   }
 ```
 
-Note that the function getAt here is written to handle wrapping 
+Note that the function `getAt` here is written to handle wrapping around the edges of the grid.
+
+## Summary
+
+In this post we've seen how monads and comonads are related, what the operations and laws of comonads are, and how they can be used to make useful, composable programs.
 
 ## References
 
-https://bartoszmilewski.com/2017/01/02/comonads/
-https://eli-jordan.github.io/2018/02/16/life-is-a-comonad/
-https://leanpub.com/fpmortals/read#leanpub-auto-co-things
+Bartosz Milewski has this great series of posts "Categories for Programmers"
+[https://bartoszmilewski.com/2017/01/02/comonads/](https://bartoszmilewski.com/2017/01/02/comonads/)
+
+I came across this post by Eli Jordan when I'd almost finished writing this one and saw that he already covered a lot of the same ground; especially interesting is his use of Store which is the Comonad version of the State monad
+[https://eli-jordan.github.io/2018/02/16/life-is-a-comonad/](https://eli-jordan.github.io/2018/02/16/life-is-a-comonad/)
+
+Read about Comonads in the Cats API documentation
+[https://typelevel.org/cats/api/cats/Comonad.html](https://typelevel.org/cats/api/cats/Comonad.html)
+
+From 2015, Red Book Runar has a very detailed introduction to Comonads and their laws
+[http://blog.higher-order.com/blog/2015/06/23/a-scala-comonad-tutorial/](http://blog.higher-order.com/blog/2015/06/23/a-scala-comonad-tutorial/)
+
+Otfried Cheong has a great intro to image processing with Scala, utilizing the standard Java library
+[http://otfried.org/scala/image.html](http://otfried.org/scala/image.html)
+
+
