@@ -299,7 +299,7 @@ One of the benefits of functional programming is composability. We can sequence 
 
 Code for this section can be found here: [Conway.scala](https://github.com/justinhj/comonad/blob/blog-final-1/src/main/scala/org/justinhj/Conway.scala) 
 
-![Conway](/../images/conway.gif "Conway Gliders")
+<iframe width="560" height="315" src="https://www.youtube.com/embed/8UxwupNI4As" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 With a couple of small changes our image processing algorithm can be put to work to simulate the zero player game Conway's Life. See the [Wiki for Conway's Life](http://www.conwaylife.com/wiki/Main_Page) for more details. For a TL;DR the game involves a starting grid of cells which are alive (0) or dead (1). At each step we count the neighbours of each cell to see if it will be alive or dead in the next generation.
 
@@ -371,5 +371,3 @@ From 2015, Red Book Runar has a very detailed introduction to Comonads and their
 
 Otfried Cheong has a great intro to image processing with Scala, utilizing the standard Java library
 [http://otfried.org/scala/image.html](http://otfried.org/scala/image.html)
-
-
