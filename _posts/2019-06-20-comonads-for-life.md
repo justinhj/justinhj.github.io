@@ -16,7 +16,7 @@ tags:
 This post is aimed at the Scala programmer with some experience pure functional programming with the Cats fp library: [https://typelevel.org/cats/](https://typelevel.org/cats/). We will look at Comonads, a type class closely related to Monads, firstly from an abstract point of view and progressing to a a couple of practical, yet simple, examples of using Comonads for interesting applications.
 
 _The code for this post can be found here:_
-- [https://github.com/justinhj/comonad](https://github.com/justinhj/comonad/tree/blog-final-1)
+- [https://github.com/justinhj/comonad](https://github.com/justinhj/comonad/tree/blog-final-2)
 
 ## Monads
 
@@ -211,7 +211,7 @@ implicit val focusedGridComonad = new Comonad[FocusedGrid] {
       val grid = fa.grid.mapWithIndex((row, ri) => 
         row.mapWithIndex((col, ci) => 
           FocusedGrid((ri,ci), fa.grid)))
-      FocusedGrid((0,0), grid)
+      FocusedGrid(fa.focus, grid)
     }
 
     // Gives us all of the possible foci for this grid
@@ -258,11 +258,11 @@ Once `coflatten` is available, the implementation of `coflatMap` follows by simp
 
 Now that FocusedGrid is a Comonad, what can we do with it? Note the function signature for `f` is `FocusedGrid[A] => B`. That means we can write a function that looks at the whole grid and lets do a calculation _from the point of view of the focus_ and create a single value of type `B`, which will be the new value of the final grid at that position.
 
-The full implementation can be found here: [FocusedGrid.scala](https://github.com/justinhj/comonad/blob/blog-final-1/src/main/scala/org/justinhj/FocusedGrid.scala)
+The full implementation can be found here: [FocusedGrid.scala](https://github.com/justinhj/comonad/blob/blog-final-2/src/main/scala/org/justinhj/FocusedGrid.scala)
 
 ### Image smoothing
 
-We can map image data directly to our FocusedGrid data type, and then use it to do image processing. A simple example is a box filter, which can be used to smooth out noise in images. In this implementation, which you can find in the file [ImageProcessor.scala](https://github.com/justinhj/comonad/blob/blog-final-1/src/main/scala/org/justinhj/ImageProcessor.scala), we will load an image file, copy the image data to a FocusedGrid, and then write the filter using the function signature `FocusedGrid[(Int,Int,Int) => (Int,Int,Int)`. Note that we represent image pixels as a tuple containing the red, green and blue components.
+We can map image data directly to our FocusedGrid data type, and then use it to do image processing. A simple example is a box filter, which can be used to smooth out noise in images. In this implementation, which you can find in the file [ImageProcessor.scala](https://github.com/justinhj/comonad/blob/blog-final-2/src/main/scala/org/justinhj/ImageProcessor.scala), we will load an image file, copy the image data to a FocusedGrid, and then write the filter using the function signature `FocusedGrid[(Int,Int,Int) => (Int,Int,Int)`. Note that we represent image pixels as a tuple containing the red, green and blue components.
 
 Here's the implementation of boxfilter. You pass in the width of the filter and it will then average the pixels for a square of the provide width (and height) and set each pixel to that average. The function `localSum` handles the summing the values found around the current focus, and then we create the new pixel by dividing to get the mean.
 
@@ -297,7 +297,7 @@ One of the benefits of functional programming is composability. We can sequence 
 
 ## Comonads for (Conway's) Life
 
-Code for this section can be found here: [Conway.scala](https://github.com/justinhj/comonad/blob/blog-final-1/src/main/scala/org/justinhj/Conway.scala) 
+Code for this section can be found here: [Conway.scala](https://github.com/justinhj/comonad/blob/blog-final-2/src/main/scala/org/justinhj/Conway.scala) 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8UxwupNI4As" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -371,3 +371,4 @@ From 2015, Red Book Runar has a very detailed introduction to Comonads and their
 
 Otfried Cheong has a great intro to image processing with Scala, utilizing the standard Java library
 [http://otfried.org/scala/image.html](http://otfried.org/scala/image.html)
+
