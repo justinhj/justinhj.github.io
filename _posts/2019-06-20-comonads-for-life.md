@@ -13,7 +13,7 @@ tags:
 
 ![Comonads](/../images/comonads.jpg "Comonads")
 
-This post is aimed at the Scala programmer with some experience pure functional programming with the Cats fp library: [https://typelevel.org/cats/](https://typelevel.org/cats/). We will look at Comonads, a type class closely related to Monads, firstly from an abstract point of view and progressing to a a couple of practical, yet simple, examples of using Comonads for interesting applications.
+This post is aimed at the Scala programmer with some experience pure functional programming with the Cats fp library: [https://typelevel.org/cats/](https://typelevel.org/cats/). We will look at Comonads, a type class closely related to Monads, firstly from an abstract point of view and progressing to a couple of practical, yet simple, examples of using Comonads for interesting applications.
 
 _The code for this post can be found here:_
 - [https://github.com/justinhj/comonad](https://github.com/justinhj/comonad/tree/blog-final-2)
