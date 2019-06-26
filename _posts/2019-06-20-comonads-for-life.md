@@ -22,7 +22,7 @@ _The code for this post can be found here:_
 
 To explain comonads, a good place to start is how they relate to monads. In order to get from monad to comonad, we define operations that are the `dual` of those in monad. By dual, we mean that the direction of the data flows is reversed.
 
-The Functor type class has a single operation `map` which lets us take a pure function that converts pure values `A` to pure values of type `B`, and se you can see from the type signature it does so in some context `F`. Examples of a context could be lists, futures (tasks, ios), options. For our simple example we will consider lists of things as our context but bear in mind that contexts are not always simple containers.
+The Functor type class has a single operation `map` which lets us take a pure function that converts pure values `A` to pure values of type `B`, and as you can see from the type signature it does so in some context `F`. Examples of a context could be lists, futures (tasks, ios), options. For our simple example we will consider lists of things as our context but bear in mind that contexts are not always simple containers.
 
 ```scala
 trait Functor[F[_]] {
@@ -136,7 +136,7 @@ I found `extract` is simple to understand, but `coflatMap` takes some mental gym
 def coflatten[A](fa: F[A]): F[F[A]]
 ```
 
-When implementing Comonad's for our own data types we need to make a decision on how to take a structure and create a nested version of it. This is not totally arbitrary, as Comonads have a set of laws like Monads, and so our implementation must satisfy those laws. As we'll see shortly, a way to make a lawful Comonad for NonEmptyList is for the `coflatten` to create a `NonEmptyList[NonEmptyList[A]]]` which is the list of all of the original list and all of it's suffixes (or tails).
+When implementing Comonad's for our own data types we need to make a decision on how to take a structure and create a nested version of it. This is not totally arbitrary, as Comonads have a set of laws like Monads, and so our implementation must satisfy those laws. As we'll see shortly, a way to make a lawful Comonad for NonEmptyList is for the `coflatten` to create a `NonEmptyList[NonEmptyList[A]]]` which is a list of the original list and all of its suffixes (tails).
 
 ```scala
 val nel1 = NonEmptyList.of(1,2,3,4,5)  
@@ -151,7 +151,7 @@ nel1.coflatten
    
 One of the comonad laws is the left identity which specifies `fa.coflatten(_.extract) <-> fa`. (All of the laws can be checked using the [ComonadLaws](https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala) in Cats). You can see that this makes sense in terms of the implementation of NonEmptyList above. 
 
-Once we have the `coflatten` implementation for a type we can implement `coflatMap`. Based on the signature `def coflatMap[A, B](fa: F[A])(f: F[A] => B): F[B]` you can see that, just like `extract`, we have just reverse the direction of data flow from `A => F[B]` to `F[A] => B`. That means the caller of the function is going provide a function that gets to look at each suffix of the NonEmptyList and combine that to a single value of type `B`. Those values are returned to the user in a new NonEmptyList. For example taking the size of a NonEmptyList matches the type signature.
+Once we have the `coflatten` implementation for a type we can implement `coflatMap`. Based on the signature `def coflatMap[A, B](fa: F[A])(f: F[A] => B): F[B]` you can see that, just like `extract`, we have just reversed the direction of data flow from `A => F[B]` to `F[A] => B`. That means the caller of the function is going provide a function that gets to look at each suffix of the NonEmptyList and combine each to a single value of type `B`. Those values are returned to the user in a new NonEmptyList. For example taking the size of a NonEmptyList matches the type signature.
 
 ```scala
 NonEmptyList.of(1,2, 3, 4, 5).coflatMap(_.size) 
