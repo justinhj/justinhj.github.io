@@ -10,10 +10,11 @@ tags:
 - Hacker News API
 ---
 
+Updated June 29th 2019 to work with latest ZIO version (1.0.0-RC8-12)
 
 This post has accompanying source code on Github:
 
-- [https://github.com/justinhj/ziohnapi/tree/blog-2019-04-07-a](https://github.com/justinhj/ziohnapi/tree/blog-2019-04-07-a)
+- [https://github.com/justinhj/ziohnapi/](https://github.com/justinhj/ziohnapi/tree/blog-2019-04-07-b)
 
 Hacker News is a news aggregation site which provides a simple API over http, for which the documentation can be found [here](https://github.com/HackerNews/API). Over several blog posts I have been writing programs that interact with the API as a way of exploring new techniques in Scala pure functional programming.
 
@@ -36,7 +37,7 @@ The example code consists of three example programs. The first is based on my pr
 
 ## Showing front page stories
 
-[ShowStories.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/main/scala/examples/ShowStories.scala) is one of the examples include that simply gets the top stories (a list of story IDs ranked by their position on the Hacker News page) and then displays them in the console...
+[ShowStories.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-b/src/main/scala/examples/ShowStories.scala) is one of the examples include that simply gets the top stories (a list of story IDs ranked by their position on the Hacker News page) and then displays them in the console...
 
 ```scala
     val runtime = new LiveRuntime {}
@@ -85,7 +86,7 @@ An Environment for the runtime is an aggregation of the modules that make up you
 
 Blocking is module that allows blocking operations to use a special threadpool, so that blocking calls don't deplete threads from your main thread pool. Effects can be made to run on the blocking pool just by wrapping them as follows:
 
-[HttpClient.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/main/scala/org/justinhj/httpclient/HttpClient.scala)
+[HttpClient.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-b/src/main/scala/org/justinhj/httpclient/HttpClient.scala)
 
 ```scala
   blocking(ZIO.effect(requestSync(url)))
@@ -95,7 +96,7 @@ Blocking is module that allows blocking operations to use a special threadpool, 
 
 The nice thing about HttpClient being a module is that I can test my code without a web connection, or without hitting the real Hacker News by swapping the real implementation with a test one. You can see that in action in the test suite:
 
-[HNApiTest.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/test/scala/org/justinhj/HNApiTest.scala) - sample test suite
+[HNApiTest.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-b/src/test/scala/org/justinhj/HNApiTest.scala) - sample test suite
 ```scala
   // The test http runtime
   trait HttpClientTest extends HttpClient {
@@ -138,7 +139,7 @@ ZIO allows a large number of concurrent operations by using an implementation of
 
 This function is used in the code below to show all the comments for a given news story (by its ID):
 
-[ShowStoryComments.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/main/scala/examples/ShowStoryComments.scala)
+[ShowStoryComments.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-b/src/main/scala/examples/ShowStoryComments.scala)
 
 ```scala
     val program = (for (
@@ -156,7 +157,7 @@ This function is used in the code below to show all the comments for a given new
 
 Another feature of ZIO is the scheduler data type. Again, the API is composed of simple operations that you can compose together to make more complex overall behaviours. In this simple example we grab the latest story or comment submitted to Hacker News every 10 seconds until the user quits.
 
-[LastItem.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-a/src/main/scala/examples/LastItem.scala)
+[LastItem.scala](https://github.com/justinhj/ziohnapi/blob/blog-2019-04-07-b/src/main/scala/examples/LastItem.scala)
 
 ```scala
     val showLastItem = for (
