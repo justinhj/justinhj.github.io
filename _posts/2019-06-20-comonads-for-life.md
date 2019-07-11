@@ -18,6 +18,9 @@ This post is aimed at the Scala programmer with some experience pure functional 
 _The code for this post can be found here:_
 - [https://github.com/justinhj/comonad](https://github.com/justinhj/comonad/tree/blog-final-2)
 
+_I did a presentation based on this post, for which you can check out the slides here:_
+- [https://justinhj.github.io/comonad-reveal/](https://justinhj.github.io/comonad-reveal/)
+
 ## Monads
 
 To explain comonads, a good place to start is how they relate to monads. In order to get from monad to comonad, we define operations that are the `dual` of those in monad. By dual, we mean that the direction of the data flows is reversed.
