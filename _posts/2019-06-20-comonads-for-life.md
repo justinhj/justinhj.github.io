@@ -152,7 +152,7 @@ nel1.coflatten
 // )
 ```   
    
-One of the comonad laws is the left identity which specifies `fa.coflatten(_.extract) <-> fa`. (All of the laws can be checked using the [ComonadLaws](https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala) in Cats). You can see that this makes sense in terms of the implementation of NonEmptyList above. 
+One of the comonad laws is the left identity which specifies `fa.coflatten.extract <-> fa`. (All of the laws can be checked using the [ComonadLaws](https://github.com/typelevel/cats/blob/master/laws/src/main/scala/cats/laws/ComonadLaws.scala) in Cats). You can see that this makes sense in terms of the implementation of NonEmptyList above. 
 
 Once we have the `coflatten` implementation for a type we can implement `coflatMap`. Based on the signature `def coflatMap[A, B](fa: F[A])(f: F[A] => B): F[B]` you can see that, just like `extract`, we have just reversed the direction of data flow from `A => F[B]` to `F[A] => B`. That means the caller of the function is going provide a function that gets to look at each suffix of the NonEmptyList and combine each to a single value of type `B`. Those values are returned to the user in a new NonEmptyList. For example taking the size of a NonEmptyList matches the type signature.
 
