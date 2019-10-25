@@ -286,7 +286,7 @@ We stored the players inventory as a Map, and we can easily use Monoids to perfo
 
 ![OilProduction](/../images/oilproduction.png)
 
-What we don't want to do is have to constantly update the players production item count at some discrete interal. For one, that would be very costly on our servers, and for another we may want to show the resources increasing or decreasing in real time on the client.
+What we don't want to do is have to constantly update the players production item count at some discrete interval. For one, that would be very costly on our servers, and for another we may want to show the resources increasing or decreasing in real time on the client.
 
 In order to model this we can simply store the starting amount (this will be zero for a new oil drill), and the players rate of production. We also store the time the production began (when the oil drill is built).
 
