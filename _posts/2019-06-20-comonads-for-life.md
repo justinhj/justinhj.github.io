@@ -15,17 +15,17 @@ tags:
 
 This post is aimed at the Scala programmer with some experience pure functional programming with the Cats fp library: [https://typelevel.org/cats/](https://typelevel.org/cats/). We will look at Comonads, a type class closely related to Monads, firstly from an abstract point of view and progressing to a couple of practical, yet simple, examples of using Comonads for interesting applications.
 
-_The code for this post can be found here:_
+_Example code used in this post is from this github project:_
 - [https://github.com/justinhj/comonad](https://github.com/justinhj/comonad/tree/blog-final-2)
 
-_I did a presentation based on this post, for which you can check out the slides here:_
-- [https://justinhj.github.io/comonad-reveal/](https://justinhj.github.io/comonad-reveal/)
+_Presentation based on this post from the Vancouver Scala Meetup:_
+- [https://justinhj.github.io/comonad-sm-reveal/](https://justinhj.github.io/comonad-sm-reveal/)
 
 ## Monads
 
 To explain comonads, a good place to start is how they relate to monads. In order to get from monad to comonad, we define operations that are the `dual` of those in monad. By dual, we mean that the direction of the data flows is reversed.
 
-The Functor type class has a single operation `map` which lets us take a pure function that converts pure values `A` to pure values of type `B`, and as you can see from the type signature it does so in some context `F`. Examples of a context could be lists, futures (tasks, ios), options. For our simple example we will consider lists of things as our context but bear in mind that contexts are not always simple containers.
+The Functor type class has a single operation `map` which lets us take a pure function that converts pure values `A` to pure values of type `B`, and as you can see from the type signature it does so in some context `F`. Examples of a context could be lists, asynchronous or deferred calculations (Future, Cats Effect, ZIO, Monix Task) and options. For our simple example we will consider lists of things as our context but bear in mind that contexts are not always simple containers.
 
 ```scala
 trait Functor[F[_]] {
