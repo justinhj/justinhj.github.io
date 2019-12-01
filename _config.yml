@@ -6,9 +6,9 @@
 # 'jekyll serve'. If you change this file, please restart the server process.
 
 # Site settings
-title: Functional Justin
+title: Functional[Justin]
 email: justinhj+blog@gmail.com
-description: Justin Heyes-Jones is a British/Canadian living Vancouver, BC. He blogs about software development, emacs and pure functional programming
+description: Justin Heyes-Jones is a British/Canadian living Vancouver. He blogs about software development, emacs and pure functional programming
 url: "http://justinhj.github.io" 
 twitter_username: justinhj
 github_username:  justinhj
@@ -16,7 +16,7 @@ github_username:  justinhj
 # Build settings
 markdown: kramdown
 
-exclude: ["old"]
+exclude: ["old", "run.sh"]
 include: ["images","css"]
 
 plugins_dir:
