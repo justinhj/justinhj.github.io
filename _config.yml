@@ -16,7 +16,7 @@ github_username:  justinhj
 # Build settings
 markdown: kramdown
 
-exclude: ["old", "run.sh"]
+exclude: ["old"]
 include: ["images","css"]
 
 plugins_dir:
