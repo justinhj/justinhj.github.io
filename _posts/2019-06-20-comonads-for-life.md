@@ -1,3 +1,4 @@
+
 ---
 layout: post
 title:  Comonads for Life
@@ -110,7 +111,7 @@ map[Int,Int](List(1,2,3), a => a + 1)
 
 ## Comonads
 
-From an abstract point of view Monads allow us to chain effects, and to life pure values into effects. Let's now consider Comonads and their dual operations.
+From an abstract point of view Monads allow us to chain effects, and to lift pure values into effects. Let's now consider Comonads and their dual operations.
 
 ```scala
 trait Comonad[F[_]] extends Functor[F] {
