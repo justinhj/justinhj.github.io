@@ -11,3 +11,4 @@ auto-save-list
 tramp
 .\#*
 .DS_store
+target/

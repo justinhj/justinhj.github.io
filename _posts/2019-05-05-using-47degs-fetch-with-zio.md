@@ -15,6 +15,7 @@ tags:
 This post has accompanying source code on Github:
 
 - [https://github.com/justinhj/hnfetch/tree/zio-cats-effect](https://github.com/justinhj/hnfetch/tree/zio-cats-effect)
+_Updated to latest ZIO etc: February 23 2020_
 
 This post is an update to an ongoing series. See previous post here:
 
@@ -116,9 +117,8 @@ Rather than go to those lengths, for the purposes of just making this work I imp
 
 ## Conclusion
 
-The experience of porting code to use Cats Effect and ZIO with a library that uses an effect type as it's API was quite straightforward, and I find this style promising for the future, particularly as effects get more features and hopefully more standardised. It can get interesting to mentally juggle which typeclasses and data types you are using at any particular part of the program. 
+The experience of porting code to use Cats Effect and ZIO with a library that uses an effect type as its API was quite straightforward, and I find this style promising for the future, particularly as effects get more features and hopefully more standardised. It can get interesting to mentally juggle which typeclasses and data types you are using at any particular part of the program. 
 
 Thanks for reading!
-
 
 Copyright (C) 2019 Justin-Heyes-Jones - All Rights Reserved
