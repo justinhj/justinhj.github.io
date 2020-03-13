@@ -11,10 +11,11 @@ layout: default
     {% endif %}
   {% endcapture %}
 
+  <!-- Iterate over the tags in this post -->
   {% for post_tag in post.tags %}
-    {% for data_tag in site.data.tags %}
-      {% if data_tag.slug == post_tag %}
-        {% assign tag = data_tag %}
+    {% for my_tag in site.my_tags %}
+      {% if my_tag.slug == post_tag %}
+        {% assign tag = my_tag %}
       {% endif %}
     {% endfor %}
     {% if tag %}
@@ -47,13 +48,12 @@ layout: default
 
   <!-- <div>{{ post.tags }}</div> -->
   <!-- <div>{{ site.tags }}</div> -->
-  <div>SITE {{ site.data.tags }}</div>
-  <div>
-    {% for tag in site.my_tags %}
-      {{ tag.slug }} => {{ tag.name }}
-    {% endfor %}
-
-  </div>
+  <!-- <div>SITE {{ site.data.tags }}</div> -->
+  <!-- <div> -->
+  <!--   {% for tag in site.my_tags %} -->
+  <!--     {{ tag.slug }} => {{ tag.name }} -->
+  <!--   {% endfor %} -->
+  <!-- </div> -->
 
   <div class="post-content" itemprop="articleBody">
     {{ content }}
