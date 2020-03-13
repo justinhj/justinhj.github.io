@@ -13,6 +13,7 @@
      :publishing-directory ,(concat project-root "_posts")
      :recursive t
      :publishing-function org-html-publish-to-html
+     :section-numbers nil
      :headline-levels 4
      :html-extension "html"
      :body-only t ;; Only export section between <body> </body>

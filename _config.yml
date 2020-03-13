@@ -16,8 +16,13 @@ github_username:  justinhj
 # Build settings
 markdown: kramdown
 
-exclude: ["README.md", "org", "run.sh", ".git", "Gemfile", ".gitignore", ".DS_Store"]
+exclude: ["README.md", "org", "run.sh", ".git", "Gemfile", ".gitignore", ".DS_Store", "tags.txt"]
 include: ["images","css"]
 
 plugins_dir:
   - jekyll-mentions
+
+collections:
+  my_tags:
+    output: true
+    permalink: /tag/:name/

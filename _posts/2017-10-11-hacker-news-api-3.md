@@ -2,15 +2,7 @@
 layout: post
 title:  "Hacker News API Part 3"
 date:   2017-10-11 00:00:00 -0000
-tags:
-- scala
-- functional programming
-- Hacker News
-- Hacker News API
-- fetch
-- typelevel
-- reftree
-- scala.js
+tags: [scala, functional-programming, hacker-news, hacker-news-api, fetch, typelevel, reftree, scala.js, 47-degs]
 ---
 
 Previous related post: [Hacker News API part 2](/2017/07/30/hacker-news-api-2.html)

@@ -1,15 +1,8 @@
 #+TITLE: Blogging with Emacs and Org-mode
 #+AUTHOR: Justin Heyes-Jones
 #+DATE: 2020
-#+DESCRIPTION:
-#+KEYWORDS:
-#+HTML_LINK_HOME:
-#+HTML_LINK_UP:
-#+HTML_MATHJAX:
-#+HTML_HEAD:
-#+HTML_HEAD_EXTRA:
+#+STARTUP: showall
 #+OPTIONS: toc:nil
-#+SUBTITLE:
 #+INFOJS_OPT:
 #+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
 #+LATEX_HEADER:
@@ -18,22 +11,38 @@
 layout: post
 title: How to blog with Org-mode
 date: '2020-03-09T00:00:00.000-08:00'
-author: Justin
-tags: emacs org-mode blogging jekyll
+tags: [47-degs, emacs, org-mode, blogging, github-pages, jekyll]
 ---
 #+END_EXPORT
-* How to blog with Org-mode
-
+* How to blog with Org mode
 ** Just make an org file like normal
+
+#+BEGIN_QUOTE
+"You can include interesting quotes inline using the quote directives."
+
+― Anonymous Emacs User
+#+END_QUOTE
 
 1. Can have lists of things
 1. Such as this
-1. Threelist thing
+1. It's a list with three things
+
+You can have italics by wrapping a /word/ in forward slashes. You can *bold* a
+word with asterisks. /*Both at once*/ is of course also possible.
+
+Using equals will =emphasize things=.
+
+Of course
+- Bullet lists
+- are
+- also a thing.
+
+You can use special symbols like \pound100 and \copy2020 Justin Heyes-Jones and
+mathematical symbols like \lambda and \pi
 ** What about code?
 Here's some emacs code
 
 #+BEGIN_SRC emacs-lisp
-
 (require 'company)
 
 (defun custom-dictionary-company-backend (command &optional arg &rest ignored)
@@ -48,29 +57,29 @@ Here's some emacs code
      (radix-tree-keys custom-dictionary-company--words-tree (downcase arg)))
     ('ignore-case
      'keep-prefix)))
-  
-;; (provide 'custom-dictionary-company-backend) 
-
-;; [1]
-(push 'custom-dictionary-company-backend company-backends)
-
-;; [2]
-;; (unintern 'custom-dictionary-company--words-tree)
-
 #+END_SRC
 
-These few lines are, believe it or not, all you need to make our custom dictionary backend work! We are just making a callback which implements the Company mode API by sending us commands for us to handle. Let's look at each one:
+And some Scala code
 
-`init' - Init is called when company mode is initially enabled. This could be when emacs loads, or if you enable manually it will be called whenever you enable it. It could be called multiple times in a session so keep that in mind when implementing. In this case our implementation checks whether we loaded the dictionary or not. If we did then nothing happens, otherwise we load it.
-`prefix' - This is the text the user has typed so far that we want to complete. I call the built in function `company-grab-word' which does what you'd expect in most cases. You can write your own depending on your needs.
-`candidates' - We are given `arg' which contains the word to be completed and must return the list of candidates that will show up in the menu for the user to pick from. We simply use radix-tree-keys to get the list of words based on the prefix. Note that we make the completion to lower case as we want to match words ignoring that the user may have capitalized the word.
-`ignore-case' - We return a special response `keep-prefix' which maintains the users original capitalization.
+#+BEGIN_SRC scala
+  def main(args: Array[String]): Unit = {
 
-Notes:
+    // ISO 8601
+    val lastNotifications = "Fri, 06 Mar 2020 22:13:45 GMT"
 
-[1] This push command is what you need to make your backend active.
-[2] If you change the dictionary and want to reset it without restarting emacs then use unintern to remove the symbol then restart company-mode.
+    //val managedZioBackend = Managed.make(AsyncHttpClientZioBackend())(what => what.close())
 
+    val program = (for(
+        implicit0(backend: SttpBackend[Task,Nothing,WebSocketHandler]) <- AsyncHttpClientZioBackend();
+        //response <- getNotificationsSince(lastNotifications).send();
+        response <- getGists().send();
+        _ <- putStrLn(s"We got the notifications");
+        _ <- putStrLn(s"Response: $response")
+        ) yield ())
+
+    runtime.unsafeRun(program)
+  }
+#+END_SRC
 ** Final notes
 
 So that's all folks. Check out the accompanying bitbucket repo if you want to download the code.

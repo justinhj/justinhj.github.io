@@ -2,83 +2,109 @@
 layout: post
 title: How to blog with Org-mode
 date: '2020-03-09T00:00:00.000-08:00'
-author: Justin
-tags: emacs org-mode blogging jekyll
+tags: [47-degs, emacs, org-mode, blogging, github-pages, jekyll]
 ---
-<div id="outline-container-orgf3f2d72" class="outline-2">
-<h2 id="orgf3f2d72"><span class="section-number-2">1</span> How to blog with Org-mode</h2>
-<div class="outline-text-2" id="text-1">
+<div id="outline-container-org5c184fa" class="outline-2">
+<h2 id="org5c184fa">How to blog with Org mode</h2>
+<div class="outline-text-2" id="text-org5c184fa">
 </div>
 <div id="outline-container-org3c3aff1" class="outline-3">
-<h3 id="org3c3aff1"><span class="section-number-3">1.1</span> Just make an org file like normal</h3>
-<div class="outline-text-3" id="text-1-1">
+<h3 id="org3c3aff1">Just make an org file like normal</h3>
+<div class="outline-text-3" id="text-org3c3aff1">
+<blockquote>
+<p>
+&ldquo;You can include interesting quotes inline using the quote directives.&rdquo;
+</p>
+
+<p>
+― Anonymous Emacs User
+</p>
+</blockquote>
+
 <ol class="org-ol">
 <li>Can have lists of things</li>
 <li>Such as this</li>
-<li>Threelist thing</li>
+<li>It&rsquo;s a list with three things</li>
 </ol>
+
+<p>
+You can have italics by wrapping a <i>word</i> in forward slashes. You can <b>bold</b> a
+word with asterisks. <i><b>Both at once</b></i> is of course also possible.
+</p>
+
+<p>
+Using equals will <code>emphasize things</code>.
+</p>
+
+<p>
+Of course
+</p>
+<ul class="org-ul">
+<li>Bullet lists</li>
+<li>are</li>
+<li>also a thing.</li>
+</ul>
+
+<p>
+You can use special symbols like &pound;100 and &copy;2020 Justin Heyes-Jones and
+mathematical symbols like &lambda; and &pi;
+</p>
 </div>
 </div>
 <div id="outline-container-org3f8b9ca" class="outline-3">
-<h3 id="org3f8b9ca"><span class="section-number-3">1.2</span> What about code?</h3>
-<div class="outline-text-3" id="text-1-2">
+<h3 id="org3f8b9ca">What about code?</h3>
+<div class="outline-text-3" id="text-org3f8b9ca">
 <p>
 Here&rsquo;s some emacs code
 </p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">
-<span style="color: #1F55A0;">(</span><span style="color: #AF005F;">require</span> <span style="color: #1F55A0;">'</span><span style="color: #AF005F;">company</span><span style="color: #1F55A0;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #51afef;">(</span><span style="color: #a9a1e1;">require</span> <span style="color: #51afef;">'</span><span style="color: #a9a1e1;">company</span><span style="color: #51afef;">)</span>
 
-<span style="color: #1F55A0;">(</span><span style="color: #D70000;">defun</span> <span style="color: #AF8700;">custom-dictionary-company-backend</span> <span style="color: #AF005F;">(</span>command <span style="color: #1F55A0;">&amp;optional</span> arg <span style="color: #1F55A0;">&amp;rest</span> ignored<span style="color: #AF005F;">)</span>
-  <span style="color: #004700; font-style: italic;">"Company mode backend for a custom dictionary stored as a radix tree."</span>
-  <span style="color: #AF005F;">(</span><span style="color: #D70000;">case</span> command
-    <span style="color: #005F00;">(</span><span style="color: #1F55A0;">'</span><span style="color: #1F55A0;">init</span>    
-     <span style="color: #1F55A0;">(</span><span style="color: #D70000;">unless</span> <span style="color: #AF005F;">(</span><span style="color: #AF005F;">boundp</span> <span style="color: #1F55A0;">'</span><span style="color: #1F55A0;">custom-dictionary-company--words-tree</span><span style="color: #AF005F;">)</span>
-         <span style="color: #AF005F;">(</span><span style="color: #D70000;">setq</span> custom-dictionary-company--words-tree <span style="color: #005F00;">(</span>tree-from-file <span style="color: #005F00;">"dictionary.el"</span><span style="color: #005F00;">)</span><span style="color: #AF005F;">)</span><span style="color: #1F55A0;">)</span><span style="color: #005F00;">)</span>
-    <span style="color: #005F00;">(</span><span style="color: #1F55A0;">'</span><span style="color: #1F55A0;">prefix</span>
-     <span style="color: #1F55A0;">(</span><span style="color: #AF8700;">company-grab-word</span><span style="color: #1F55A0;">)</span><span style="color: #005F00;">)</span>
-    <span style="color: #005F00;">(</span><span style="color: #1F55A0;">'</span><span style="color: #1F55A0;">candidates</span>
-     <span style="color: #1F55A0;">(</span>radix-tree-keys custom-dictionary-company--words-tree <span style="color: #AF005F;">(</span><span style="color: #AF005F;">downcase</span> arg<span style="color: #AF005F;">)</span><span style="color: #1F55A0;">)</span><span style="color: #005F00;">)</span>
-    <span style="color: #005F00;">(</span><span style="color: #1F55A0;">'</span><span style="color: #1F55A0;">ignore-case</span>
-     <span style="color: #1F55A0;">'</span><span style="color: #1F55A0;">keep-prefix</span><span style="color: #005F00;">)</span><span style="color: #AF005F;">)</span><span style="color: #1F55A0;">)</span>
-  
-<span style="color: #4E4E4E; font-style: italic;">;; </span><span style="color: #4E4E4E; font-style: italic;">(provide 'custom-dictionary-company-backend) </span>
-
-<span style="color: #4E4E4E; font-style: italic;">;; </span><span style="color: #4E4E4E; font-style: italic;">[1]</span>
-<span style="color: #1F55A0;">(</span><span style="color: #D70000;">push</span> <span style="color: #1F55A0;">'</span><span style="color: #1F55A0;">custom-dictionary-company-backend</span> <span style="color: #004651;">company-backends</span><span style="color: #1F55A0;">)</span>
-
-<span style="color: #4E4E4E; font-style: italic;">;; </span><span style="color: #4E4E4E; font-style: italic;">[2]</span>
-<span style="color: #4E4E4E; font-style: italic;">;; </span><span style="color: #4E4E4E; font-style: italic;">(unintern 'custom-dictionary-company--words-tree)</span>
-
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">custom-dictionary-company-backend</span> <span style="color: #c678dd;">(</span>command <span style="color: #ECBE7B;">&amp;optional</span> arg <span style="color: #ECBE7B;">&amp;rest</span> ignored<span style="color: #c678dd;">)</span>
+  <span style="color: #83898d;">"Company mode backend for a custom dictionary stored as a radix tree."</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">case</span> command
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">'</span><span style="color: #ECBE7B;">init</span>    
+     <span style="color: #51afef;">(</span><span style="color: #51afef;">unless</span> <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">boundp</span> <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">custom-dictionary-company--words-tree</span><span style="color: #c678dd;">)</span>
+         <span style="color: #c678dd;">(</span><span style="color: #51afef;">setq</span> custom-dictionary-company--words-tree <span style="color: #98be65;">(</span>tree-from-file <span style="color: #98be65;">"dictionary.el"</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">'</span><span style="color: #ECBE7B;">prefix</span>
+     <span style="color: #51afef;">(</span><span style="color: #c678dd;">company-grab-word</span><span style="color: #51afef;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">'</span><span style="color: #ECBE7B;">candidates</span>
+     <span style="color: #51afef;">(</span>radix-tree-keys custom-dictionary-company--words-tree <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">downcase</span> arg<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">'</span><span style="color: #ECBE7B;">ignore-case</span>
+     <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">keep-prefix</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
 </pre>
 </div>
 
 <p>
-These few lines are, believe it or not, all you need to make our custom dictionary backend work! We are just making a callback which implements the Company mode API by sending us commands for us to handle. Let&rsquo;s look at each one:
+And some Scala code
 </p>
 
-<p>
-`init&rsquo; - Init is called when company mode is initially enabled. This could be when emacs loads, or if you enable manually it will be called whenever you enable it. It could be called multiple times in a session so keep that in mind when implementing. In this case our implementation checks whether we loaded the dictionary or not. If we did then nothing happens, otherwise we load it.
-`prefix&rsquo; - This is the text the user has typed so far that we want to complete. I call the built in function `company-grab-word&rsquo; which does what you&rsquo;d expect in most cases. You can write your own depending on your needs.
-`candidates&rsquo; - We are given `arg&rsquo; which contains the word to be completed and must return the list of candidates that will show up in the menu for the user to pick from. We simply use radix-tree-keys to get the list of words based on the prefix. Note that we make the completion to lower case as we want to match words ignoring that the user may have capitalized the word.
-`ignore-case&rsquo; - We return a special response `keep-prefix&rsquo; which maintains the users original capitalization.
-</p>
+<div class="org-src-container">
+<pre class="src src-scala">  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">main</span>(args<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Array</span>[<span style="color: #a9a1e1;">String</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Unit</span> <span style="color: #51afef;">=</span> {
 
-<p>
-Notes:
-</p>
+    <span style="color: #5B6268;">// </span><span style="color: #5B6268;">ISO 8601</span>
+    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">lastNotifications</span> <span style="color: #51afef;">=</span> <span style="color: #98be65;">"Fri, 06 Mar 2020 22:13:45 GMT"</span>
 
-<p>
-[1] This push command is what you need to make your backend active.
-[2] If you change the dictionary and want to reset it without restarting emacs then use unintern to remove the symbol then restart company-mode.
-</p>
+    <span style="color: #5B6268;">//</span><span style="color: #5B6268;">val managedZioBackend = Managed.make(AsyncHttpClientZioBackend())(what =&gt; what.close())</span>
+
+    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">program</span> <span style="color: #51afef;">=</span> (<span style="color: #51afef;">for</span>(
+        implicit0(backend<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">SttpBackend</span>[<span style="color: #a9a1e1;">Task</span>,<span style="color: #a9a1e1;">Nothing</span>,<span style="color: #a9a1e1;">WebSocketHandler</span>]) <span style="color: #51afef;">&lt;-</span> <span style="color: #a9a1e1;">AsyncHttpClientZioBackend</span>();
+        <span style="color: #5B6268;">//</span><span style="color: #5B6268;">response &lt;- getNotificationsSince(lastNotifications).send();</span>
+        response <span style="color: #51afef;">&lt;-</span> getGists().send();
+        <span style="color: #51afef;">_</span> <span style="color: #51afef;">&lt;-</span> putStrLn(s<span style="color: #98be65;">"We got the notifications"</span>);
+        <span style="color: #51afef;">_</span> <span style="color: #51afef;">&lt;-</span> putStrLn(s<span style="color: #98be65;">"Response: </span><span style="color: #dcaeea;">$response</span><span style="color: #98be65;">"</span>)
+        ) <span style="color: #51afef;">yield</span> ())
+
+    runtime.unsafeRun(program)
+  }
+</pre>
 </div>
 </div>
-
+</div>
 <div id="outline-container-org59e4297" class="outline-3">
-<h3 id="org59e4297"><span class="section-number-3">1.3</span> Final notes</h3>
-<div class="outline-text-3" id="text-1-3">
+<h3 id="org59e4297">Final notes</h3>
+<div class="outline-text-3" id="text-org59e4297">
 <p>
 So that&rsquo;s all folks. Check out the accompanying bitbucket repo if you want to download the code.
 </p>
