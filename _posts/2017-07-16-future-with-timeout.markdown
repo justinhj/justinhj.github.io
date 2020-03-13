@@ -2,11 +2,7 @@
 layout: post
 title:  "Future with timeout"
 date:   2017-07-16 10:00:40 -0000
-tags:
-- scala
-- functional programming
-- future
-- timeout
+tags: [scala, functional-programming]
 ---
 
 Previous post: [Future Either with Cats](/2017/06/18/future-either-with-cats.html)

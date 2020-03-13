@@ -2,13 +2,7 @@
 layout: post
 title:  "Future[Either] with Cats"
 date:   2017-06-18 10:00:40 -0000
-tags:
-- scala
-- monads
-- eitherT
-- functional programming
-- cats
-- monad transformers
+tags: [scala, monads, eithert, functional-programming, cats, monad-transformers]
 ---
 
 _Disclaimer_ Monad transformers have some overhead, so make sure you benchmark before and after switching to them

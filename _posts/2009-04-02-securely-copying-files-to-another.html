@@ -3,11 +3,10 @@ layout: post
 title: Securely copying files to another machine
 date: '2009-04-02T11:51:00.000-07:00'
 author: Justin
-tags:
-- linux cygwin secure file transfer
+tags: [cygwin, secure-file-transfer, scp]
 modified_time: '2009-04-02T11:56:10.102-07:00'
 blogger_id: tag:blogger.com,1999:blog-4777243148323391813.post-9072046395097548498
 blogger_orig_url: http://justinsboringpage.blogspot.com/2009/04/securely-copying-files-to-another.html
 ---
 
-Fast post about copying files between computers over a secure connection.<br /><br />Linux and Cygwin comes with scp, a secure version of cp.<br /><br />Usage... in this case I'm copying a file from my cygwin (putty) terminal to a remote machine.<br /><br /><blockquote>scp /cygdrive/c/Documents and Settings/myname/My Documents/interestingfile.txt usernameonmachine@1.2.3.3:/home/usernameonmachine/<br /><br /><br /></blockquote>You should get a password prompt and see the transfer complete as follows.<br /><br />interestingfile.txt                               100%   34KB  34.3KB/s   00:00
+Quick post about copying files between computers over a secure connection.<br /><br />Linux and Cygwin comes with scp, a secure version of cp.<br /><br />Usage... in this case I'm copying a file from my cygwin (putty) terminal to a remote machine.<br /><br /><blockquote>scp /cygdrive/c/Documents and Settings/myname/My Documents/interestingfile.txt usernameonmachine@1.2.3.3:/home/usernameonmachine/<br /><br /><br /></blockquote>You should get a password prompt and see the transfer complete as follows.<br /><br />interestingfile.txt                               100%   34KB  34.3KB/s   00:00

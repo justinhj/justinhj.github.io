@@ -2,11 +2,7 @@
 layout: post
 title:  "Radix trees, Dash and Company mode"
 date:   2018-10-24 00:00:00 -0000
-tags:
-- emacs
-- functional programming
-- radix trees
-- company-mode
+tags: [emacs, functional-programming, radix-trees, company-mode, data-structures]
 ---
 
 ## Radix trees

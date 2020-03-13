@@ -2,15 +2,7 @@
 layout: post
 title:  "Hacker News API Part 4"
 date:   2018-05-05 00:00:00 -0000
-tags:
-- scala
-- functional programming
-- Hacker News
-- Hacker News API
-- fetch
-- typelevel
-- monix
----
+tags: [scala, functional-programming, hacker-news-api, fetch, 47-degs, typelevel, monix]
 
 # Hacker News API Part 4  - Fun with Monix
 

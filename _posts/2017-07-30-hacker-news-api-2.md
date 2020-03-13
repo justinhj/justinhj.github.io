@@ -2,14 +2,7 @@
 layout: post
 title:  "Hacker News API Part 2"
 date:   2017-07-30 00:00:00 -0000
-tags:
-- scala
-- functional programming
-- future
-- timeout
-- Hacker News
-- fetch
-- typelevel
+tags: [scala, functional-programming, hacker-news-api, fetch, typelevel, 47-degs]
 ---
 
 Previous post: [Hacker News API part 1](/2017/07/26/hacker-news-api-1.html)

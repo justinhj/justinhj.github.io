@@ -2,13 +2,7 @@
 layout: post
 title:  "Eredis - An updated Emacs Redis API"
 date:   2018-11-19 00:00:00 -0000
-tags:
-- emacs
-- functional programming
-- redis
-- emacs lisp
-- elisp
----
+tags: [emacs, functional-programming, redis, emacs-lisp]
 
 In July 2011 I released an emacs lisp client for the Redis in-memory data structure store. You can install either from the Melpa package or just clone from Github. The current version at time of writing is 0.9.6 and you will need that or later for some of the examples below to work.
 

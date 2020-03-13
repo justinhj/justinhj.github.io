@@ -2,12 +2,7 @@
 layout: post
 title:  "Hacker News API Part 1"
 date:   2017-07-26 23:00:00 -0000
-tags:
-- scala
-- functional programming
-- future
-- timeout
-- Hacker News
+tags: [scala, functional-programming, hacker-news-api]
 ---
 
 Previous post: [Future with Timeout](/2017/07/16/future-with-timeout.html)

@@ -2,13 +2,7 @@
 layout: post
 title:  "Roman numeral tool with Udash"
 date:   2017-08-27 00:00:00 -0000
-tags:
-- scala
-- scala.js
-- clojurescript
-- functional programming
-- udash
-- roman numeral conversion
+tags: [scala, scala.js, clojure-script, functional-programming, udash]
 ---
 
 In this post I'll walk through building this Roman numeral to decimal converter using Scala.js and the [Udash](http://udash.io/) web application framework
