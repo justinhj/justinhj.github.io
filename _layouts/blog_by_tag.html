@@ -3,7 +3,7 @@
     {% if site.tags[page.slug] %}
       {% for post in site.tags[page.slug] %}
       <div>
-        <a href="{{ post.url }}/">{{ post.title }}</a>
+        <a href="{{ post.url }}">{{ post.title }}</a>
         </div>
       {% endfor %}
     {% else %}
