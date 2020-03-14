@@ -16,5 +16,6 @@
      :section-numbers nil
      :headline-levels 4
      :html-extension "html"
-     :body-only t ;; Only export section between <body> </body>
-     )))
+     :body-only t
+     )
+    ))

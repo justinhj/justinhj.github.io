@@ -4,58 +4,155 @@ title: How to blog with Org-mode
 date: '2020-03-09T00:00:00.000-08:00'
 tags: [emacs, org-mode, blogging, github-pages, jekyll]
 ---
-<div id="outline-container-org5c184fa" class="outline-2">
-<h2 id="org5c184fa">How to blog with Org mode</h2>
-<div class="outline-text-2" id="text-org5c184fa">
-</div>
-<div id="outline-container-org3c3aff1" class="outline-3">
-<h3 id="org3c3aff1">Just make an org file like normal</h3>
-<div class="outline-text-3" id="text-org3c3aff1">
+<div id="outline-container-orgd9035db" class="outline-2">
+<h2 id="orgd9035db">Why blog with Org mode?</h2>
+<div class="outline-text-2" id="text-orgd9035db">
 <blockquote>
 <p>
-&ldquo;You can include interesting quotes inline using the quote directives.&rdquo;
-</p>
-
-<p>
-― Anonymous Emacs User
+Org is a mode for keeping notes, maintaining TODO lists, and project
+planning with a fast and effective plain-text system.
 </p>
 </blockquote>
 
+<p>
+Like most things in the Emacs world, this description of <a href="https://orgmode.org/">Org mode</a> belies the
+true depth of what it can do. Mostly I use Org mode only superficially as a way
+to track notes and projects, using it as a tree of tasks and the status of each.
+However, Org mode is good at many other tasks, not least of those is authoring
+content. I write most of the posts in this blog using markdown, but since I am
+in Emacs anyway and Org mode is a much richer authoring tool I decided to give
+it a go.
+</p>
+
+<p>
+Another thing that motivated the change was Sam Halliday&rsquo;s book <a href="https://leanpub.com/fpmortals">Functional Programming for Mortals</a> which is written entirely in Org mode. As well as
+as having no problem with code, images and text, the book even embeds <a href="https://en.wikipedia.org/wiki/DOT_(graph_description_language)">DOT (graph description language)</a> to
+define and render diagrams inline in the org manuscript.
+</p>
+
+<p>
+Just a heads up, I host the blog (at the time of writing) on Github Pages which
+uses <a href="https://jekyllrb.com">Jekyll</a>, a static site generator ideal for blogs and other content creation.
+Some of the information here is not relavent if you don&rsquo;t use Jekyll, but you
+can still use these steps to generate HTML and upload that to your site.
+</p>
+
+<p>
+I followed the steps in this post on <a href="https://orgmode.org/worg/org-tutorials/org-jekyll.html">Using org to Blog with Jekyll</a> with some
+modifications to get everything working.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb2e21e1" class="outline-2">
+<h2 id="orgb2e21e1">How to author content with Org mode</h2>
+<div class="outline-text-2" id="text-orgb2e21e1">
+<p>
+In my blog repository I made a new folder <code>org/posts</code>. In the <code>org</code> folder I
+added an Emacs Lisp file <code>publish.el</code> which contains some code to set up the
+publishing parameters for later.
+</p>
+
+<p>
+Then you can create a blog post in the <code>org/posts</code> folder which must be named
+with the usual convention, but with an <code>.org</code> extension instead of <code>.md</code> or <code>.html</code>.
+</p>
+
+<p>
+For example:
+<code>org/posts/2020-03-15-beware-the-ides-of-march.org</code>
+</p>
+
+<p>
+You can structure your post just like an org file and the headlines will map to
+headings and sub-headings in your post. All of the formatting
+</p>
+
+<p>
+For example:
+</p>
+
+<pre class="example">
+#+BEGIN_QUOTE
+"You can format quotes using the quote directive."
+  ― Emacs User
+#+END_QUOTE
+</pre>
+
+<p>
+Would be rendered as:
+</p>
+
+<blockquote>
+<p>
+&ldquo;You can format quotes using the quote directive.&rdquo;
+  ― Emacs User
+</p>
+</blockquote>
+
+<p>
+By preceding items with <code>1.</code> or <code>*</code> you can make lists, which can be nested:
+</p>
+
 <ol class="org-ol">
-<li>Can have lists of things</li>
-<li>Such as this</li>
-<li>It&rsquo;s a list with three things</li>
+<li>First item</li>
+<li>Another item
+<ul class="org-ul">
+<li>Nested first item</li>
+<li>Second nested item</li>
+</ul></li>
+<li>Behold, a third item</li>
 </ol>
 
 <p>
-You can have italics by wrapping a <i>word</i> in forward slashes. You can <b>bold</b> a
-word with asterisks. <i><b>Both at once</b></i> is of course also possible.
+You can have <i>italics by wrapping words</i> in forward slashes. You can <b>bold</b> a
+word with asterisks. <i><b>Both at once</b></i> is of course also allowed.
 </p>
 
 <p>
-Using equals will <code>emphasize things</code>.
+Using equals will <code>emphasize things</code> and tildes can be used for inline code <code>val
+x = y + 1</code>.
 </p>
 
 <p>
-Of course
+You can use special symbols like &pound;100 and <i>&copy;2020 Justin Heyes-Jones</i> and
+mathematical symbols like &lambda; and &pi;. See <a href="https://orgmode.org/worg/org-symbols.html">Symbols in Org mode</a> for the full list.
 </p>
-<ul class="org-ul">
-<li>Bullet lists</li>
-<li>are</li>
-<li>also a thing.</li>
-</ul>
 
 <p>
-You can use special symbols like &pound;100 and &copy;2020 Justin Heyes-Jones and
-mathematical symbols like &lambda; and &pi;
+Images can be included by using a file link (without a description if you want
+to inline the image), and you can modify the HTML attributes as follows:
 </p>
+
+<pre class="example">
+#+CAPTION: Photo by Rumman Amin on Unsplash
+#+ATTR_HTML: :alt A nice cup of coffee :width 400
+[[../../../images/rumman-amin-bJzJH85Kp7g-unsplash.jpg]]
+</pre>
+
+<p>
+Which renders the image inline:
+</p>
+
+
+<div class="figure">
+<p><img src="../../../images/rumman-amin-bJzJH85Kp7g-unsplash.jpg" alt="A nice cup of coffee" width="400" />
+</p>
+<p><span class="figure-number">Figure 1: </span>Photo by Rumman Amin on Unsplash</p>
 </div>
 </div>
-<div id="outline-container-org3f8b9ca" class="outline-3">
-<h3 id="org3f8b9ca">What about code?</h3>
-<div class="outline-text-3" id="text-org3f8b9ca">
+</div>
+
+<div id="outline-container-org12f0617" class="outline-2">
+<h2 id="org12f0617">Source code</h2>
+<div class="outline-text-2" id="text-org12f0617">
 <p>
-Here&rsquo;s some emacs code
+Since you&rsquo;re reading my technical blog you may be the sort of person that likes
+to share code. Org mode supports source code (you can even run it and pass the
+variables around to other parts of the document). Just wrap your code in a
+<code>#+BEGIN_SRC</code> and <code>#+END_SRC</code> block. The code will be highlighted using whatever
+configuration you have already for that mode, you can optionally have line
+numbers using the <code>-n</code> option:
 </p>
 
 <div class="org-src-container">
@@ -77,37 +174,88 @@ Here&rsquo;s some emacs code
 </div>
 
 <p>
-And some Scala code
+And some Scala code with line numbers
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">main</span>(args<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Array</span>[<span style="color: #a9a1e1;">String</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Unit</span> <span style="color: #51afef;">=</span> {
-
-    <span style="color: #5B6268;">// </span><span style="color: #5B6268;">ISO 8601</span>
-    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">lastNotifications</span> <span style="color: #51afef;">=</span> <span style="color: #98be65;">"Fri, 06 Mar 2020 22:13:45 GMT"</span>
-
-    <span style="color: #5B6268;">//</span><span style="color: #5B6268;">val managedZioBackend = Managed.make(AsyncHttpClientZioBackend())(what =&gt; what.close())</span>
-
-    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">program</span> <span style="color: #51afef;">=</span> (<span style="color: #51afef;">for</span>(
-        implicit0(backend<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">SttpBackend</span>[<span style="color: #a9a1e1;">Task</span>,<span style="color: #a9a1e1;">Nothing</span>,<span style="color: #a9a1e1;">WebSocketHandler</span>]) <span style="color: #51afef;">&lt;-</span> <span style="color: #a9a1e1;">AsyncHttpClientZioBackend</span>();
-        <span style="color: #5B6268;">//</span><span style="color: #5B6268;">response &lt;- getNotificationsSince(lastNotifications).send();</span>
-        response <span style="color: #51afef;">&lt;-</span> getGists().send();
-        <span style="color: #51afef;">_</span> <span style="color: #51afef;">&lt;-</span> putStrLn(s<span style="color: #98be65;">"We got the notifications"</span>);
-        <span style="color: #51afef;">_</span> <span style="color: #51afef;">&lt;-</span> putStrLn(s<span style="color: #98be65;">"Response: </span><span style="color: #dcaeea;">$response</span><span style="color: #98be65;">"</span>)
-        ) <span style="color: #51afef;">yield</span> ())
-
-    runtime.unsafeRun(program)
-  }
+<pre class="src src-scala"><span class="linenr"> 1: </span>  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">main</span>(args<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Array</span>[<span style="color: #a9a1e1;">String</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Unit</span> <span style="color: #51afef;">=</span> {
+<span class="linenr"> 2: </span>
+<span class="linenr"> 3: </span>    <span style="color: #5B6268;">// </span><span style="color: #5B6268;">ISO 8601</span>
+<span class="linenr"> 4: </span>    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">lastNotifications</span> <span style="color: #51afef;">=</span> <span style="color: #98be65;">"Fri, 06 Mar 2020 22:13:45 GMT"</span>
+<span class="linenr"> 5: </span>
+<span class="linenr"> 6: </span>    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">program</span> <span style="color: #51afef;">=</span> (<span style="color: #51afef;">for</span>(
+<span class="linenr"> 7: </span>        implicit0(backend<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">SttpBackend</span>[<span style="color: #a9a1e1;">Task</span>,<span style="color: #a9a1e1;">Nothing</span>,<span style="color: #a9a1e1;">WebSocketHandler</span>])
+<span class="linenr"> 8: </span>          <span style="color: #51afef;">&lt;-</span> <span style="color: #a9a1e1;">AsyncHttpClientZioBackend</span>();
+<span class="linenr"> 9: </span>        response <span style="color: #51afef;">&lt;-</span> getGists().send();
+<span class="linenr">10: </span>        <span style="color: #51afef;">_</span> <span style="color: #51afef;">&lt;-</span> putStrLn(s<span style="color: #98be65;">"We got the notifications"</span>);
+<span class="linenr">11: </span>        <span style="color: #51afef;">_</span> <span style="color: #51afef;">&lt;-</span> putStrLn(s<span style="color: #98be65;">"Response: </span><span style="color: #dcaeea;">$response</span><span style="color: #98be65;">"</span>)
+<span class="linenr">12: </span>        ) <span style="color: #51afef;">yield</span> ())
+<span class="linenr">13: </span>
+<span class="linenr">14: </span>    runtime.unsafeRun(program)
+<span class="linenr">15: </span>  }
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-org59e4297" class="outline-3">
-<h3 id="org59e4297">Final notes</h3>
-<div class="outline-text-3" id="text-org59e4297">
+<div id="outline-container-org59b759d" class="outline-2">
+<h2 id="org59b759d">Implementation notes</h2>
+<div class="outline-text-2" id="text-org59b759d">
 <p>
-So that&rsquo;s all folks. Check out the accompanying bitbucket repo if you want to download the code.
+I diverged from the guide I was following. Firstly I made a file <code>publish.el</code>
+which contains the code required to configure the publishing of the blog, and
+modified it so that instead of hard coded paths it just uses relative paths to
+make things easier. To publish a blog you need to just evaluate this file once
+in a session and run <code>org-publish-all</code> to publish all your Org projects, or
+<code>org-publish</code> to select just one.
+</p>
+
+<pre class="example">
+;; -*- flycheck-disabled-checkers: (emacs-lisp-checkdoc); byte-compile-warnings: (not free-vars) -*-
+;; Run this then M-x org-publish
+
+(setq project-root (locate-dominating-file "." "_config.yml"))
+
+(setq org-publish-project-alist
+  `(
+    ("org-justinhj"
+     ;; Path to your org files.
+     :base-directory ,(concat project-root "org/posts")
+     :base-extension "org"
+     ;; Path to your Jekyll project.
+     :publishing-directory ,(concat project-root "_posts")
+     :recursive t
+     :publishing-function org-html-publish-to-html
+     :section-numbers nil
+     :headline-levels 4
+     :html-extension "html"
+     :body-only t
+     )
+    ))
+</pre>
+
+<p>
+Publishing will create HTML versions of the posts in Jekyll&rsquo;s <code>_posts</code> folder
+and then you can build your site and view it locally before pushing to Github
+Pages.
 </p>
 </div>
+</div>
+
+<div id="outline-container-org83fa7ca" class="outline-2">
+<h2 id="org83fa7ca">Summary</h2>
+<div class="outline-text-2" id="text-org83fa7ca">
+<p>
+One thing I&rsquo;m not sure about is if I like using Emacs&rsquo;s code blogs instead of
+embedded Github gists. It&rsquo;s certainly possible to use either. Anyway I plan to
+do a few future blogs using this method and see how it works out.
+</p>
+
+<p>
+Thanks for reading!
+</p>
+
+<p>
+&copy;2020 Justin Heyes-Jones. All Rights Reserved
+</p>
 </div>
 </div>
