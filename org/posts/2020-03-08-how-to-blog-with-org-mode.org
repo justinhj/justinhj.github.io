@@ -185,6 +185,9 @@ One thing I'm not sure about is if I like using Emacs's code blogs instead of
 embedded Github gists. It's certainly possible to use either. Anyway I plan to
 do a few future blogs using this method and see how it works out.
 
+You can view the raw org file for this post in my github repository here:
+[[https://raw.githubusercontent.com/justinhj/justinhj.github.io/master/org/posts/2020-03-08-how-to-blog-with-org-mode.org]]
+
 Thanks for reading!
 
 \copy2020 Justin Heyes-Jones. All Rights Reserved
