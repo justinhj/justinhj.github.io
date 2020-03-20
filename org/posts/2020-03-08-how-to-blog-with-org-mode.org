@@ -181,7 +181,7 @@ and then you can build your site and view it locally before pushing to Github
 Pages.
 
 ** Summary
-One thing I'm not sure about is if I like using Emacs's code blogs instead of
+One thing I'm not sure about is if I like using Emacs's code blocks instead of
 embedded Github gists. It's certainly possible to use either. Anyway I plan to
 do a few future blogs using this method and see how it works out.
 
