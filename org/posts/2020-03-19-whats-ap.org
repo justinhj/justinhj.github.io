@@ -1,0 +1,127 @@
+#+TITLE: What's Ap?
+#+AUTHOR: Justin Heyes-Jones
+#+DATE: 2020
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: What's Ap?
+date: '2020-03-19T00:00:00.000-08:00'
+tags: [pure-functional-programming, cats, scala, applicative]
+---
+#+END_EXPORT
+** What's Ap, an ntroduction to Applicative Functors
+This post is aimed at the beginner to intermediate Scala programmer who is
+interested in pure functional programming. We'll talk about the Applicative type
+class as implemented in the Cats functional programming library, and see why it
+is useful.
+** Functor and Monad
+As a Scala programmer you will be no doubt be familar with the ~map~ and
+~flatMap~ functions, which you will find in some of the collections and other
+data types in the standard Scala library. If you're interested in pure
+functional programming, and have used the Cats or Scalaz libraries, you may know
+that these two functions are part of the ~Functor~ and ~Monad~ type classes
+respectively.
+
+Before looking at ~Apply~ and ~Applicative~ let's review what you can do
+Functors and Monads.
+
+Remember, the goal of functional programming is to do most of our work using
+pure functions. We use structures like Functors and Monads to manage effects
+that are not pure; letting us use pure functions in an effectful world. The
+Functor type class gives us the power to take a pure function like ~a => a + 1~
+and apply it to the value inside an effect. Here's an example using instances of
+the Functor monad for List and Option...
+
+#+BEGIN_SRC scala
+List(1,2,3).map(a => a + 1)
+// res: List[Int] = List(2, 3, 4)
+
+Option(1).map(a => a + 1)
+// res: Option[Int] = Some(2)
+#+END_SRC
+
+Whilst Functor gives you the ability to reach inside an effect, apply a pure
+function to the value inside there, and wrap it up inside an effect of the same
+type. The type signature of map is ~map[A,B](fa: F[A], f: A => B): F[B]~.
+
+Monad instances have two functions. The first, ~pure~ or ~unit~, gives us a way
+to lift pure values into an effectful context. ~pure[A](a: A) F[A]~ and you can
+think of it as being a type constructor...
+
+#+BEGIN_SRC scala
+import cats._
+import cats.implicits._
+
+1.pure[List]
+// res: List[Int] = List(1)
+
+1.pure[Option]
+// res: Option[Int] = Some(1)
+#+END_SRC
+
+Pure isn't really giving us something we didn't already have; we could make a
+list and an option before. But the pure function is useful as a building block
+when building code that uses Monad instances. We'll see it in use later.
+
+Finally, Monad has the ~flatMap~ function. The signature is ~flatMap[A,B](fa:
+F[A], f: A => [B]): F[B]~. flatMap comes in handy when we compose two effects
+together. It let's you get the result from the first and pass it as a (pure) parameter
+to the next. For example, imagine we have two calls that go out over the network
+to a database or external service and we use map to chain them together...
+
+#+BEGIN_SRC scala
+def getUser(email: String): Future[User] = ???
+
+def getAccountStatus(id: String): Future[AccountStatus] = ???
+
+val accountStatus = getUser("bob@google.com")
+  .map(user => getAccountStatus(user.accountId))
+// accountStatus has type Future[Future[AccountStatus]]
+#+END_SRC
+
+Dealing with nested effects like ~Future[Future[_]]~ creates a burden on us to
+reach inside the layers one at a time. If we used flatMap instead it would take
+care of flattening the result for us...
+
+#+BEGIN_SRC scala
+val accountStatus = getUser("bob@google.com")
+  .flatMap(user => getAccountStatus(user.accountId))
+// accountStatus has type [Future[AccountStatus]
+#+END_SRC
+
+That is the essence of Monad's; being able to compose effects together. Note
+that the second call is dependent on the first. It would make no sense to call
+~getAccountStatus~ before we called ~getUser~ because we need the user's account
+ID. In fact, even if these two effects were completely independent, we would
+still have to wait for the first one before calling the second. That's not an
+ideal situation because these calls may take tens or even a few hundred
+milliseconds. If we want the service to be low latency, we would like to run
+these calls concurrently instead of in sequence.
+** What's Ap?
+Now we're caught up Functors and Monads, let's look at the ~Applicative~
+typeclass. It is defined as follows in Cats, with some details removed...
+
+#+BEGIN_SRC scala
+trait Applicative[F[_]] extends Apply[F] {
+  def pure[A](x: A): F[A]
+}
+#+END_SRC
+
+If you make an instance of Applicative then you need to supply an implementation
+of ~pure~ which is exactly the same as pure found in Monads. You also need to
+implement ~Apply~ which looks like this...
+
+#+BEGIN_SRC scala
+trait Apply[F[_]] extends Functor[F] {
+  def ap[A, B](ff: F[A => B])(fa: F[A]): F[B]
+}
+#+END_SRC
+
+You can see that ~Apply~ extends Functor which means it has map. Also it has the
+function ~ap~ which is, of course, the main subject of this post. What a curious
+type signature! Just like with ~map~ we are dealing with an effect type ~F~, and
+a parameter ~F[A]~. The difference is the function we want to /apply/ (~ff: F[A
+=> B]=~) is also /inside the effect/.
