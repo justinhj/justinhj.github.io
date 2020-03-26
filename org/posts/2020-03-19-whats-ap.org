@@ -12,11 +12,13 @@ date: '2020-03-19T00:00:00.000-08:00'
 tags: [pure-functional-programming, cats, scala, applicative]
 ---
 #+END_EXPORT
-** What's Ap, an ntroduction to Applicative Functors
-This post is aimed at the beginner to intermediate Scala programmer who is
-interested in pure functional programming. We'll talk about the Applicative type
-class as implemented in the Cats functional programming library, and see why it
-is useful.
+** A (long) introduction to Applicative Functors
+This post is aimed at the Scala programmer who is familiar with the basics of
+the language and ideally becoming interested, or already deeply entrenched, in
+pure functional programming and curious about ~Applicative Functors~. We'll
+delve into the original paper in which they were introduced, converting the
+Haskell code to modern Scala, and then look at an efficient implementation of
+blending two images using Applicative progamming.
 ** Functor and Monad
 As a Scala programmer you will be no doubt be familar with the ~map~ and
 ~flatMap~ functions, which you will find in some of the collections and other
@@ -125,3 +127,173 @@ function ~ap~ which is, of course, the main subject of this post. What a curious
 type signature! Just like with ~map~ we are dealing with an effect type ~F~, and
 a parameter ~F[A]~. The difference is the function we want to /apply/ (~ff: F[A
 => B]=~) is also /inside the effect/.
+
+Before talking about what this is useful for, let's look at what it actually
+does for various implementations.
+
+*** Applicative instance for Option
+
+#+BEGIN_SRC scala
+Option((a:Int) => a + 10).ap(Option(20))
+// res: Option[Int] = Some(30)
+
+Option((a:Int) => a + 10).ap(None)
+// res: Option[Int] = None
+
+Option.empty[Int => Int].ap(Option(20))
+// res: Option[Int] = None
+
+Option.empty[Int => Int].ap(Option.empty[Int])
+// res: Option[Int] = None
+#+END_SRC
+
+The ap function for Option, then, behaves probably as you'd expect. When you
+/apply/ the function, if the ~ff~ argument is ~None~ then there's nothing to
+apply and we get the result ~None~. If there is a function in there, we extract
+it so that we have a /pure function/ that we can /apply/ to the effectful
+argument ~F[A]~. Again, if that is empty we get ~None~, otherwise we get the
+value ~f(a)~ which will be wrapped back up in the effect giving ~Some(30)~.
+
+*** Applicative instance for List
+
+#+BEGIN_SRC scala
+List((a:Int) => a + 1,
+     (a:Int) => a - 10,
+     (a:Int) => a + 22).ap(List(1,2,3))
+// res: List[Int] = List(2, 3, 4, -9, -8, -7, 23, 24, 25)
+#+END_SRC
+
+For ~List~ the input value for ~ff~ has the signature ~List[A => B]~, and each
+function in the list is applied to each argument in the input list.
+
+*** Idomaticly apply all the things
+All data types that have instances of Applicative have a way to apply a
+function wrapped in an effect of that type, and the way that it is applied is
+/idomatic/ to that effect. In fact, before the name ~Applicative Functor~ stuck,
+they were called ~Idioms~.
+
+You may be scratching your head at this point, for it's not often in programming
+that you want to apply a list of functions to a list (although I'm sure you can
+probably come up with some ways to use it), and how often do you have functions
+in Options? It gets weirder in the case of other data types. With ~Future~, or
+~IO~, for example, do you ever remember writing a function that returns a
+function from a Future? It's certainly rare. Still more strange would be a
+function inside a ~State~ monad, but that is perfectly valid too...
+
+#+BEGIN_SRC scala
+import cats.data.State
+
+// Create a function in a State
+val fs = State[Int, (Int => Int)]
+  (s => (s, (a: Int) => a + s))
+
+// Now to apply it to an appropriate State
+val applied = fs.ap(State[Int, Int](s => (s,10)))
+
+// Finally run the Applicative State and grab the value
+applied.run(10).value
+//res: (Int, Int) = (10, 20)
+#+END_SRC
+
+So, everything that has an Applicative can handle pure functions that have been
+lifted into effects. In some cases that seems marginally useful and in other
+cases seems rather weird. Why is that? I'm going to bury the lede and in the
+next section we'll back up a bit and look at the original paper that motivated
+Applicative Functors back in 2008.
+
+** Applicative Programming with Effects
+
+In this section we'll walk through some sections of the 2008 paper by McBride
+and Patterson, Applicative Programming with Effects, converting the original
+Haskell into working Scala code.
+
+[[https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf]]
+
+#+BEGIN_QUOTE
+This is the story of a pattern that popped up time and again in our daily work,
+programming in Haskell (Peyton Jones, 2003), until the temptation to abstract it
+became irresistable. Let us illustrate with some examples.
+#+END_QUOTE
+
+We'll walk through each of the three examples...
+
+*** Sequencing Commands
+#+BEGIN_QUOTE
+One often wants to execute a sequence of commands and
+collect the sequence of their responses, and indeed there is such a function in the
+Haskell Prelude (here specialised to IO)
+#+END_QUOTE
+#+BEGIN_SRC haskell
+sequence :: [IO a ] → IO [a ]
+sequence [ ] = return [ ]
+sequence (c : cs) = do
+  x ← c
+  xs ← sequence cs
+#+END_SRC
+
+Before we get started, if you're following along in your Scala IDE or REPL you
+will need the following imports...
+
+#+BEGIN_SRC scala
+  import cats._
+  import cats.effect.ContextShift
+  import cats.CommutativeApplicative
+  import cats.effect.IO
+  import cats.effect.IO.Par
+  import cats.implicits._
+  import scala.concurrent.ExecutionContext
+  import scala.concurrent.duration._
+
+  // Some things needed by Cats Effect
+  implicit val timer = IO.timer(ExecutionContext.global)
+  implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+#+END_SRC
+
+... and the following libraries ...
+
+#+BEGIN_SRC scala
+ "org.typelevel" %% "cats-core" % "2.1.1",
+ "org.typelevel" %% "cats-effect" % "2.1.2"
+#+END_SRC
+
+Converting the sequence function from Haskell to Scala...
+
+#+BEGIN_SRC scala
+ def sequence[A](ios: List[IO[A]]): IO[List[A]] = {
+    ios match {
+      case Nil =>
+        IO.pure(List.empty[A])
+      case c :: cs =>
+        for (
+          x <- c;
+          xs <- sequence(cs)
+        ) yield (x +: xs)
+    }
+  }
+#+END_SRC
+
+If you're not familiar with ~IO~ you can think of it as the standard library
+Scala ~Future~ except it has some properties that make it /more pure/. Future is
+eagerly evaluated, meaning that as soon as you create a Future it will be
+scheduled on a thread and start running. Whilst this is perfectly fine for a lot
+of use cases, for our purposes here we need the ~IO~ monad (as implemented in
+Cats Effect, Monix, Scalaz and ZIO). For the purposes of this post that's enough
+detail but I enourage you to read up on IO Monads in the red book or the blue
+book later. TODO footnotes. 
+
+In order to show this in action, let's make a little IO action that waits a
+couple of seconds then prints a message...
+
+#+BEGIN_SRC scala
+def printIO(out: String): IO[Unit] = {
+  for (
+    _ <- IO.sleep(1 second);
+    _ <- IO(println(out))
+  ) yield ()
+}
+
+val ios = List(
+  printIO("Why,"),
+  printIO("hello"),
+  printIO("there!"))
+#+END_SRC
