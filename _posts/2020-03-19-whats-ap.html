@@ -1,0 +1,534 @@
+---
+layout: post
+title: What's Ap?
+date: '2020-03-19T00:00:00.000-08:00'
+tags: [pure-functional-programming, cats, scala, applicative]
+---
+<div id="outline-container-org26ff951" class="outline-2">
+<h2 id="org26ff951">Applicative Functors</h2>
+<div class="outline-text-2" id="text-org26ff951">
+<p>
+This post is aimed at the Scala programmer who is familiar with the basics of
+the language and ideally becoming interested, or already deeply entrenched, in
+pure functional programming and curious about <code>Applicative Functors</code>. We&rsquo;ll
+delve into the original paper in which they were introduced, converting the
+Haskell code to modern Scala, and then look at an efficient implementation of
+blending two images using Applicative progamming.
+</p>
+</div>
+</div>
+<div id="outline-container-org38ebe47" class="outline-2">
+<h2 id="org38ebe47">Functor and Monad</h2>
+<div class="outline-text-2" id="text-org38ebe47">
+<p>
+As a Scala programmer you will be no doubt be familar with the <code>map</code> and
+<code>flatMap</code> functions, which you will find in some of the collections and other
+data types in the standard Scala library. If you&rsquo;re interested in pure
+functional programming, and have used the Cats or Scalaz libraries, you may know
+that these two functions are part of the <code>Functor</code> and <code>Monad</code> type classes
+respectively.
+</p>
+
+<p>
+Before looking at <code>Apply</code> and <code>Applicative</code> let&rsquo;s review what you can do
+Functors and Monads.
+</p>
+
+<p>
+Remember, the goal of functional programming is to do most of our work using
+pure functions. We use structures like Functors and Monads to manage effects
+that are not pure; letting us use pure functions in an effectful world. The
+Functor type class gives us the power to take a pure function like <code>a =&gt; a + 1</code>
+and apply it to the value inside an effect. Here&rsquo;s an example using instances of
+the Functor monad for List and Option&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>).map(a <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">1</span>)
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Int] = List(2, 3, 4)</span>
+
+<span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">1</span>).map(a <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">1</span>)
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[Int] = Some(2)</span>
+</pre>
+</div>
+
+<p>
+Whilst Functor gives you the ability to reach inside an effect, apply a pure
+function to the value inside there, and wrap it up inside an effect of the same
+type. The type signature of map is <code>map[A,B](fa: F[A], f: A =&gt; B): F[B]</code>.
+</p>
+
+<p>
+Monad instances have two functions. The first, <code>pure</code> or <code>unit</code>, gives us a way
+to lift pure values into an effectful context. <code>pure[A](a: A) F[A]</code> and you can
+think of it as being a type constructor&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">import</span> cats.<span style="color: #51afef;">_</span>
+<span style="color: #51afef;">import</span> cats.implicits.<span style="color: #51afef;">_</span>
+
+<span style="color: #da8548; font-weight: bold;">1</span>.pure[<span style="color: #a9a1e1;">List</span>]
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Int] = List(1)</span>
+
+<span style="color: #da8548; font-weight: bold;">1</span>.pure[<span style="color: #a9a1e1;">Option</span>]
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[Int] = Some(1)</span>
+</pre>
+</div>
+
+<p>
+Pure isn&rsquo;t really giving us something we didn&rsquo;t already have; we could make a
+list and an option before. But the pure function is useful as a building block
+when building code that uses Monad instances. We&rsquo;ll see it in use later.
+</p>
+
+<p>
+Finally, Monad has the <code>flatMap</code> function. The signature is <code>flatMap[A,B](fa:
+F[A], f: A =&gt; [B]): F[B]</code>. flatMap comes in handy when we compose two effects
+together. It let&rsquo;s you get the result from the first and pass it as a (pure) parameter
+to the next. For example, imagine we have two calls that go out over the network
+to a database or external service and we use map to chain them together&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">getUser</span>(email<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Future</span>[<span style="color: #a9a1e1;">User</span>] <span style="color: #51afef;">=</span> ???
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">getAccountStatus</span>(id<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Future</span>[<span style="color: #a9a1e1;">AccountStatus</span>] <span style="color: #51afef;">=</span> ???
+
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">accountStatus</span> <span style="color: #51afef;">=</span> getUser(<span style="color: #98be65;">"bob@google.com"</span>)
+  .map(user <span style="color: #51afef;">=&gt;</span> getAccountStatus(user.accountId))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">accountStatus has type Future[Future[AccountStatus]]</span>
+</pre>
+</div>
+
+<p>
+Dealing with nested effects like <code>Future[Future[_]]</code> creates a burden on us to
+reach inside the layers one at a time. If we used flatMap instead it would take
+care of flattening the result for us&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">accountStatus</span> <span style="color: #51afef;">=</span> getUser(<span style="color: #98be65;">"bob@google.com"</span>)
+  .flatMap(user <span style="color: #51afef;">=&gt;</span> getAccountStatus(user.accountId))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">accountStatus has type [Future[AccountStatus]</span>
+</pre>
+</div>
+
+<p>
+That is the essence of Monad&rsquo;s; being able to compose effects together. Note
+that the second call is dependent on the first. It would make no sense to call
+<code>getAccountStatus</code> before we called <code>getUser</code> because we need the user&rsquo;s account
+ID. In fact, even if these two effects were completely independent, we would
+still have to wait for the first one before calling the second. That&rsquo;s not an
+ideal situation because these calls may take tens or even a few hundred
+milliseconds. If we want the service to be low latency, we would like to run
+these calls concurrently instead of in sequence.
+</p>
+</div>
+</div>
+<div id="outline-container-orgffa620d" class="outline-2">
+<h2 id="orgffa620d">What&rsquo;s Ap?</h2>
+<div class="outline-text-2" id="text-orgffa620d">
+<p>
+Now we&rsquo;re caught up Functors and Monads, let&rsquo;s look at the <code>Applicative</code>
+typeclass. It is defined as follows in Cats, with some details removed&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">trait</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]] <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Apply</span>[<span style="color: #a9a1e1;">F</span>] {
+  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">pure</span>[<span style="color: #a9a1e1;">A</span>](x<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>]
+}
+</pre>
+</div>
+
+<p>
+If you make an instance of Applicative then you need to supply an implementation
+of <code>pure</code> which is exactly the same as pure found in Monads. You also need to
+implement <code>Apply</code> which looks like this&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">trait</span> <span style="color: #ECBE7B;">Apply</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]] <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Functor</span>[<span style="color: #a9a1e1;">F</span>] {
+  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">ap</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](ff<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>])(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">B</span>]
+}
+</pre>
+</div>
+
+<p>
+You can see that <code>Apply</code> extends Functor which means it has map. Also it has the
+function <code>ap</code> which is, of course, the main subject of this post. What a curious
+type signature! Just like with <code>map</code> we are dealing with an effect type <code>F</code>, and
+a parameter <code>F[A]</code>. The difference is the function we want to <i>apply</i> (<code>ff: F[A
+=&gt; B]=</code>) is also <i>inside the effect</i>.
+</p>
+
+<p>
+Before talking about what this is useful for, let&rsquo;s look at what it actually
+does for various implementations.
+</p>
+</div>
+
+<div id="outline-container-orgc54ea37" class="outline-3">
+<h3 id="orgc54ea37">Applicative instance for Option</h3>
+<div class="outline-text-3" id="text-orgc54ea37">
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a9a1e1;">Option</span>((a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">10</span>).ap(<span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">20</span>))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[Int] = Some(30)</span>
+
+<span style="color: #a9a1e1;">Option</span>((a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">10</span>).ap(<span style="color: #a9a1e1;">None</span>)
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[Int] = None</span>
+
+<span style="color: #a9a1e1;">Option</span>.empty[<span style="color: #a9a1e1;">Int</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Int</span>].ap(<span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">20</span>))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[Int] = None</span>
+
+<span style="color: #a9a1e1;">Option</span>.empty[<span style="color: #a9a1e1;">Int</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Int</span>].ap(<span style="color: #a9a1e1;">Option</span>.empty[<span style="color: #a9a1e1;">Int</span>])
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[Int] = None</span>
+</pre>
+</div>
+
+<p>
+The ap function for Option, then, behaves probably as you&rsquo;d expect. When you
+<i>apply</i> the function, if the <code>ff</code> argument is <code>None</code> then there&rsquo;s nothing to
+apply and we get the result <code>None</code>. If there is a function in there, we extract
+it so that we have a <i>pure function</i> that we can <i>apply</i> to the effectful
+argument <code>F[A]</code>. Again, if that is empty we get <code>None</code>, otherwise we get the
+value <code>f(a)</code> which will be wrapped back up in the effect giving <code>Some(30)</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org78882d1" class="outline-3">
+<h3 id="org78882d1">Applicative instance for List</h3>
+<div class="outline-text-3" id="text-org78882d1">
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a9a1e1;">List</span>((a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">1</span>,
+     (a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a - <span style="color: #da8548; font-weight: bold;">10</span>,
+     (a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">22</span>).ap(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Int] = List(2, 3, 4, -9, -8, -7, 23, 24, 25)</span>
+</pre>
+</div>
+
+<p>
+For <code>List</code> the input value for <code>ff</code> has the signature <code>List[A =&gt; B]</code>, and each
+function in the list is applied to each argument in the input list.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org422c4d1" class="outline-3">
+<h3 id="org422c4d1">Idomaticly apply all the things</h3>
+<div class="outline-text-3" id="text-org422c4d1">
+<p>
+All data types that have instances of Applicative have a way to apply a
+function wrapped in an effect of that type, and the way that it is applied is
+<i>idomatic</i> to that effect. In fact, before the name <code>Applicative Functor</code> stuck,
+they were called <code>Idioms</code>.
+</p>
+
+<p>
+You may be scratching your head at this point, for it&rsquo;s not often in programming
+that you want to apply a list of functions to a list (although I&rsquo;m sure you can
+probably come up with some ways to use it), and how often do you have functions
+in Options? It gets weirder in the case of other data types. With <code>Future</code>, or
+<code>IO</code>, for example, do you ever remember writing a function that returns a
+function from a Future? It&rsquo;s certainly rare. Still more strange would be a
+function inside a <code>State</code> monad, but that is perfectly valid too&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">import</span> cats.data.<span style="color: #a9a1e1;">State</span>
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Create a function in a State</span>
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">fs</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">State</span>[<span style="color: #a9a1e1;">Int</span>, (<span style="color: #a9a1e1;">Int</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Int</span>)]
+  (s <span style="color: #51afef;">=&gt;</span> (s, (a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + s))
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Now to apply it to an appropriate State</span>
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">applied</span> <span style="color: #51afef;">=</span> fs.ap(<span style="color: #a9a1e1;">State</span>[<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>](s <span style="color: #51afef;">=&gt;</span> (s,<span style="color: #da8548; font-weight: bold;">10</span>)))
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Finally run the Applicative State and grab the value</span>
+applied.run(<span style="color: #da8548; font-weight: bold;">10</span>).value
+<span style="color: #5B6268;">//</span><span style="color: #5B6268;">res: (Int, Int) = (10, 20)</span>
+</pre>
+</div>
+
+<p>
+So, everything that has an Applicative can handle pure functions that have been
+lifted into effects. In some cases that seems marginally useful and in other
+cases seems rather weird. Why is that? I&rsquo;m going to bury the lede and in the
+next section we&rsquo;ll back up a bit and look at the original paper that motivated
+Applicative Functors back in 2008.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga1a6532" class="outline-2">
+<h2 id="orga1a6532">Applicative Programming with Effects</h2>
+<div class="outline-text-2" id="text-orga1a6532">
+<p>
+In this section we&rsquo;ll walk through some sections of the 2008 paper by McBride
+and Patterson, Applicative Programming with Effects, converting the original
+Haskell into working Scala code.
+</p>
+
+<p>
+<a href="https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf">https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf</a>
+</p>
+
+<blockquote>
+<p>
+This is the story of a pattern that popped up time and again in our daily work,
+programming in Haskell (Peyton Jones, 2003), until the temptation to abstract it
+became irresistable. Let us illustrate with some examples.
+</p>
+</blockquote>
+
+<p>
+We&rsquo;ll walk through each of the three examples&#x2026;
+</p>
+</div>
+
+<div id="outline-container-org9719544" class="outline-3">
+<h3 id="org9719544">Sequencing Commands</h3>
+<div class="outline-text-3" id="text-org9719544">
+<blockquote>
+<p>
+One often wants to execute a sequence of commands and
+collect the sequence of their responses, and indeed there is such a function in the
+Haskell Prelude (here specialised to IO)
+</p>
+</blockquote>
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">sequence</span> <span style="color: #dcaeea;">::</span> [<span style="color: #ECBE7B;">IO</span> a ] <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">IO</span> [a ]
+<span style="color: #c678dd;">sequence</span> [ ] <span style="color: #dcaeea;">=</span> return [ ]
+<span style="color: #c678dd;">sequence</span> (c <span style="color: #ECBE7B;">:</span> cs) <span style="color: #dcaeea;">=</span> <span style="color: #51afef;">do</span>
+  x <span style="color: #dcaeea;">&#8592;</span> c
+  xs <span style="color: #dcaeea;">&#8592;</span> sequence cs
+</pre>
+</div>
+
+<p>
+Before we get started, if you&rsquo;re following along in your Scala IDE or REPL you
+will need some imports listed below. You can also clone the Github repository.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">import</span> zio.<span style="color: #51afef;">_</span>
+<span style="color: #51afef;">import</span> zio.console.<span style="color: #51afef;">_</span>
+<span style="color: #51afef;">import</span> zio.clock.<span style="color: #51afef;">_</span>
+<span style="color: #51afef;">import</span> zio.duration.<span style="color: #51afef;">_</span>
+<span style="color: #51afef;">import</span> cats.<span style="color: #a9a1e1;">Applicative</span>
+<span style="color: #51afef;">import</span> cats.implicits.<span style="color: #51afef;">_</span>
+</pre>
+</div>
+
+<p>
+&#x2026; and the following libraries &#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">libraryDependencies ++= <span style="color: #a9a1e1;">Seq</span>(
+ <span style="color: #98be65;">"org.typelevel"</span> %% <span style="color: #98be65;">"cats-core"</span> % <span style="color: #98be65;">"2.1.1"</span>,
+ <span style="color: #98be65;">"dev.zio"</span> %% <span style="color: #98be65;">"zio"</span> % <span style="color: #98be65;">"1.0.0-RC18"</span>)
+</pre>
+</div>
+
+<p>
+I am using ZIO in place of Haskell&rsquo;s IO Monad, and bringing in Cats to use its
+Applicative.
+</p>
+
+<p>
+Converting the sequence function from Haskell to Scala&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">monadicSequence</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">A</span>](ios<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>, <span style="color: #a9a1e1;">E</span>, <span style="color: #a9a1e1;">A</span>]])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>, <span style="color: #a9a1e1;">E</span>, <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=</span> {
+    ios <span style="color: #51afef;">match</span> {
+      <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">Nil</span> <span style="color: #51afef;">=&gt;</span>
+        zioApplicative.pure(<span style="color: #a9a1e1;">List</span>.empty[<span style="color: #a9a1e1;">A</span>])
+      <span style="color: #51afef;">case</span> <span style="color: #dcaeea;">c</span> <span style="color: #ECBE7B;">::</span> <span style="color: #dcaeea;">cs</span> <span style="color: #51afef;">=&gt;</span>
+        <span style="color: #51afef;">for</span> (
+          x <span style="color: #51afef;">&lt;-</span> c;
+          xs <span style="color: #51afef;">&lt;-</span> monadicSequence(cs)
+        ) <span style="color: #51afef;">yield</span> (x +: xs)
+    }
+  }
+</pre>
+</div>
+
+<p>
+If you&rsquo;re not familiar with <code>ZIO</code> you can think of it as a replacement for the standard library
+Scala <code>Future</code>, but it has better performance and a lot more features. It is
+also not eagerly evaluated like Future. To explain, when you create a future it runs
+immediately and you cannot run it again. You can create a ZIO and run it when
+you decide to and as many times as you want.
+</p>
+
+<p>
+To demonstrate this sequence running let&rsquo;s write an implementation of a silly
+algorithm called Sleep Sort. Sleep Sort works by waiting an amount of time based
+on the value of the number. Emitting the numbers in this way sorts them
+(assuming your scheduler is accurate enough). Let&rsquo;s be clear, this is a stupid
+way to sort numbers, but it&rsquo;s handy as a way to illustrate our <code>monadicSequence</code>
+function.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">delayedPrintNumber</span>(s<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Console</span> <span style="color: #51afef;">with</span> <span style="color: #ECBE7B;">Clock</span>,<span style="color: #a9a1e1;">String</span>,<span style="color: #a9a1e1;">Int</span>] <span style="color: #51afef;">=</span> {
+    putStrLn(s<span style="color: #98be65;">"Preparing to say number in </span><span style="color: #dcaeea;">$s</span><span style="color: #98be65;"> seconds"</span>) *&gt;
+    putStrLn(s<span style="color: #98be65;">"</span><span style="color: #dcaeea;">$s</span><span style="color: #98be65;">"</span>).delay(s.seconds) *&gt;
+    <span style="color: #a9a1e1;">ZIO</span>.succeed(s)
+}
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">ios1</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">6</span>,<span style="color: #da8548; font-weight: bold;">5</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">8</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">7</span>).map(delayedPrintNumber)
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">ios1: List[ZIO[Console with Clock,String,Int]]</span>
+</pre>
+</div>
+
+<p>
+The function creates an IO effect, which when run will immediately print a
+message and then wait <code>s</code> seconds before printing the number. We map the
+function across a list of numbers to generate a list of IO effects, which we can
+then run.
+</p>
+
+<p>
+You may be surprised that this does not work. Instead of running all the effects
+at once and printing them out in order it just executes the first IO (wait 6
+seconds), then the second (wait 5 seconds).
+</p>
+
+<pre class="example">
+Monadic version
+
+Preparing to say number in 6 seconds
+6
+Preparing to say number in 5 seconds
+5
+// ... and so on for a while
+</pre>
+
+<p>
+If you were not surprised maybe you&rsquo;re ahead of me, and know that our
+<code>monadicSequence</code> function cannot possibly run all the effects at once by virtue
+of it being monadic in the first place.
+</p>
+
+<p>
+That <code>for</code> comprehension is really hiding that we are calling flatMap on each
+successive IO, and flatMap sequences things together. You must wait for the
+result of the first effect before you can evaluate the second. So whilst the
+first implementation of <code>sequence</code> in the paper will absolutely work, it will
+not let us implement our sleep sort, nor let us parallelize the IO&rsquo;s in general.
+</p>
+
+<p>
+Anyway let&rsquo;s get back to the paper, at this point the authors observe&#x2026;
+</p>
+
+<blockquote>
+<p>
+In the (c : cs) case, we collect the values of some effectful computations, which we
+then use as the arguments to a pure function (:). We could avoid the need for names
+to wire these values through to their point of usage if we had a kind of ‘effectful
+application’.
+</p>
+</blockquote>
+
+<p>
+By effectful application they are talking about the <code>ap</code> function, and they go
+on to say that it lives in the Haskell Monad library. Given that function they
+rewrite the <code>sequence</code> function as follows&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">sequence</span> <span style="color: #dcaeea;">::</span> [<span style="color: #ECBE7B;">IO</span> a ] <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">IO</span> [a ]
+<span style="color: #c678dd;">sequence</span> [ ] <span style="color: #dcaeea;">=</span> return [ ]
+<span style="color: #c678dd;">sequence</span> (c <span style="color: #ECBE7B;">:</span> cs) <span style="color: #dcaeea;">=</span> return (<span style="color: #ECBE7B;">:</span>) &#8216;ap&#8216; c &#8216;ap&#8216; sequence cs
+</pre>
+</div>
+
+<blockquote>
+<p>
+Except for the noise of the returns and aps, this definition is in a fairly standard
+applicative style, even though effects are present.
+</p>
+</blockquote>
+
+<p>
+Note that the <code>ap</code> they are using here is in the Monad library, and implemented
+using flatMap, so it will not yet allow our sleep sort to work. However, I&rsquo;ve
+implemented an Applicative instance for ZIO which does not have that
+limitation&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">zioApplicative</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>] <span style="color: #51afef;">=</span> <span style="color: #51afef;">new</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,?]] {
+    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">pure</span>[<span style="color: #a9a1e1;">A</span>](x<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">ZIO</span>.succeed(x)
+    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">ap</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](ff<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>])(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=</span> {
+      map2(ff, fa){
+        (f,a) <span style="color: #51afef;">=&gt;</span>
+          f(a)
+      }
+    }
+    <span style="color: #c678dd;">override</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">map2</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">C</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">A</span>], fb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">B</span>])(f<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">C</span>) <span style="color: #51afef;">:</span>
+      <span style="color: #a9a1e1;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">C</span>] <span style="color: #51afef;">=</span> {
+        fa.zipPar(fb).map{<span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">a</span>,<span style="color: #dcaeea;">b</span>) <span style="color: #51afef;">=&gt;</span> f(a,b)}
+    }
+  }
+</pre>
+</div>
+
+<p>
+It&rsquo;s not important to understand all the details here, all you need understand
+is we now have an <code>ap</code> that we can apply to ZIO effects that is truly parallel,
+so if you&rsquo;re not interested then skip to the next paragraph.
+</p>
+
+<div class="aside">
+<p>
+The <code>pure</code> function is straightforward, it just wraps a pure value in a
+succeeded ZIO. The <code>ap</code> function is more interesting. Whilst it&rsquo;s not obvious
+how you would implemented ap in for ZIO, it is really easy to implement <code>map2</code>.
+<code>map2</code> comes in handy because it lets you take the results of two effects and
+pass them to a pure function. The function has the signature <code>f: (A, B) =&gt; C</code>.
+We use the ZIO function <code>zipPar</code> to execute the two effects <span class="underline">in parallel</span>, and
+if both <code>fa</code> and <code>fb</code> yield values then they are mapped with the pure function
+giving us a ZIO with the final result inside. Happily, you can implement ap in
+terms of map2, so that solves our problem.
+</p>
+
+</div>
+
+<p>
+Here&rsquo;s the conversion of the applicative version of <code>sequence</code> to Scala&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">applicativeSequence</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">A</span>](ios<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>, <span style="color: #a9a1e1;">E</span>, <span style="color: #a9a1e1;">A</span>]])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>, <span style="color: #a9a1e1;">E</span>, <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=</span> {
+    ios <span style="color: #51afef;">match</span> {
+      <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">Nil</span> <span style="color: #51afef;">=&gt;</span>
+        <span style="color: #a9a1e1;">ZIO</span>.succeed(<span style="color: #a9a1e1;">List</span>.empty[<span style="color: #a9a1e1;">A</span>])
+      <span style="color: #51afef;">case</span> <span style="color: #dcaeea;">c</span> <span style="color: #ECBE7B;">::</span> <span style="color: #dcaeea;">cs</span> <span style="color: #51afef;">=&gt;</span>
+        <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">ff</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>, <span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> (<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>])] <span style="color: #51afef;">=</span>
+          zioApplicative.pure(((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> (listA<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=&gt;</span> a +: listA))
+        <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">p1</span> <span style="color: #51afef;">=</span> ff.ap(c)
+        p1.ap(applicativeSequence(cs))
+    }
+  }
+</pre>
+</div>
+
+<p>
+It&rsquo;s a little bit noisier than the Haskell code, but most of that is having to
+be more verbose about the types to keep the type checker happy. In fact the
+parts of each implementation match up together.
+</p>
+
+<p>
+Now we can run that and you will see that the effects are now parellelised and
+our sleep sort works!!
+</p>
+</div>
+</div>
+</div>

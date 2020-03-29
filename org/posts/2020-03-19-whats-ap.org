@@ -3,6 +3,7 @@
 #+DATE: 2020
 #+STARTUP: showall
 #+OPTIONS: toc:nil
+#+HTML_HTML5_FANCY:
 #+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
 #+BEGIN_EXPORT html
 ---
@@ -12,7 +13,7 @@ date: '2020-03-19T00:00:00.000-08:00'
 tags: [pure-functional-programming, cats, scala, applicative]
 ---
 #+END_EXPORT
-** A (long) introduction to Applicative Functors
+** Applicative Functors
 This post is aimed at the Scala programmer who is familiar with the basics of
 the language and ideally becoming interested, or already deeply entrenched, in
 pure functional programming and curious about ~Applicative Functors~. We'll
@@ -300,12 +301,133 @@ then run.
 
 You may be surprised that this does not work. Instead of running all the effects
 at once and printing them out in order it just executes the first IO (wait 6
-seconds), then the second (wait 5 seconds). If you were not surprised maybe
-you're ahead of me, and know that our ~monadicSequence~ function cannot possibly
-run all the effects at once by virtue of it being monadic in the first place.
+seconds), then the second (wait 5 seconds).
+
+#+BEGIN_SRC
+Monadic version
+
+Preparing to say number in 6 seconds
+6
+Preparing to say number in 5 seconds
+5
+// ... and so on for a while
+#+END_SRC
+
+If you were not surprised maybe you're ahead of me, and know that our
+~monadicSequence~ function cannot possibly run all the effects at once by virtue
+of it being monadic in the first place.
 
 That ~for~ comprehension is really hiding that we are calling flatMap on each
 successive IO, and flatMap sequences things together. You must wait for the
 result of the first effect before you can evaluate the second. So whilst the
 first implementation of ~sequence~ in the paper will absolutely work, it will
 not let us implement our sleep sort, nor let us parallelize the IO's in general.
+
+Anyway let's get back to the paper, at this point the authors observe...
+
+#+BEGIN_QUOTE
+In the (c : cs) case, we collect the values of some effectful computations, which we
+then use as the arguments to a pure function (:). We could avoid the need for names
+to wire these values through to their point of usage if we had a kind of ‘effectful
+application’.
+#+END_QUOTE
+
+By effectful application they are talking about the ~ap~ function, and they go
+on to say that it lives in the Haskell Monad library. Given that function they
+rewrite the ~sequence~ function as follows...
+
+#+BEGIN_SRC haskell
+sequence :: [IO a ] → IO [a ]
+sequence [ ] = return [ ]
+sequence (c : cs) = return (:) ‘ap‘ c ‘ap‘ sequence cs
+#+END_SRC
+
+#+BEGIN_QUOTE
+Except for the noise of the returns and aps, this definition is in a fairly standard
+applicative style, even though effects are present.
+#+END_QUOTE
+
+Note that the ~ap~ they are using here is in the Monad library, and implemented
+using flatMap, so it will not yet allow our sleep sort to work. However, I've
+implemented an Applicative instance for ZIO which does not have that
+limitation...
+
+#+BEGIN_SRC scala
+implicit def zioApplicative[Z,E] = new Applicative[ZIO[Z,E,?]] {
+    def pure[A](x: A) = ZIO.succeed(x)
+    def ap[A, B](ff: ZIO[Z,E,A => B])(fa: ZIO[Z,E,A]) = {
+      map2(ff, fa){
+        (f,a) =>
+          f(a)
+      }
+    }
+    override def map2[A, B, C](fa: ZIO[Z,E,A], fb: ZIO[Z,E,B])(f: (A, B) => C) :
+      ZIO[Z,E,C] = {
+        fa.zipPar(fb).map{case (a,b) => f(a,b)}
+    }
+  }
+#+END_SRC
+
+It's not important to understand all the details here, all you need understand
+is we now have an ~ap~ that we can apply to ZIO effects that is truly parallel,
+so if you're not interested then skip to the next paragraph.
+
+#+BEGIN_aside
+The ~pure~ function is straightforward, it just wraps a pure value in a
+succeeded ZIO. The ~ap~ function is more interesting. Whilst it's not obvious
+how you would implemented ap in for ZIO, it is really easy to implement ~map2~.
+~map2~ comes in handy because it lets you take the results of two effects and
+pass them to a pure function. The function has the signature ~f: (A, B) => C~.
+We use the ZIO function ~zipPar~ to execute the two effects _in parallel_, and
+if both ~fa~ and ~fb~ yield values then they are mapped with the pure function
+giving us a ZIO with the final result inside. Happily, you can implement ap in
+terms of map2, so that solves our problem.
+#+END_aside
+
+Here's the conversion of the applicative version of ~sequence~ to Scala...
+
+#+BEGIN_SRC scala
+def applicativeSequence[Z,E,A](ios: List[ZIO[Z, E, A]]): ZIO[Z, E, List[A]] = {
+    ios match {
+      case Nil =>
+        ZIO.succeed(List.empty[A])
+      case c :: cs =>
+        val ff: ZIO[Z,E, A => (List[A] => List[A])] =
+          zioApplicative.pure(((a: A) => (listA: List[A]) => a +: listA))
+        val p1 = ff.ap(c)
+        p1.ap(applicativeSequence(cs))
+    }
+  }
+#+END_SRC
+
+It's a little bit noisier than the Haskell code, but most of that is having to
+be more verbose about the types to keep the type checker happy. In fact the
+parts of each implementation match up together.
+
+Now we can run that and you will see that the effects are now parellelised and
+our sleep sort works!
+
+#+BEGIN_SRC
+Applicative version
+
+Preparing to say number in 6 seconds
+Preparing to say number in 2 seconds
+Preparing to say number in 1 seconds
+Preparing to say number in 3 seconds
+Preparing to say number in 8 seconds
+Preparing to say number in 4 seconds
+Preparing to say number in 7 seconds
+Preparing to say number in 5 seconds
+1
+2
+3
+4
+5
+6
+7
+8
+#+END_SRC
+
+Note that the point the authors were making here was just to show that the
+~sequence~ function is a pattern that came up often, that could be more
+succinctly expressed with ~ap~.
