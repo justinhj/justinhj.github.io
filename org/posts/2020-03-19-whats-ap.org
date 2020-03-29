@@ -232,68 +232,80 @@ sequence (c : cs) = do
 #+END_SRC
 
 Before we get started, if you're following along in your Scala IDE or REPL you
-will need the following imports...
+will need some imports listed below. You can also clone the Github repository.
 
 #+BEGIN_SRC scala
-  import cats._
-  import cats.effect.ContextShift
-  import cats.CommutativeApplicative
-  import cats.effect.IO
-  import cats.effect.IO.Par
-  import cats.implicits._
-  import scala.concurrent.ExecutionContext
-  import scala.concurrent.duration._
-
-  // Some things needed by Cats Effect
-  implicit val timer = IO.timer(ExecutionContext.global)
-  implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+import zio._
+import zio.console._
+import zio.clock._
+import zio.duration._
+import cats.Applicative
+import cats.implicits._
 #+END_SRC
 
 ... and the following libraries ...
 
 #+BEGIN_SRC scala
+libraryDependencies ++= Seq(
  "org.typelevel" %% "cats-core" % "2.1.1",
- "org.typelevel" %% "cats-effect" % "2.1.2"
+ "dev.zio" %% "zio" % "1.0.0-RC18")
 #+END_SRC
+
+I am using ZIO in place of Haskell's IO Monad, and bringing in Cats to use its
+Applicative.
 
 Converting the sequence function from Haskell to Scala...
 
 #+BEGIN_SRC scala
- def sequence[A](ios: List[IO[A]]): IO[List[A]] = {
+  def monadicSequence[Z,E,A](ios: List[ZIO[Z, E, A]]): ZIO[Z, E, List[A]] = {
     ios match {
       case Nil =>
-        IO.pure(List.empty[A])
+        zioApplicative.pure(List.empty[A])
       case c :: cs =>
         for (
           x <- c;
-          xs <- sequence(cs)
+          xs <- monadicSequence(cs)
         ) yield (x +: xs)
     }
   }
 #+END_SRC
 
-If you're not familiar with ~IO~ you can think of it as the standard library
-Scala ~Future~ except it has some properties that make it /more pure/. Future is
-eagerly evaluated, meaning that as soon as you create a Future it will be
-scheduled on a thread and start running. Whilst this is perfectly fine for a lot
-of use cases, for our purposes here we need the ~IO~ monad (as implemented in
-Cats Effect, Monix, Scalaz and ZIO). For the purposes of this post that's enough
-detail but I enourage you to read up on IO Monads in the red book or the blue
-book later. TODO footnotes. 
+If you're not familiar with ~ZIO~ you can think of it as a replacement for the standard library
+Scala ~Future~, but it has better performance and a lot more features. It is
+also not eagerly evaluated like Future. To explain, when you create a future it runs
+immediately and you cannot run it again. You can create a ZIO and run it when
+you decide to and as many times as you want.
 
-In order to show this in action, let's make a little IO action that waits a
-couple of seconds then prints a message...
+To demonstrate this sequence running let's write an implementation of a silly
+algorithm called Sleep Sort. Sleep Sort works by waiting an amount of time based
+on the value of the number. Emitting the numbers in this way sorts them
+(assuming your scheduler is accurate enough). Let's be clear, this is a stupid
+way to sort numbers, but it's handy as a way to illustrate our ~monadicSequence~
+function.
 
 #+BEGIN_SRC scala
-def printIO(out: String): IO[Unit] = {
-  for (
-    _ <- IO.sleep(1 second);
-    _ <- IO(println(out))
-  ) yield ()
+def delayedPrintNumber(s: Int): ZIO[Console with Clock,String,Int] = {
+    putStrLn(s"Preparing to say number in $s seconds") *>
+    putStrLn(s"$s").delay(s.seconds) *>
+    ZIO.succeed(s)
 }
-
-val ios = List(
-  printIO("Why,"),
-  printIO("hello"),
-  printIO("there!"))
+val ios1 = List(6,5,2,1,3,8,4,7).map(delayedPrintNumber)
+// ios1: List[ZIO[Console with Clock,String,Int]]
 #+END_SRC
+
+The function creates an IO effect, which when run will immediately print a
+message and then wait ~s~ seconds before printing the number. We map the
+function across a list of numbers to generate a list of IO effects, which we can
+then run.
+
+You may be surprised that this does not work. Instead of running all the effects
+at once and printing them out in order it just executes the first IO (wait 6
+seconds), then the second (wait 5 seconds). If you were not surprised maybe
+you're ahead of me, and know that our ~monadicSequence~ function cannot possibly
+run all the effects at once by virtue of it being monadic in the first place.
+
+That ~for~ comprehension is really hiding that we are calling flatMap on each
+successive IO, and flatMap sequences things together. You must wait for the
+result of the first effect before you can evaluate the second. So whilst the
+first implementation of ~sequence~ in the paper will absolutely work, it will
+not let us implement our sleep sort, nor let us parallelize the IO's in general.
