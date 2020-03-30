@@ -204,11 +204,13 @@ Applicative Functors back in 2008.
 
 ** Applicative Programming with Effects
 
-In this section we'll walk through some sections of the 2008 paper by McBride
-and Patterson, Applicative Programming with Effects, converting the original
-Haskell into working Scala code.
+*** Motivating Examples
+Applicative Functors first saw light of day in the 2008 paper by McBride and
+Patterson, "Applicative Programming with Effects" which you can find here...
 
 [[https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf]]
+
+The paper begins with three motivating examples for the use of Applicative style...
 
 #+BEGIN_QUOTE
 This is the story of a pattern that popped up time and again in our daily work,
@@ -216,9 +218,9 @@ programming in Haskell (Peyton Jones, 2003), until the temptation to abstract it
 became irresistable. Let us illustrate with some examples.
 #+END_QUOTE
 
-We'll walk through each of the three examples...
+We'll walk through each of the three examples and convert them to use Scala...
 
-*** Sequencing Commands
+**** Sequencing Commands
 #+BEGIN_QUOTE
 One often wants to execute a sequence of commands and
 collect the sequence of their responses, and indeed there is such a function in the
@@ -430,4 +432,219 @@ Preparing to say number in 5 seconds
 
 Note that the point the authors were making here was just to show that the
 ~sequence~ function is a pattern that came up often, that could be more
-succinctly expressed with ~ap~.
+succinctly expressed with ~ap~. Showing that it also enables our effects to run
+in parallel, given the correct implementation, was just to show one of the
+benefits of avoiding Monad when effects are not dependent on each other.
+
+**** Matrix Transposition
+The second example in the paper is that of Matrix transposition, which takes a
+matrix and flips it along a diagonal. For example...
+
+#+BEGIN_SRC
+Original matrix
+ 1  2  3  4  5
+ 6  7  8  9 10
+11 12 13 14 15
+
+Transposed matrix
+ 1  6 11
+ 2  7 12
+ 3  8 13
+ 4  9 14
+ 5 10 15
+#+END_SRC
+
+In Haskell, we first see this implememtation of transpose...
+
+#+BEGIN_SRC haskell
+transpose :: [[a ]] → [[a ]]
+transpose [ ] = repeat [ ]
+transpose (xs : xss) = zipWith (:) xs (transpose xss)
+
+repeat :: a → [a ]
+repeat x = x : repeat x
+#+END_SRC
+
+Let's translate this to Scala. The algorithm works by taking each row in turn
+and /zipping/ it with each subsequent row.
+
+First we need to be careful about the function ~repeat~ which returns an
+infinite number of whatever x is. This is used in the transpose for the last row
+of the matrix where we want a number of empty lists to finish our recursion but
+we don't know how many, so we want to just keep taking them. Since Haskell is by
+default lazily evaluated this will work fine. In Scala as soon as we evaluate
+repeat we will run into an infinite loop. That's easily fixed by switching to
+~LazyList~ which is part of the standard library. (Before Scala 2.13 it was
+called Stream).
+
+#+BEGIN_SRC scala
+def repeat[A](a: A): LazyList[A] = a #:: repeat(a)
+#+END_SRC
+
+The function ~zipWith~ has the following type signature...
+
+#+BEGIN_SRC haskell
+zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+#+END_SRC
+
+In other words it takes two lists and a pure function of two arguments, and
+creates a new list by applying the function to each element. It will stop once
+it runs out of elements in one of the lists. Here's the Scala version.
+
+#+BEGIN_SRC scala
+def zipWith[A, B, C](as: LazyList[A], bs: LazyList[B])(
+      f: (A, B) => C): LazyList[C] = {
+    as.zip(bs).map { case (a, b) => f(a, b) }
+  }
+#+END_SRC
+
+With the pieces in place I can now implement the transpose as follows...
+
+#+BEGIN_SRC scala
+def transpose[A](matrix: LazyList[LazyList[A]]): LazyList[LazyList[A]] = {
+  matrix match {
+    case LazyList() => repeat(LazyList.empty)
+    case xs #:: xss =>
+      zipWith(xs, transpose(xss)) {
+        case (a, as) =>
+          a +: as
+      }
+  }
+}
+#+END_SRC
+
+The next step in the paper is to make this look a bit more /applicative/ by
+using a combination of ~repeat~ and ~zapp~...
+
+#+BEGIN_SRC haskell
+zapp :: [a → b ] → [a ] → [b ]
+zapp (f : fs) (x : xs) = f x : zapp fs xs
+zapp = [ ]
+
+transpose :: [[a ]] → [[a ]]
+transpose [ ] = repeat [ ]
+transpose (xs : xss) = repeat (:) ‘zapp‘ xs ‘zapp‘ transpose xss
+#+END_SRC
+
+#+BEGIN_QUOTE
+Except for the noise of the repeats and zapps, this definition is in a fairly standard
+applicative style, even though we are working with vectors.
+#+END_QUOTE
+
+**** Evaluating Expressions
+The third example of applicative style is an expression evaluator that can add
+numbers, both literals and numbers bound to strings and stored in an environment.
+
+#+BEGIN_QUOTE
+When implementing an evaluator for a language of expressions, it is customary to
+pass around an environment, giving values to the free variables.
+#+END_QUOTE
+
+The Haskell code looks like this...
+
+#+BEGIN_SRC haskell
+data Exp v = Var v
+  | Val Int
+  | Add (Exp v) (Exp v)
+
+eval :: Exp v → Env v → Int
+eval (Var x ) γ = fetch x γ
+eval (Val i) γ = i
+eval (Add p q) γ = eval p γ + eval q γ
+#+END_SRC
+
+Converting to Scala is straightforward...
+
+#+BEGIN_SRC scala
+sealed trait Exp
+case class Val(value: Int) extends Exp
+case class Add(left: Exp, right: Exp) extends Exp
+case class Var(key: String) extends Exp
+
+case class Env[K](kv: Map[K,Int])
+
+def fetch(key: String)(env: Env[String]) : Int =
+  env.kv.getOrElse(key, 0)
+
+def eval(exp: Exp, env: Env[String]) : Int = {
+  exp match {
+    case Val(value) => value
+    case Var(key) => fetch(key)(env)
+    case Add(left, right) =>
+      eval(left, env) + eval(right, env)
+  }
+}
+#+END_SRC
+
+Here I've made the environment a simple key value store, and, to avoid
+complicating the example with error handling, if a variable is not present in
+the environment I just default to returning zero.
+
+Following the pattern of the previous two examples, the authors then pull some
+magic to make the applicative pattern more noticable...
+
+#+BEGIN_QUOTE
+We can eliminate the clutter of the explicitly threaded environment with a little
+help from some very old friends, designed for this purpose
+#+END_QUOTE
+
+#+BEGIN_SRC haskell
+eval :: Exp v → Env v → Int
+eval (Var x ) = fetch x
+eval (Val i) = K i
+eval (Add p q) = K (+) ‘S‘ eval p ‘S‘ eval q
+
+where
+K :: a → env → a
+K x γ = x
+
+S :: (env → a → b) → (env → a) → (env → b)
+S ef es γ = (ef γ) (es γ)
+#+END_SRC
+
+So this all looks a bit cryptic. Who are the old friends? Well, if you look at
+the type signature of ~K~ it is actually the ~pure~ function, and ~S~
+is the ~ap~ function. This is in fact what we'd call the ~Reader~ Monad in
+Scala.
+
+By old friends, the authors are referring to the [[https://en.wikipedia.org/wiki/SKI_combinator_calculus][SKI Combinator Calculus]].
+
+Let's reimplement in Scala using the ~Reader~.
+
+#+BEGIN_SRC scala
+def fetchR(key: String) = Reader[Map[String,Int], Int](env => env.getOrElse(key, 0))
+def pureR(value: Int) = Reader[Map[String,Int], Int](env => value)
+
+def evalR(exp: Exp): Reader[Map[String,Int], Int] = {
+  exp match {
+    case Val(value) => pureR(value)
+    case Var(key) => fetchR(key)
+    case Add(left, right) =>
+      val f = Reader((env:Map[String,Int]) =>
+        (a:Int) => (b:Int) => a + b)
+      val leftEval = evalR(left).ap(f)
+      evalR(right).ap(leftEval)
+  }
+}
+#+END_SRC
+
+And take it for a test drive...
+
+#+BEGIN_SRC scala
+val env1 = Env(Map("x" -> 3, "y" -> 10))
+val exp1 = Add(Val(10), Add(Var("x"), Var("y")))
+
+println(s"Eval : ${eval(exp1, env1)}")
+// Eval : 23
+#+END_SRC
+
+**** We applied ourselves!
+To summarize, we've seen three different effects used in applicative style; IO,
+List and Reader. Now you can see why it makes sense to be able to apply a
+function that is wrapped in these effects. What we needed, and got with ~ap~, is
+a way to lift a pure function so we can apply it to a chain of effects of the
+same effect type.
+
+
+*** Section 2
+

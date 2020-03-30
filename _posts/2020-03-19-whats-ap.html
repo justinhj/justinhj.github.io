@@ -527,8 +527,252 @@ parts of each implementation match up together.
 
 <p>
 Now we can run that and you will see that the effects are now parellelised and
-our sleep sort works!!
+our sleep sort works!
 </p>
+
+<pre class="example">
+Applicative version
+
+Preparing to say number in 6 seconds
+Preparing to say number in 2 seconds
+Preparing to say number in 1 seconds
+Preparing to say number in 3 seconds
+Preparing to say number in 8 seconds
+Preparing to say number in 4 seconds
+Preparing to say number in 7 seconds
+Preparing to say number in 5 seconds
+1
+2
+3
+4
+5
+6
+7
+8
+</pre>
+
+<p>
+Note that the point the authors were making here was just to show that the
+<code>sequence</code> function is a pattern that came up often, that could be more
+succinctly expressed with <code>ap</code>. Showing that it also enables our effects to run
+in parallel, given the correct implementation, was just to show one of the
+benefits of avoiding Monad when effects are not dependent on each other.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org9f06115" class="outline-3">
+<h3 id="org9f06115">Matrix Transposition</h3>
+<div class="outline-text-3" id="text-org9f06115">
+<p>
+The second example in the paper is that of Matrix transposition, which takes a
+matrix and flips it along a diagonal. For example&#x2026;
+</p>
+
+<pre class="example">
+Original matrix
+ 1  2  3  4  5
+ 6  7  8  9 10
+11 12 13 14 15
+
+Transposed matrix
+ 1  6 11
+ 2  7 12
+ 3  8 13
+ 4  9 14
+ 5 10 15
+</pre>
+
+<p>
+In Haskell, we first see this implememtation of transpose&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">transpose</span> <span style="color: #dcaeea;">::</span> [[a ]] <span style="color: #dcaeea;">&#8594;</span> [[a ]]
+<span style="color: #c678dd;">transpose</span> [ ] <span style="color: #dcaeea;">=</span> repeat [ ]
+<span style="color: #c678dd;">transpose</span> (xs <span style="color: #ECBE7B;">:</span> xss) <span style="color: #dcaeea;">=</span> zipWith (<span style="color: #ECBE7B;">:</span>) xs (transpose xss)
+
+<span style="color: #c678dd;">repeat</span> <span style="color: #dcaeea;">::</span> a <span style="color: #dcaeea;">&#8594;</span> [a ]
+<span style="color: #c678dd;">repeat</span> x <span style="color: #dcaeea;">=</span> x <span style="color: #ECBE7B;">:</span> repeat x
+</pre>
+</div>
+
+<p>
+Let&rsquo;s translate this to Scala. The algorithm works by taking each row in turn
+and <i>zipping</i> it with each subsequent row.
+</p>
+
+<p>
+First we need to be careful about the function <code>repeat</code> which returns an
+infinite number of whatever x is. This is used in the transpose for the last row
+of the matrix where we want a number of empty lists to finish our recursion but
+we don&rsquo;t know how many, so we want to just keep taking them. Since Haskell is by
+default lazily evaluated this will work fine. In Scala as soon as we evaluate
+repeat we will run into an infinite loop. That&rsquo;s easily fixed by switching to
+<code>LazyList</code> which is part of the standard library. (Before Scala 2.13 it was
+called Stream).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">repeat</span>[<span style="color: #a9a1e1;">A</span>](a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> a #:: repeat(a)
+</pre>
+</div>
+
+<p>
+The function <code>zipWith</code> has the following type signature&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">zipWith</span> <span style="color: #dcaeea;">::</span> (a <span style="color: #dcaeea;">-&gt;</span> b <span style="color: #dcaeea;">-&gt;</span> c) <span style="color: #dcaeea;">-&gt;</span> [a] <span style="color: #dcaeea;">-&gt;</span> [b] <span style="color: #dcaeea;">-&gt;</span> [c]
+</pre>
+</div>
+
+<p>
+In other words it takes two lists and a pure function of two arguments, and
+creates a new list by applying the function to each element. It will stop once
+it runs out of elements in one of the lists. Here&rsquo;s the Scala version.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">zipWith</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">C</span>](as<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">A</span>], bs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">B</span>])(
+      f<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">C</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">C</span>] <span style="color: #51afef;">=</span> {
+    as.zip(bs).map { <span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">a</span>, <span style="color: #dcaeea;">b</span>) <span style="color: #51afef;">=&gt;</span> f(a, b) }
+  }
+</pre>
+</div>
+
+<p>
+With the pieces in place I can now implement the transpose as follows&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">transpose</span>[<span style="color: #a9a1e1;">A</span>](matrix<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">LazyList</span>[<span style="color: #a9a1e1;">A</span>]])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">LazyList</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=</span> {
+  matrix <span style="color: #51afef;">match</span> {
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">LazyList</span>() <span style="color: #51afef;">=&gt;</span> repeat(<span style="color: #a9a1e1;">LazyList</span>.empty)
+    <span style="color: #51afef;">case</span> <span style="color: #dcaeea;">xs</span> <span style="color: #ECBE7B;">#::</span> <span style="color: #dcaeea;">xss</span> <span style="color: #51afef;">=&gt;</span>
+      zipWith(xs, transpose(xss)) {
+        <span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">a</span>, <span style="color: #dcaeea;">as</span>) <span style="color: #51afef;">=&gt;</span>
+          a +: as
+      }
+  }
+}
+</pre>
+</div>
+
+<p>
+The next step in the paper is to make this look a bit more <i>applicative</i> by
+using a combination of <code>repeat</code> and <code>zapp</code>&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">zapp</span> <span style="color: #dcaeea;">::</span> [a <span style="color: #dcaeea;">&#8594;</span> b ] <span style="color: #dcaeea;">&#8594;</span> [a ] <span style="color: #dcaeea;">&#8594;</span> [b ]
+<span style="color: #c678dd;">zapp</span> (f <span style="color: #ECBE7B;">:</span> fs) (x <span style="color: #ECBE7B;">:</span> xs) <span style="color: #dcaeea;">=</span> f x <span style="color: #ECBE7B;">:</span> zapp fs xs
+<span style="color: #c678dd;">zapp</span> <span style="color: #dcaeea;">=</span> [ ]
+
+<span style="color: #c678dd;">transpose</span> <span style="color: #dcaeea;">::</span> [[a ]] <span style="color: #dcaeea;">&#8594;</span> [[a ]]
+<span style="color: #c678dd;">transpose</span> [ ] <span style="color: #dcaeea;">=</span> repeat [ ]
+<span style="color: #c678dd;">transpose</span> (xs <span style="color: #ECBE7B;">:</span> xss) <span style="color: #dcaeea;">=</span> repeat (<span style="color: #ECBE7B;">:</span>) &#8216;zapp&#8216; xs &#8216;zapp&#8216; transpose xss
+</pre>
+</div>
+
+<blockquote>
+<p>
+Except for the noise of the repeats and zapps, this definition is in a fairly standard
+applicative style, even though we are working with vectors.
+</p>
+</blockquote>
+</div>
+</div>
+
+<div id="outline-container-org15f9128" class="outline-3">
+<h3 id="org15f9128">Evaluating Expressions</h3>
+<div class="outline-text-3" id="text-org15f9128">
+<p>
+The third example of applicative style is an expression evaluator that can add
+numbers, both literals and numbers bound to strings and stored in an environment.
+</p>
+
+<blockquote>
+<p>
+When implementing an evaluator for a language of expressions, it is customary to
+pass around an environment, giving values to the free variables.
+</p>
+</blockquote>
+
+<p>
+The Haskell code looks like this&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #51afef;">data</span> <span style="color: #ECBE7B;">Exp</span> v <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Var</span> v
+  <span style="color: #dcaeea;">|</span> <span style="color: #ECBE7B;">Val</span> <span style="color: #ECBE7B;">Int</span>
+  <span style="color: #dcaeea;">|</span> <span style="color: #ECBE7B;">Add</span> (<span style="color: #ECBE7B;">Exp</span> v) (<span style="color: #ECBE7B;">Exp</span> v)
+
+<span style="color: #c678dd;">eval</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Exp</span> v <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Env</span> v <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Int</span>
+<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Var</span> x ) &#947; <span style="color: #dcaeea;">=</span> fetch x &#947;
+<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Val</span> i) &#947; <span style="color: #dcaeea;">=</span> i
+<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Add</span> p q) &#947; <span style="color: #dcaeea;">=</span> eval p &#947; <span style="color: #dcaeea;">+</span> eval q &#947;
+</pre>
+</div>
+
+<p>
+Converting to Scala is straightforward&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">sealed</span> <span style="color: #51afef;">trait</span> <span style="color: #ECBE7B;">Exp</span>
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Val</span>(value<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Add</span>(left<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, right<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Var</span>(key<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
+
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Env</span>[<span style="color: #a9a1e1;">K</span>](kv<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Map</span>[<span style="color: #a9a1e1;">K</span>,<span style="color: #a9a1e1;">Int</span>])
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">fetch</span>(key<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>)(env<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>[<span style="color: #a9a1e1;">String</span>]) <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span> <span style="color: #51afef;">=</span>
+  env.kv.getOrElse(key, <span style="color: #da8548; font-weight: bold;">0</span>)
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">eval</span>(exp<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, env<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>[<span style="color: #a9a1e1;">String</span>]) <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span> <span style="color: #51afef;">=</span> {
+  exp <span style="color: #51afef;">match</span> {
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Val</span>(<span style="color: #dcaeea;">value</span>) <span style="color: #51afef;">=&gt;</span> value
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Var</span>(<span style="color: #dcaeea;">key</span>) <span style="color: #51afef;">=&gt;</span> fetch(key)(env)
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Add</span>(<span style="color: #dcaeea;">left</span>, <span style="color: #dcaeea;">right</span>) <span style="color: #51afef;">=&gt;</span>
+      eval(left, env) + eval(right, env)
+  }
+}
+</pre>
+</div>
+
+<p>
+Here I&rsquo;ve made the environment a simple key value store, and, to avoid
+complicating the example with error handling, if a variable is not present in
+the environment I just default to returning zero.
+</p>
+
+<p>
+Following the pattern of the previous two examples, the authors then pull some
+magic to make the applicative pattern more noticable&#x2026;
+</p>
+
+<blockquote>
+<p>
+We can eliminate the clutter of the explicitly threaded environment with a little
+help from some very old friends, designed for this purpose
+</p>
+</blockquote>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">eval</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Exp</span> v <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Env</span> v <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Int</span>
+<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Var</span> x ) <span style="color: #dcaeea;">=</span> fetch x
+<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Val</span> i) <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">K</span> i
+<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Add</span> p q) <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">K</span> (<span style="color: #dcaeea;">+</span>) &#8216;<span style="color: #ECBE7B;">S</span>&#8216; eval p &#8216;<span style="color: #ECBE7B;">S</span>&#8216; eval q
+
+<span style="color: #51afef;">where</span>
+<span style="color: #dcaeea;">\</span><span style="color: #ECBE7B;">K</span> <span style="color: #dcaeea;">::</span> a <span style="color: #dcaeea;">&#8594;</span> env <span style="color: #dcaeea;">&#8594;</span> a
+<span style="color: #ECBE7B;">K</span> x &#947; <span style="color: #dcaeea;">=</span> x
+
+<span style="color: #ECBE7B;">S</span> <span style="color: #dcaeea;">::</span> (env <span style="color: #dcaeea;">&#8594;</span> a <span style="color: #dcaeea;">&#8594;</span> b) <span style="color: #dcaeea;">&#8594;</span> (env <span style="color: #dcaeea;">&#8594;</span> a) <span style="color: #dcaeea;">&#8594;</span> (env <span style="color: #dcaeea;">&#8594;</span> b)
+<span style="color: #ECBE7B;">S</span> ef es &#947; <span style="color: #dcaeea;">=</span> (ef &#947;) (es &#947;)
+</pre>
+</div>
 </div>
 </div>
 </div>
