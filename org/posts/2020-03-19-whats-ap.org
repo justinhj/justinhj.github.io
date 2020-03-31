@@ -638,13 +638,49 @@ println(s"Eval : ${eval(exp1, env1)}")
 // Eval : 23
 #+END_SRC
 
-**** We applied ourselves!
-To summarize, we've seen three different effects used in applicative style; IO,
-List and Reader. Now you can see why it makes sense to be able to apply a
-function that is wrapped in these effects. What we needed, and got with ~ap~, is
-a way to lift a pure function so we can apply it to a chain of effects of the
-same effect type.
+*** The Applicative Type class
+To summarize, we've seen three different effects used in applicative style; IO
+(or ZIO), List and Reader. Now you can see why it makes sense to be able to
+apply a function that is wrapped in these effects. What we needed, and got with
+~ap~, is a way to lift a pure function so we can apply it to a chain of effects
+of the same effect type.
 
+Next in the paper the authors describe the laws which an instance of the
+Applicative type class must adhere to, which is out of scope for this post but
+is put succinctly in English as follows...
 
-*** Section 2
+#+BEGIN_QUOTE
+The idea is that pure embeds pure computations into the pure fragment of an
+effectful world—the resulting computations may thus be shunted around freely, as
+long as the order of the genuinely effectful computations is preserved.
+#+END_QUOTE
 
+Next we are show that Applicatives are all Functors (hence Applicative
+Functors), because you can implement the map operation as follows...
+
+#+BEGIN_SRC scala
+// Declare map in terms of pure and ap
+def map[A,B,F[_]: Applicative](fa: F[A], f: A => B): F[B] = {
+  Applicative[F].pure(f).ap(fa)
+}
+
+// Map a function over a list
+map(List(1,2,3,4,5), (a:Int) => a + 1)
+// res: List[Int] = List(2, 3, 4, 5, 6)
+#+END_SRC
+
+Note that you don't have to do this with Cats instances because all
+Applicatives have their Functor instance taken care of too.
+
+The paper then notes that all uses of Applicatives follow this pattern of
+lifting a pure function and applying it to a chain of effects, and suggests a
+new syntax for shifting into the /Idiom/ of the applicative functor. The syntax
+is a special pair of brackets...
+
+#+BEGIN_SRC haskell
+[[ ff f1 f2 f3 ... fn ]]
+#+END_SRC
+
+Although this has not been widely adopted in either Haskell or Scala as far as I
+can tell, you can try it yourself using this delightfully named (and
+implemented) Scala library: [[https://github.com/sammthomson/IdiomEars][Idiom Ears]]
