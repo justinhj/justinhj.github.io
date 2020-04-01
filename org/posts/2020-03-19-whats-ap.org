@@ -199,12 +199,12 @@ applied.run(10).value
 So, everything that has an Applicative can handle pure functions that have been
 lifted into effects. In some cases that seems marginally useful and in other
 cases seems rather weird. Why is that? I'm going to bury the lede and in the
-next section we'll back up a bit and look at the original paper that motivated
-Applicative Functors back in 2008.
+next section we'll look back to 2008 when Applicative Functors first show up in
+academic literature...
 
 ** Applicative Programming with Effects
 
-*** Motivating Examples
+*** Let's Apply ourselves
 Applicative Functors first saw light of day in the 2008 paper by McBride and
 Patterson, "Applicative Programming with Effects" which you can find here...
 
@@ -218,7 +218,7 @@ programming in Haskell (Peyton Jones, 2003), until the temptation to abstract it
 became irresistable. Let us illustrate with some examples.
 #+END_QUOTE
 
-We'll walk through each of the three examples and convert them to use Scala...
+We'll walk through each of these examples and convert them to use Scala...
 
 **** Sequencing Commands
 #+BEGIN_QUOTE
@@ -655,8 +655,8 @@ effectful world—the resulting computations may thus be shunted around freely, 
 long as the order of the genuinely effectful computations is preserved.
 #+END_QUOTE
 
-Next we are show that Applicatives are all Functors (hence Applicative
-Functors), because you can implement the map operation as follows...
+Next we are show that /Applicatives are all Functors/ (hence the name
+Applicative Functors), because you can implement the map operation as follows...
 
 #+BEGIN_SRC scala
 // Declare map in terms of pure and ap
@@ -683,4 +683,37 @@ is a special pair of brackets...
 
 Although this has not been widely adopted in either Haskell or Scala as far as I
 can tell, you can try it yourself using this delightfully named (and
-implemented) Scala library: [[https://github.com/sammthomson/IdiomEars][Idiom Ears]]
+implemented) Scala library: [[https://github.com/sammthomson/IdiomEars][Idiom Ears]]. This will let you closely match the
+syntax from the paper; for example...
+
+#+BEGIN_SRC scala
+val f = (a: Int) => (b: Int) => a * b
+⊏| (f) (List(1, 2)) (List(3, 4)) |⊐
+// List(3, 4, 6, 8)
+
+// Which is equivalent to
+Applicative[List].pure(f).ap(List(1,2)).ap(List(3,4))
+#+END_SRC
+
+If you do fall in love with the idiom brackets of McBride and Patterson then
+knock yourself out, but you may have to invest some time bringing the project
+back to life as it has suffered some bitrot since 2016. There is a demo of
+IdiomEars in the Github repository accompanying this post, but I simply copied
+the code into my project rather than spend time updating it.
+
+*** Traverse data structures
+The third section of the paper is about traversing data structures.
+
+#+BEGIN_QUOTE
+Have you noticed that sequence and transpose now look rather alike? The details
+that distinguish the two programs are inferred by the compiler from their types.
+Both are instances of the applicative distributor for lists:
+#+END_QUOTE
+
+#+BEGIN_SRC haskell
+dist :: Applicative f ⇒ [f a ] → f [a ]
+dist [ ] = ⊏| [ ] |⊐
+dist (v : vs) = ⊏| (:) v (dist vs) |⊐
+#+END_SRC
+
+Let's rewrite in Scala...

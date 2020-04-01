@@ -265,14 +265,21 @@ Applicative Functors back in 2008.
 <div id="outline-container-orga1a6532" class="outline-2">
 <h2 id="orga1a6532">Applicative Programming with Effects</h2>
 <div class="outline-text-2" id="text-orga1a6532">
+</div>
+<div id="outline-container-org2b3a3e9" class="outline-3">
+<h3 id="org2b3a3e9">Motivating Examples</h3>
+<div class="outline-text-3" id="text-org2b3a3e9">
 <p>
-In this section we&rsquo;ll walk through some sections of the 2008 paper by McBride
-and Patterson, Applicative Programming with Effects, converting the original
-Haskell into working Scala code.
+Applicative Functors first saw light of day in the 2008 paper by McBride and
+Patterson, &ldquo;Applicative Programming with Effects&rdquo; which you can find here&#x2026;
 </p>
 
 <p>
 <a href="https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf">https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf</a>
+</p>
+
+<p>
+The paper begins with three motivating examples for the use of Applicative style&#x2026;
 </p>
 
 <blockquote>
@@ -284,13 +291,13 @@ became irresistable. Let us illustrate with some examples.
 </blockquote>
 
 <p>
-We&rsquo;ll walk through each of the three examples&#x2026;
+We&rsquo;ll walk through each of the three examples and convert them to use Scala&#x2026;
 </p>
 </div>
 
-<div id="outline-container-org9719544" class="outline-3">
-<h3 id="org9719544">Sequencing Commands</h3>
-<div class="outline-text-3" id="text-org9719544">
+<div id="outline-container-org9719544" class="outline-4">
+<h4 id="org9719544">Sequencing Commands</h4>
+<div class="outline-text-4" id="text-org9719544">
 <blockquote>
 <p>
 One often wants to execute a sequence of commands and
@@ -561,9 +568,9 @@ benefits of avoiding Monad when effects are not dependent on each other.
 </div>
 </div>
 
-<div id="outline-container-org9f06115" class="outline-3">
-<h3 id="org9f06115">Matrix Transposition</h3>
-<div class="outline-text-3" id="text-org9f06115">
+<div id="outline-container-org9f06115" class="outline-4">
+<h4 id="org9f06115">Matrix Transposition</h4>
+<div class="outline-text-4" id="text-org9f06115">
 <p>
 The second example in the paper is that of Matrix transposition, which takes a
 matrix and flips it along a diagonal. For example&#x2026;
@@ -684,9 +691,9 @@ applicative style, even though we are working with vectors.
 </div>
 </div>
 
-<div id="outline-container-org15f9128" class="outline-3">
-<h3 id="org15f9128">Evaluating Expressions</h3>
-<div class="outline-text-3" id="text-org15f9128">
+<div id="outline-container-org15f9128" class="outline-4">
+<h4 id="org15f9128">Evaluating Expressions</h4>
+<div class="outline-text-4" id="text-org15f9128">
 <p>
 The third example of applicative style is an expression evaluator that can add
 numbers, both literals and numbers bound to strings and stored in an environment.
@@ -766,13 +773,127 @@ help from some very old friends, designed for this purpose
 <span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Add</span> p q) <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">K</span> (<span style="color: #dcaeea;">+</span>) &#8216;<span style="color: #ECBE7B;">S</span>&#8216; eval p &#8216;<span style="color: #ECBE7B;">S</span>&#8216; eval q
 
 <span style="color: #51afef;">where</span>
-<span style="color: #dcaeea;">\</span><span style="color: #ECBE7B;">K</span> <span style="color: #dcaeea;">::</span> a <span style="color: #dcaeea;">&#8594;</span> env <span style="color: #dcaeea;">&#8594;</span> a
+<span style="color: #ECBE7B;">K</span> <span style="color: #dcaeea;">::</span> a <span style="color: #dcaeea;">&#8594;</span> env <span style="color: #dcaeea;">&#8594;</span> a
 <span style="color: #ECBE7B;">K</span> x &#947; <span style="color: #dcaeea;">=</span> x
 
 <span style="color: #ECBE7B;">S</span> <span style="color: #dcaeea;">::</span> (env <span style="color: #dcaeea;">&#8594;</span> a <span style="color: #dcaeea;">&#8594;</span> b) <span style="color: #dcaeea;">&#8594;</span> (env <span style="color: #dcaeea;">&#8594;</span> a) <span style="color: #dcaeea;">&#8594;</span> (env <span style="color: #dcaeea;">&#8594;</span> b)
 <span style="color: #ECBE7B;">S</span> ef es &#947; <span style="color: #dcaeea;">=</span> (ef &#947;) (es &#947;)
 </pre>
 </div>
+
+<p>
+So this all looks a bit cryptic. Who are the old friends? Well, if you look at
+the type signature of <code>K</code> it is actually the <code>pure</code> function, and <code>S</code>
+is the <code>ap</code> function. This is in fact what we&rsquo;d call the <code>Reader</code> Monad in
+Scala.
+</p>
+
+<p>
+By old friends, the authors are referring to the <a href="https://en.wikipedia.org/wiki/SKI_combinator_calculus">SKI Combinator Calculus</a>.
+</p>
+
+<p>
+Let&rsquo;s reimplement in Scala using the <code>Reader</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">fetchR</span>(key<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Reader</span>[<span style="color: #a9a1e1;">Map</span>[<span style="color: #a9a1e1;">String</span>,<span style="color: #a9a1e1;">Int</span>], <span style="color: #a9a1e1;">Int</span>](env <span style="color: #51afef;">=&gt;</span> env.getOrElse(key, <span style="color: #da8548; font-weight: bold;">0</span>))
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">pureR</span>(value<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Reader</span>[<span style="color: #a9a1e1;">Map</span>[<span style="color: #a9a1e1;">String</span>,<span style="color: #a9a1e1;">Int</span>], <span style="color: #a9a1e1;">Int</span>](env <span style="color: #51afef;">=&gt;</span> value)
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">evalR</span>(exp<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Reader</span>[<span style="color: #a9a1e1;">Map</span>[<span style="color: #a9a1e1;">String</span>,<span style="color: #a9a1e1;">Int</span>], <span style="color: #a9a1e1;">Int</span>] <span style="color: #51afef;">=</span> {
+  exp <span style="color: #51afef;">match</span> {
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Val</span>(<span style="color: #dcaeea;">value</span>) <span style="color: #51afef;">=&gt;</span> pureR(value)
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Var</span>(<span style="color: #dcaeea;">key</span>) <span style="color: #51afef;">=&gt;</span> fetchR(key)
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Add</span>(<span style="color: #dcaeea;">left</span>, <span style="color: #dcaeea;">right</span>) <span style="color: #51afef;">=&gt;</span>
+      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">f</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Reader</span>((env<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Map</span>[<span style="color: #a9a1e1;">String</span>,<span style="color: #a9a1e1;">Int</span>]) <span style="color: #51afef;">=&gt;</span>
+        (a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> (b<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + b)
+      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">leftEval</span> <span style="color: #51afef;">=</span> evalR(left).ap(f)
+      evalR(right).ap(leftEval)
+  }
+}
+</pre>
+</div>
+
+<p>
+And take it for a test drive&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">env1</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Env</span>(<span style="color: #a9a1e1;">Map</span>(<span style="color: #98be65;">"x"</span> -&gt; <span style="color: #da8548; font-weight: bold;">3</span>, <span style="color: #98be65;">"y"</span> -&gt; <span style="color: #da8548; font-weight: bold;">10</span>))
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">exp1</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Add</span>(<span style="color: #a9a1e1;">Val</span>(<span style="color: #da8548; font-weight: bold;">10</span>), <span style="color: #a9a1e1;">Add</span>(<span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"x"</span>), <span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"y"</span>)))
+
+println(s<span style="color: #98be65;">"Eval : </span><span style="color: #dcaeea;">${eval(exp1, env1)}</span><span style="color: #98be65;">"</span>)
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Eval : 23</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org01f79f5" class="outline-3">
+<h3 id="org01f79f5">The Applicative Type class</h3>
+<div class="outline-text-3" id="text-org01f79f5">
+<p>
+To summarize, we&rsquo;ve seen three different effects used in applicative style; IO
+(or ZIO), List and Reader. Now you can see why it makes sense to be able to
+apply a function that is wrapped in these effects. What we needed, and got with
+<code>ap</code>, is a way to lift a pure function so we can apply it to a chain of effects
+of the same effect type.
+</p>
+
+<p>
+Next in the paper the authors describe the laws which an instance of the
+Applicative type class must adhere to, which is out of scope for this post but
+is put succinctly in English as follows&#x2026;
+</p>
+
+<blockquote>
+<p>
+The idea is that pure embeds pure computations into the pure fragment of an
+effectful world—the resulting computations may thus be shunted around freely, as
+long as the order of the genuinely effectful computations is preserved.
+</p>
+</blockquote>
+
+<p>
+Next we are show that Applicatives are all Functors (hence Applicative
+Functors), because you can implement the map operation as follows&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #5B6268;">// </span><span style="color: #5B6268;">Declare map in terms of pure and ap</span>
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">map</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>,<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>], f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">B</span>] <span style="color: #51afef;">=</span> {
+  <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">F</span>].pure(f).ap(fa)
+}
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Map a function over a list</span>
+map(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>), (a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">1</span>)
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Int] = List(2, 3, 4, 5, 6)</span>
+</pre>
+</div>
+
+<p>
+Note that you don&rsquo;t have to do this with Cats instances because all
+Applicatives have their Functor instance taken care of too.
+</p>
+
+<p>
+The paper then notes that all uses of Applicatives follow this pattern of
+lifting a pure function and applying it to a chain of effects, and suggests a
+new syntax for shifting into the <i>Idiom</i> of the applicative functor. The syntax
+is a special pair of brackets&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">[[ ff f1 f2 f3 <span style="color: #dcaeea;">...</span> fn ]]
+</pre>
+</div>
+
+<p>
+Although this has not been widely adopted in either Haskell or Scala as far as I
+can tell, you can try it yourself using this delightfully named (and
+implemented) Scala library: <a href="https://github.com/sammthomson/IdiomEars">Idiom Ears</a>. There&rsquo;s another library that
+</p>
 </div>
 </div>
 </div>
