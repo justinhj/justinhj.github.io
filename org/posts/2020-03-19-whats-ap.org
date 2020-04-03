@@ -655,6 +655,8 @@ effectful world—the resulting computations may thus be shunted around freely, 
 long as the order of the genuinely effectful computations is preserved.
 #+END_QUOTE
 
+For more detail on the applicative laws check out chapter 12, section 5 of [[https://livebook.manning.com/book/functional-programming-in-scala/chapter-12/80][The Red Book]]
+
 Next we are show that /Applicatives are all Functors/ (hence the name
 Applicative Functors), because you can implement the map operation as follows...
 
@@ -701,14 +703,17 @@ back to life as it has suffered some bitrot since 2016. There is a demo of
 IdiomEars in the Github repository accompanying this post, but I simply copied
 the code into my project rather than spend time updating it.
 
-*** Traverse data structures
-The third section of the paper is about traversing data structures.
-
+*** Moving right along to Traverse
 #+BEGIN_QUOTE
 Have you noticed that sequence and transpose now look rather alike? The details
 that distinguish the two programs are inferred by the compiler from their types.
-Both are instances of the applicative distributor for lists:
+Both are instances of the applicative distributor for lists.
 #+END_QUOTE
+
+At this point in the paper we have seen the birth of the Applicative type class
+which encapsulates the ~ap~ and ~pure~ functions needed to implement the
+patterns above. Next the authors describe another new type class, ~Traverse~,
+which lets us generalize the pattern further...
 
 #+BEGIN_SRC haskell
 dist :: Applicative f ⇒ [f a ] → f [a ]
@@ -716,4 +721,279 @@ dist [ ] = ⊏| [ ] |⊐
 dist (v : vs) = ⊏| (:) v (dist vs) |⊐
 #+END_SRC
 
-Let's rewrite in Scala...
+Note that I'm using the unicode from Idiom Ears to replace the fancy brackets
+from the paper which I cannot reproduce here, but you get the idea. Let's
+rewrite in Scala...
+
+#+BEGIN_SRC scala
+// applicative distributor for lists
+def dist[A, F[_]](fs: List[F[A]])(implicit app: Applicative[F]): F[List[A]] = {
+  fs match {
+    case Nil =>
+      app.pure(List.empty[A])
+    case c :: cs =>
+      val w1 = app.pure((a: A) => (listA: List[A]) => a +: listA)
+      val w2 = w1.ap(c)
+      w2.ap(dist(cs))
+  }
+}
+
+// dist a list of options
+println(dist(List(Option(10), Option(10), Option(3), Option(4))))
+// Some(List(10, 10, 3, 4))
+
+// Note that we have short circuiting
+println(dist(List(None, Option(10), Option(3), Option(4))))
+// None
+#+END_SRC
+
+Note that this short-circuits. We fail as soon as a single ~None~ shows up. Why?
+It's because although applicative allows us to avoid the enforced sequencing of
+Monad's flatMap, many types have instances of ~ap~ implemented in terms of
+flatMap anyway, because that matches the expectation of users for that type.
+
+We could override the Cats instance for Option with our own. What we do instead
+is create Applicative versions of type classes. For example, our monadic friend
+Either (which represents an error or a success value) has an applicative
+alter-ego ~Validated~. Rather than short-circuit on failure, Validated allows us
+to acculate errors so we can provide valuable feeback ot the caller. That is one
+of the super-powers of Applicatives!
+
+#+BEGIN_SRC scala
+val someValidateds: List[Validated[NonEmptyList[String],Int]] =
+  (List("Had some error".invalidNel, 10.valid, "Another error".invalidNel, 4.valid))
+
+// Try the same with Validated that has an Applicative instance
+println("Validated failure example: " + dist(someValidateds))
+// Validated failure example: Invalid(NonEmptyList(Had some error, Another error))
+#+END_SRC
+
+Just by changing data types we have completely changed the behaviour from
+short-circuiting to being able to //accumulate the errors/. Just imagine that these
+are expensive computations or slow network calls, and you can see how avoiding
+sequencing can really save us in computing costs, and thereby save us money.
+Furthermore we can improve user experience. We can validate a whole form from
+the user at once and send all the corrections needed rather than necessitate a
+painful back and forth until the whole form is valid.
+
+Anyway enough real world talk let's get back to ~dist~.
+
+#+BEGIN_QUOTE
+Distribution is often used together with ‘map’.
+#+END_QUOTE
+
+Fair enough. The ~dist~ function we developed above would be enhanced in
+usefullness if it could map a list of pure values into some effect type first.
+Let's take a look at a poor way to implement that...
+
+#+BEGIN_SRC haskell
+flakyMap :: (a → Maybe b) → [a ] → Maybe [b ]
+flakyMap f ss = dist (fmap f ss)
+#+END_SRC
+
+We can translate pretty much directly to Scala...
+
+#+BEGIN_SRC scala
+def flakyMap[A,B](f: A => Option[B], as: List[A]): Option[List[B]] = {
+  dist(as.map(f))
+}
+
+println("Flakymap success: " + flakyMap((n: Int) => Option(n * 2), List(1,2,3)))
+// Flakymap success: Some(List(2, 4, 6))
+println("Flakymap failure: " + flakyMap((n: Int) => if(n%2==1) Some(n) else None, List(1,2,3)))
+// Flakymap failure: None
+#+END_SRC
+
+That's clearly useful, and it works, but it's flaky because we have to process
+the list twice. First we map over the list to transform it, then we do it again
+with the dist function. How about we do both at once? That's ~Traverse~...
+
+#+BEGIN_SRC haskell
+traverse :: Applicative f ⇒ (a → f b) → [a ] → f [b ]
+traverse f [ ] = ⊏| [ ] |⊐
+traverse f (x : xs) = ⊏| (:) (f x ) (traverse f xs) |⊐
+#+END_SRC
+
+And a Scala version...
+
+#+BEGIN_SRC scala
+def listTraverse[A, B, F[_]](f: A => F[B], fs: List[A])
+     (implicit app: Applicative[F]): F[List[B]] = {
+  fs match {
+    case Nil =>
+      app.pure(List.empty[B])
+    case c :: cs =>
+      val w1 = app.pure((b: B) => (listB: List[B]) => b +: listB)
+      val w2 = w1.ap(f(c))
+      w2.ap(listTraverse(f, cs))
+  }
+}
+// Output is the same as flakyMap
+#+END_SRC
+
+By providing the identity function for ~f~ we get the ~sequence~ function back
+in terms of traverse...
+
+#+BEGIN_SRC scala
+def sequence[A, F[_]](fs: List[F[A]])
+    (implicit app: Applicative[F]): F[List[A]] = {
+  listTraverse((fa: F[A]) => fa, fs)
+}
+#+END_SRC
+
+Finally we get to the Traverse type class, which gives us an interface to write
+traverse for two effect types rather than just List and another effect. We have
+two functions, traverse and dist, which are represented in Scala today as
+traverse and sequence.
+
+#+BEGIN_SRC haskell
+class Traversable t where
+traverse :: Applicative f ⇒ (a → f b) → t a → f (t b)
+dist :: Applicative f ⇒ t (f a) → f (t a)
+dist = traverse id
+#+END_SRC
+
+There's no need to show the Scala because we can reply on the implementations in
+the Cats library, but the instance implementations for list are as above. In the
+paper we see that you can also traverse more complex structures such as a
+tree...
+
+#+BEGIN_SRC scala
+sealed trait Tree[+A]
+case object Leaf extends Tree[Nothing]
+case class Node[A](left: Tree[A], a: A, right: Tree[A]) extends Tree[A]
+
+def treeTraverse[A, B, F[_]](f: A => F[B], fs: Tree[A])
+                (implicit app: Applicative[F]): F[Tree[B]] = {
+  fs match {
+    case Leaf =>
+      app.pure(Leaf)
+    case Node(left, a, right) =>
+      val w1 = app.pure((l: Tree[B]) =>
+        (v: B) =>
+        (r: Tree[B]) => Node(l,v,r))
+      val w2 = w1.ap(treeTraverse(f,left))
+      val w3 = w2.ap(f(a))
+      w3.ap(treeTraverse(f,right))
+  }
+}
+
+val tree1 = Node(Leaf, 10, Node(Leaf, 5, Node(Leaf, 10, Leaf)))
+println("treeTraverse: " + treeTraverse((n: Int) => Option(n + 1), tree1))
+// treeTraverse: Some(Node(Leaf,11,Node(Leaf,6,Node(Leaf,11,Leaf))))
+#+END_SRC
+
+Note that in your own code you would usually lean on the Traverse type class and
+override some methods to provide your own implementations.
+
+Another thing to highlight the expressive power of traverse is that we can use
+it to do a ~map~ just like a ~~Functor~ by using the Id (identity) Monad as our
+effect type. The Id monad simply wraps a pure value and has no other effect, so
+we can use it to use traverse as a functor as follows...
+
+#+BEGIN_SRC scala
+@ List[Int](1,2,3).traverse((a: Int) => (1 + a): Id[Int])
+// Id[List[Int]] = List(2, 3, 4)
+#+END_SRC
+
+*** Monoids are phantom Applicative functors
+This section of the paper, part four if you are reading along, has an intriguing
+title. Whilst short, there is a lot of information in a small space on how we
+can use Monoids, Applicatives and Traverse to do some cool things. I will go
+much slower than the paper as some of the concepts take some time to get your
+head around.
+
+Monoids are a type class that provides an interface to join things together such
+as appending strings or adding numbers. In addition they give us a way to
+represent a zero value for the data type, which will be useful in a moment. If
+you want to dig into Monoids in more detail I have written a couple of posts on
+the subject...
+
+[[http://justinhj.github.io/2019/06/10/monoids-for-production.html][Monoids for Production [2019]​]]
+[[https://medium.com/yoppworks-reactive-systems/persistent-entities-with-monoids-a44212a157fb][Persistent Entities with Monoids [2020]​]]
+
+**** Every Applicative is a Monoid
+It's possible to implement a Monoid instance that works for any Applicative. In
+Scala it looks like this...
+
+#+BEGIN_SRC scala
+implicit def appMonoid[A: Monoid, F[_]: Applicative] = new Monoid[F[A]] {
+  def empty: F[A] = Applicative[F].pure((Monoid[A].empty))
+  def combine(x: F[A], y: F[A]): F[A] =
+    Applicative[F].map2(x,y)(Monoid[A].combine)
+}
+#+END_SRC
+
+What does this give us? We can join Applicative Effects togther, and when we do
+so they are joined in the =idiom= of the effect type. So for example when
+combining a list with its default Monoid instance it will simply append the
+lists like this...
+
+#+BEGIN_SRC scala
+List(1,2,3) |+| List(4,5,6)
+// res: List[Int] = List(1, 2, 3, 4, 5, 6)
+#+END_SRC
+
+But if instead we bring into scope a monoid for List we get the applicative
+application instead...
+
+#+BEGIN_SRC scala
+implicit val m = appMonoid[Int, List]
+List(1,2,3) |+| List(4,5,6)
+// res: List[Int] = List(5, 6, 7, 6, 7, 8, 7, 8, 9)
+#+END_SRC
+
+**** Every Monoid is an Applicative?
+It does not work the other way around, but some types with Monoid instances can
+use those instances in their Applicative implementation. For example =Tuple2= in
+the Cats library does just that. The actual implementation is split into two
+because of the way the Cats class hierarchy is organized, so here's a simplified
+version so you can see what's going on...
+
+#+BEGIN_SRC scala
+implicit def appTuple2[X: Monoid] = new Applicative[Tuple2[X,?]] {
+  def pure[A](a: A): (X, A) = (Monoid[X].empty, a)
+
+  def ap[A, B](ff: (X, A => B))(fa: (X, A)): (X, B) = {
+    (ff._1.combine(fa._1),
+     ff._2(fa._2))
+  }
+}
+#+END_SRC
+
+
+
+
+
+
+**** Const
+
+#+BEGIN_SRC haskell
+newtype Accy o a = Acc{acc :: o }
+#+END_SRC
+
+In Scala this is...
+
+#+BEGIN_SRC scala
+def const[A, B](a: A)(b: => B): A = a
+#+END_SRC
+
+Const, or Accy, is a strange looking data type that takes two type parameters,
+and in fact takes two values, but we can only every recover the first. This is
+why the second parameter is called a ~phantom~.
+
+We can create a Const with any crazy type we want for the ~B~ parameter...
+
+#+BEGIN_SRC scala
+@ Const[Int, com.oracle.webservices.internal.api.message.MessageContext](12).getConst
+res10: Int = 12
+#+END_SRC
+
+So what use is Const? If you create an Applicative Functor for Const
+
+#+BEGIN_SRC haskell
+instance Monoid o ⇒ Applicative (Accy o) where
+pure = Acc ∅
+Acc o1 ~ Acc o2 = Acc (o1 ⊕ o2)
+#+END_SRC
+

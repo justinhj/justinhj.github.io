@@ -255,8 +255,8 @@ applied.run(<span style="color: #da8548; font-weight: bold;">10</span>).value
 So, everything that has an Applicative can handle pure functions that have been
 lifted into effects. In some cases that seems marginally useful and in other
 cases seems rather weird. Why is that? I&rsquo;m going to bury the lede and in the
-next section we&rsquo;ll back up a bit and look at the original paper that motivated
-Applicative Functors back in 2008.
+next section we&rsquo;ll look back to 2008 when Applicative Functors first show up in
+academic literature&#x2026;
 </p>
 </div>
 </div>
@@ -266,9 +266,9 @@ Applicative Functors back in 2008.
 <h2 id="orga1a6532">Applicative Programming with Effects</h2>
 <div class="outline-text-2" id="text-orga1a6532">
 </div>
-<div id="outline-container-org2b3a3e9" class="outline-3">
-<h3 id="org2b3a3e9">Motivating Examples</h3>
-<div class="outline-text-3" id="text-org2b3a3e9">
+<div id="outline-container-org4887ecc" class="outline-3">
+<h3 id="org4887ecc">Let&rsquo;s Apply ourselves</h3>
+<div class="outline-text-3" id="text-org4887ecc">
 <p>
 Applicative Functors first saw light of day in the 2008 paper by McBride and
 Patterson, &ldquo;Applicative Programming with Effects&rdquo; which you can find here&#x2026;
@@ -291,7 +291,7 @@ became irresistable. Let us illustrate with some examples.
 </blockquote>
 
 <p>
-We&rsquo;ll walk through each of the three examples and convert them to use Scala&#x2026;
+We&rsquo;ll walk through each of these examples and convert them to use Scala&#x2026;
 </p>
 </div>
 
@@ -856,8 +856,8 @@ long as the order of the genuinely effectful computations is preserved.
 </blockquote>
 
 <p>
-Next we are show that Applicatives are all Functors (hence Applicative
-Functors), because you can implement the map operation as follows&#x2026;
+Next we are show that <i>Applicatives are all Functors</i> (hence the name
+Applicative Functors), because you can implement the map operation as follows&#x2026;
 </p>
 
 <div class="org-src-container">
@@ -892,8 +892,269 @@ is a special pair of brackets&#x2026;
 <p>
 Although this has not been widely adopted in either Haskell or Scala as far as I
 can tell, you can try it yourself using this delightfully named (and
-implemented) Scala library: <a href="https://github.com/sammthomson/IdiomEars">Idiom Ears</a>. There&rsquo;s another library that
+implemented) Scala library: <a href="https://github.com/sammthomson/IdiomEars">Idiom Ears</a>. This will let you closely match the
+syntax from the paper; for example&#x2026;
 </p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">f</span> <span style="color: #51afef;">=</span> (a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> (b<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a * b
+&#8847;| (f) (<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>, <span style="color: #da8548; font-weight: bold;">2</span>)) (<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">3</span>, <span style="color: #da8548; font-weight: bold;">4</span>)) |&#8848;
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">List(3, 4, 6, 8)</span>
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Which is equivalent to</span>
+<span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">List</span>].pure(f).ap(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>)).ap(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>))
+</pre>
+</div>
+
+<p>
+If you do fall in love with the idiom brackets of McBride and Patterson then
+knock yourself out, but you may have to invest some time bringing the project
+back to life as it has suffered some bitrot since 2016. There is a demo of
+IdiomEars in the Github repository accompanying this post, but I simply copied
+the code into my project rather than spend time updating it.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2ca2038" class="outline-3">
+<h3 id="org2ca2038">Moving right along to Traverse</h3>
+<div class="outline-text-3" id="text-org2ca2038">
+<blockquote>
+<p>
+Have you noticed that sequence and transpose now look rather alike? The details
+that distinguish the two programs are inferred by the compiler from their types.
+Both are instances of the applicative distributor for lists.
+</p>
+</blockquote>
+
+<p>
+At this point in the paper we have seen the birth of the Applicative type class
+which encapsulates the <code>ap</code> and <code>pure</code> functions needed to implement the
+patterns above. Next the authors describe another new type class, <code>Traverse</code>,
+which lets us generalize the pattern further&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">dist</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Applicative</span> f <span style="color: #dcaeea;">&#8658;</span> [f a ] <span style="color: #dcaeea;">&#8594;</span> f [a ]
+<span style="color: #c678dd;">dist</span> [ ] <span style="color: #dcaeea;">=</span> <span style="color: #dcaeea;">&#8847;|</span> [ ] <span style="color: #dcaeea;">|&#8848;</span>
+<span style="color: #c678dd;">dist</span> (v <span style="color: #ECBE7B;">:</span> vs) <span style="color: #dcaeea;">=</span> <span style="color: #dcaeea;">&#8847;|</span> (<span style="color: #ECBE7B;">:</span>) v (dist vs) <span style="color: #dcaeea;">|&#8848;</span>
+</pre>
+</div>
+
+<p>
+Note that I&rsquo;m using the unicode from Idiom Ears to replace the fancy brackets
+from the paper which I cannot reproduce here, but you get the idea. Let&rsquo;s
+rewrite in Scala&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #5B6268;">// </span><span style="color: #5B6268;">applicative distributor for lists</span>
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">dist</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]](fs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">A</span>]])(<span style="color: #c678dd;">implicit</span> app<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">F</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=</span> {
+  fs <span style="color: #51afef;">match</span> {
+    <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">Nil</span> <span style="color: #51afef;">=&gt;</span>
+      app.pure(<span style="color: #a9a1e1;">List</span>.empty[<span style="color: #a9a1e1;">A</span>])
+    <span style="color: #51afef;">case</span> <span style="color: #dcaeea;">c</span> <span style="color: #ECBE7B;">::</span> <span style="color: #dcaeea;">cs</span> <span style="color: #51afef;">=&gt;</span>
+      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w1</span> <span style="color: #51afef;">=</span> app.pure((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> (listA<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=&gt;</span> a +: listA)
+      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w2</span> <span style="color: #51afef;">=</span> w1.ap(c)
+      w2.ap(dist(cs))
+  }
+}
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">dist a list of options</span>
+println(dist(<span style="color: #a9a1e1;">List</span>(<span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">10</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">10</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">3</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">4</span>))))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Some(List(10, 10, 3, 4))</span>
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Note that we have short circuiting</span>
+println(dist(<span style="color: #a9a1e1;">List</span>(<span style="color: #a9a1e1;">None</span>, <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">10</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">3</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">4</span>))))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">None</span>
+</pre>
+</div>
+
+<p>
+Note that this short-circuits. We fail as soon as a single <code>None</code> shows up. Why?
+It&rsquo;s because although applicative allows us to avoid the enforced sequencing of
+Monad&rsquo;s flatMap, many types have instances of <code>ap</code> implemented in terms of
+flatMap anyway, because that matches the expectation of users for that type.
+</p>
+
+<p>
+We could override the Cats instance for Option with our own. What we do instead
+is create Applicative versions of type classes. For example, our monadic friend
+Either (which represents an error or a success value) has an applicative
+alter-ego <code>Validated</code>. Rather than short-circuit on failure, Validated allows us
+to acculate errors so we can provide valuable feeback ot the caller. That is one
+of the super-powers of Applicatives!
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">someValidateds</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">Validated</span>[<span style="color: #a9a1e1;">NonEmptyList</span>[<span style="color: #a9a1e1;">String</span>],<span style="color: #a9a1e1;">Int</span>]] <span style="color: #51afef;">=</span>
+  (<span style="color: #a9a1e1;">List</span>(<span style="color: #98be65;">"Had some error"</span>.invalidNel, <span style="color: #da8548; font-weight: bold;">10</span>.valid, <span style="color: #98be65;">"Another error"</span>.invalidNel, <span style="color: #da8548; font-weight: bold;">4</span>.valid))
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Try the same with Validated that has an Applicative instance</span>
+println(<span style="color: #98be65;">"Validated failure example: "</span> + dist(someValidateds))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Validated failure example: Invalid(NonEmptyList(Had some error, Another error))</span>
+</pre>
+</div>
+
+<p>
+Just by changing data types we have completely changed the behaviour from
+short-circuiting to being able to <i>/accumulate the errors</i>. Just imagine that these
+are expensive computations or slow network calls, and you can see how avoiding
+sequencing can really save us in computing costs, and thereby save us money.
+Furthermore we can improve user experience. We can validate a whole form from
+the user at once and send all the corrections needed rather than necessitate a
+painful back and forth until the whole form is valid.
+</p>
+
+<p>
+Anyway enough real world talk let&rsquo;s get back to <code>dist</code>.
+</p>
+
+<blockquote>
+<p>
+Distribution is often used together with ‘map’.
+</p>
+</blockquote>
+
+<p>
+Fair enough. The <code>dist</code> function we developed above would be enhanced in
+usefullness if it could map a list of pure values into some effect type first.
+Let&rsquo;s take a look at a poor way to implement that&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">flakyMap</span> <span style="color: #dcaeea;">::</span> (a <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Maybe</span> b) <span style="color: #dcaeea;">&#8594;</span> [a ] <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Maybe</span> [b ]
+<span style="color: #c678dd;">flakyMap</span> f ss <span style="color: #dcaeea;">=</span> dist (fmap f ss)
+</pre>
+</div>
+
+<p>
+We can translate pretty much directly to Scala&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">flakyMap</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Option</span>[<span style="color: #a9a1e1;">B</span>], as<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Option</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">B</span>]] <span style="color: #51afef;">=</span> {
+  dist(as.map(f))
+}
+
+println(<span style="color: #98be65;">"Flakymap success: "</span> + flakyMap((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Option</span>(n * <span style="color: #da8548; font-weight: bold;">2</span>), <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>)))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Flakymap success: Some(List(2, 4, 6))</span>
+println(<span style="color: #98be65;">"Flakymap failure: "</span> + flakyMap((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #51afef;">if</span>(n%<span style="color: #da8548; font-weight: bold;">2</span>==<span style="color: #da8548; font-weight: bold;">1</span>) <span style="color: #a9a1e1;">Some</span>(n) <span style="color: #51afef;">else</span> <span style="color: #a9a1e1;">None</span>, <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>)))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Flakymap failure: None</span>
+</pre>
+</div>
+
+<p>
+That&rsquo;s clearly useful, and it works, but it&rsquo;s flaky because we have to process
+the list twice. First we map over the list to transform it, then we do it again
+with the dist function. How about we do both at once? That&rsquo;s <code>Traverse</code>&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">traverse</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Applicative</span> f <span style="color: #dcaeea;">&#8658;</span> (a <span style="color: #dcaeea;">&#8594;</span> f b) <span style="color: #dcaeea;">&#8594;</span> [a ] <span style="color: #dcaeea;">&#8594;</span> f [b ]
+<span style="color: #c678dd;">traverse</span> f [ ] <span style="color: #dcaeea;">=</span> <span style="color: #dcaeea;">&#8847;|</span> [ ] <span style="color: #dcaeea;">|&#8848;</span>
+<span style="color: #c678dd;">traverse</span> f (x <span style="color: #ECBE7B;">:</span> xs) <span style="color: #dcaeea;">=</span> <span style="color: #dcaeea;">&#8847;|</span> (<span style="color: #ECBE7B;">:</span>) (f x ) (traverse f xs) <span style="color: #dcaeea;">|&#8848;</span>
+</pre>
+</div>
+
+<p>
+And a Scala version&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">listTraverse</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">B</span>], fs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>])
+     (<span style="color: #c678dd;">implicit</span> app<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">F</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">B</span>]] <span style="color: #51afef;">=</span> {
+  fs <span style="color: #51afef;">match</span> {
+    <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">Nil</span> <span style="color: #51afef;">=&gt;</span>
+      app.pure(<span style="color: #a9a1e1;">List</span>.empty[<span style="color: #a9a1e1;">B</span>])
+    <span style="color: #51afef;">case</span> <span style="color: #dcaeea;">c</span> <span style="color: #ECBE7B;">::</span> <span style="color: #dcaeea;">cs</span> <span style="color: #51afef;">=&gt;</span>
+      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w1</span> <span style="color: #51afef;">=</span> app.pure((b<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span>) <span style="color: #51afef;">=&gt;</span> (listB<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">B</span>]) <span style="color: #51afef;">=&gt;</span> b +: listB)
+      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w2</span> <span style="color: #51afef;">=</span> w1.ap(f(c))
+      w2.ap(listTraverse(f, cs))
+  }
+}
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Output is the same as flakyMap</span>
+</pre>
+</div>
+
+<p>
+By providing the identity function for <code>f</code> we get the <code>sequence</code> function back
+in terms of traverse&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">sequence</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]](fs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">A</span>]])
+    (<span style="color: #c678dd;">implicit</span> app<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">F</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=</span> {
+  listTraverse((fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=&gt;</span> fa, fs)
+}
+</pre>
+</div>
+
+<p>
+Finally we get to the Traverse type class, which gives us an interface to write
+traverse for two effect types rather than just List and another effect. We have
+two functions, traverse and dist, which are represented in Scala today as
+traverse and sequence.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Traversable</span> t <span style="color: #51afef;">where</span>
+<span style="color: #c678dd;">traverse</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Applicative</span> f <span style="color: #dcaeea;">&#8658;</span> (a <span style="color: #dcaeea;">&#8594;</span> f b) <span style="color: #dcaeea;">&#8594;</span> t a <span style="color: #dcaeea;">&#8594;</span> f (t b)
+<span style="color: #c678dd;">dist</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Applicative</span> f <span style="color: #dcaeea;">&#8658;</span> t (f a) <span style="color: #dcaeea;">&#8594;</span> f (t a)
+<span style="color: #c678dd;">dist</span> <span style="color: #dcaeea;">=</span> traverse id
+</pre>
+</div>
+
+<p>
+There&rsquo;s no need to show the Scala because we can reply on the implementations in
+the Cats library, but the instance implementations for list are as above. In the
+paper we see that you can also traverse more complex structures such as a
+tree&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">sealed</span> <span style="color: #51afef;">trait</span> <span style="color: #ECBE7B;">Tree</span>[+<span style="color: #a9a1e1;">A</span>]
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">object</span> <span style="color: #a9a1e1;">Leaf</span> <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">Nothing</span>]
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Node</span>[<span style="color: #a9a1e1;">A</span>](left<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>], a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>, right<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>]
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">treeTraverse</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">B</span>], fs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>])
+                (<span style="color: #c678dd;">implicit</span> app<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">F</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">Tree</span>[<span style="color: #a9a1e1;">B</span>]] <span style="color: #51afef;">=</span> {
+  fs <span style="color: #51afef;">match</span> {
+    <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">Leaf</span> <span style="color: #51afef;">=&gt;</span>
+      app.pure(<span style="color: #a9a1e1;">Leaf</span>)
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Node</span>(<span style="color: #dcaeea;">left</span>, <span style="color: #dcaeea;">a</span>, <span style="color: #dcaeea;">right</span>) <span style="color: #51afef;">=&gt;</span>
+      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w1</span> <span style="color: #51afef;">=</span> app.pure((l<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">B</span>]) <span style="color: #51afef;">=&gt;</span>
+        (v<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span>) <span style="color: #51afef;">=&gt;</span>
+        (r<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">B</span>]) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Node</span>(l,v,r))
+      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w2</span> <span style="color: #51afef;">=</span> w1.ap(treeTraverse(f,left))
+      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w3</span> <span style="color: #51afef;">=</span> w2.ap(f(a))
+      w3.ap(treeTraverse(f,right))
+  }
+}
+
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">tree1</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Node</span>(<span style="color: #a9a1e1;">Leaf</span>, <span style="color: #da8548; font-weight: bold;">10</span>, <span style="color: #a9a1e1;">Node</span>(<span style="color: #a9a1e1;">Leaf</span>, <span style="color: #da8548; font-weight: bold;">5</span>, <span style="color: #a9a1e1;">Node</span>(<span style="color: #a9a1e1;">Leaf</span>, <span style="color: #da8548; font-weight: bold;">10</span>, <span style="color: #a9a1e1;">Leaf</span>)))
+println(<span style="color: #98be65;">"treeTraverse: "</span> + treeTraverse((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Option</span>(n + <span style="color: #da8548; font-weight: bold;">1</span>), tree1))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">treeTraverse: Some(Node(Leaf,11,Node(Leaf,6,Node(Leaf,11,Leaf))))</span>
+</pre>
+</div>
+
+<p>
+Note that in your own code you would usually lean on the Traverse type class and
+override some methods to provide your own implementations.
+</p>
+
+<p>
+Another thing to highlight the expressive power of traverse is that we can use
+it to do a <code>map</code> like a <code>~Functor</code> by using the Id (identity) Monad as our
+effect type. The Id monad simply wraps a pure value and has no other effect, so
+we can use it to map as follows&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">@</span> <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">Int</span>](<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>).traverse((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> (<span style="color: #da8548; font-weight: bold;">1</span> + a)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Id</span>[<span style="color: #a9a1e1;">Int</span>])
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Id[List[Int]] = List(2, 3, 4)</span>
+</pre>
+</div>
 </div>
 </div>
 </div>
