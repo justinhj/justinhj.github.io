@@ -909,8 +909,8 @@ represent a zero value for the data type, which will be useful in a moment. If
 you want to dig into Monoids in more detail I have written a couple of posts on
 the subject...
 
-[[http://justinhj.github.io/2019/06/10/monoids-for-production.html][Monoids for Production [2019]​]]
-[[https://medium.com/yoppworks-reactive-systems/persistent-entities-with-monoids-a44212a157fb][Persistent Entities with Monoids [2020]​]]
+- [[http://justinhj.github.io/2019/06/10/monoids-for-production.html][Monoids for Production [2019]​]]
+- [[https://medium.com/yoppworks-reactive-systems/persistent-entities-with-monoids-a44212a157fb][Persistent Entities with Monoids [2020]​]]
 
 **** Every Applicative is a Monoid
 It's possible to implement a Monoid instance that works for any Applicative. In
@@ -943,7 +943,7 @@ List(1,2,3) |+| List(4,5,6)
 // res: List[Int] = List(5, 6, 7, 6, 7, 8, 7, 8, 9)
 #+END_SRC
 
-**** Every Monoid is an Applicative?
+**** Magical Folding with Traverse
 It does not work the other way around, but some types with Monoid instances can
 use those instances in their Applicative implementation. For example =Tuple2= in
 the Cats library does just that. The actual implementation is split into two
@@ -961,39 +961,173 @@ implicit def appTuple2[X: Monoid] = new Applicative[Tuple2[X,?]] {
 }
 #+END_SRC
 
+You can see how the fact that Monoids have an empty (or zero) value is useful
+here because when we implement =pure= we need a value of type X to build the
+response but we only have an A. By using the ~Monoid.empty~ function we can
+fulfill the contract.
 
+The implementation of ~ap~ is also interesting. What happens is that the X values
+(which have a Monoid instance), are simply combined. The new value B is created
+by applying the function in ff to the value in fa and now we have our new
+Tuple2.
 
+Recall the function signature for traverse on a List...
 
+#+BEGIN_SRC scala
+def traverse[G[_]: Applicative, A, B](fa: List[A])(f: A => G[B]): G[List[B]]
+#+END_SRC
 
+The ~G~ in traverse is used to apply the function f to each element of our
+collection, and so when we traverse and use Tuple2 as our G, it will use that
+Monoid implementation we see above. Take a list and reducing it to a single
+value is called various names including folding, reducing, crushing. In Scala
+we'd typically fold a list of elements with a Monadic structure. We can now do
+the same thing with traverse.
 
-**** Const
+#+BEGIN_SRC scala
+Traverse[List].traverse(List[Id[Int]](1,2,3))((n: Int) => Tuple2(n,n))
+// res: (Int, List[Int]) = (6, List(1, 2, 3))
+#+END_SRC
+
+You can see that the resulting tuple consists of two things, the sum of the
+integers in the list (6) and second element is the list of results. That gives
+us the ability to transform a collection into a an aggregated (folded) value,
+and map it to a new collection at the same time!
+
+Now often you may want to just fold the values and you don't care about the
+other collection. In that case you could just drop it by calling ~._2~ on the
+result.
+
+There's a better way, and we can now move onto finding out about Phantom types
+and how they can help us here.
+**** Phantom types
+Now we can rejoin the paper. We are introduced the ~Accy~ type which is called
+~Const~ in Cats. 
 
 #+BEGIN_SRC haskell
 newtype Accy o a = Acc{acc :: o }
 #+END_SRC
 
-In Scala this is...
+In Scala...
 
 #+BEGIN_SRC scala
 def const[A, B](a: A)(b: => B): A = a
 #+END_SRC
 
 Const, or Accy, is a strange looking data type that takes two type parameters,
-and in fact takes two values, but we can only every recover the first. This is
-why the second parameter is called a ~phantom~.
-
-We can create a Const with any crazy type we want for the ~B~ parameter...
+and in fact takes two values, but we only store the first. This is why the
+second parameter is called a ~phantom~. We can create a Const with any crazy
+type we want for the ~B~ parameter because it won't be used at all...
 
 #+BEGIN_SRC scala
-@ Const[Int, com.oracle.webservices.internal.api.message.MessageContext](12).getConst
-res10: Int = 12
+import com.oracle.webservices.internal.api.message.MessageContext
+Const[Int,MessageContext](12).getConst
+// res: Int = 12
 #+END_SRC
 
-So what use is Const? If you create an Applicative Functor for Const
+So what use is Const? Well we can create an applicative functor for it just like
+we did with Tuple, but now we can drop the pretense that we cared about the
+second value and just get the folded value, saving us CPU time and memory as the
+computation progresses...
+
+#+BEGIN_SRC scala
+Traverse[List].traverse(List(1,2,3,4,5))(a => Const[Int, String](a)).getConst
+// res: Int = 15
+#+END_SRC
+
+Let's convert the examples in the paper of using this technique into Scala...
 
 #+BEGIN_SRC haskell
-instance Monoid o ⇒ Applicative (Accy o) where
-pure = Acc ∅
-Acc o1 ~ Acc o2 = Acc (o1 ⊕ o2)
+accumulate :: (Traversable t, Monoid o) ⇒ (a → o) → t a → o
+accumulate f = acc · traverse (Acc · f )
+reduce :: (Traversable t, Monoid o) ⇒ t o → o
+reduce = accumulate id
 #+END_SRC
 
+#+BEGIN_SRC scala
+def accumulate[F: Traverse, B: Monoid](f: A => B)(fa: F[A]): B = {
+  Traverse[F].traverse(f(a))
+}
+def reduce[F[_]: Traverse, A: Monoid](fa: F[A]): A = {
+  cats.Traverse[F].traverse(fa)((a: A) => Const.of[A](a)).getConst
+}
+// Accumulate
+println("accumulate: " + accumulate((s: String) => s.size)(List("ten", "twenty", "thirty")))
+// 15
+
+// Reduce
+println("reduce: " + reduce(List("ten", "twenty", "thirty")))
+// tentwentythirty
+#+END_SRC
+
+And we can convert the following without much change...
+
+#+BEGIN_SRC haskell
+flatten :: Tree a → [a ]
+flatten = accumulate (:[ ])
+concat :: [[a ]] → [a ]
+concat = reduce
+#+END_SRC
+
+Scala versions...
+
+#+BEGIN_SRC scala
+def treeFlatten[A](tree: Tree[A]): List[A] = {
+  accumulate((a: A) => List(a))(tree)
+}
+
+def concatLists[A](fa: List[List[A]]): List[A] = {
+  reduce(fa)
+}
+
+// Tree flattening
+println("treeFlatten: " + treeFlatten(tree1))
+// treeFlatten: List(10, 5, 10)
+
+// Concat lists (flatten)
+println("concatLists: " + concatLists(List(List(1,2,3), List(4,5,6))))
+// concatLists: List(1, 2, 3, 4, 5, 6)
+#+END_SRC
+
+Last thing in this chapter is an example of how to find if a an element in a
+list (or really anything we can Traverse) matches some predicate...
+
+#+BEGIN_SRC haskell
+newtype Mighty = Might{might :: Bool}
+
+instance Monoid Mighty where
+∅ = Might False
+Might x ⊕ Might y = Might (x ∨ y)
+
+any :: Traversable t ⇒ (a → Bool) → t a → Bool
+any p = might · accumulate (Might · p)
+#+END_SRC
+
+What's going on here is that we get a new type called Mighty which has a Monoid
+instance for it representing disjunction (boolean or). There is no default
+Monoid for boolean in Cats so we have to define one first.
+
+#+BEGIN_SRC scala
+implicit val mightyBoolean = new Monoid[Boolean] {
+  def empty = false
+  def combine(a: Boolean, b: Boolean) = a || b
+}
+
+Traverse[List].traverse(List(1,2,3,4,5))(a =>
+  if(a > 2) Const.of[Any](true)
+  else Const.of[Any](false))
+// res: Const[Boolean, List[Any]] = Const(true)
+
+Traverse[List].traverse(List(1,2,3,4,5))(a =>
+  if(a > 5) Const.of[Any](true)
+  else Const.of[Any](false))
+// res: Const[Boolean, List[Any]] = Const(false)
+#+END_SRC
+
+Instead of using boolean we can rely on the Integer addition boolean to count
+how many times a predicate is matched in a traversable structure...
+
+#+BEGIN_SRC scala
+Traverse[List].traverse(List(1,2,3,4,5))(a => if(a > 2) Const.of[Any](1) else Const.of[Any](0))
+// res: Const[Int, List[Any]] = Const(3)
+#+END_SRC

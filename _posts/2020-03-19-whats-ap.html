@@ -856,6 +856,10 @@ long as the order of the genuinely effectful computations is preserved.
 </blockquote>
 
 <p>
+For more detail on the applicative laws check out chapter 12, section 5 of <a href="https://livebook.manning.com/book/functional-programming-in-scala/chapter-12/80">The Red Book</a>
+</p>
+
+<p>
 Next we are show that <i>Applicatives are all Functors</i> (hence the name
 Applicative Functors), because you can implement the map operation as follows&#x2026;
 </p>
@@ -1145,15 +1149,332 @@ override some methods to provide your own implementations.
 
 <p>
 Another thing to highlight the expressive power of traverse is that we can use
-it to do a <code>map</code> like a <code>~Functor</code> by using the Id (identity) Monad as our
+it to do a <code>map</code> just like a <code>~Functor</code> by using the Id (identity) Monad as our
 effect type. The Id monad simply wraps a pure value and has no other effect, so
-we can use it to map as follows&#x2026;
+we can use it to use traverse as a functor as follows&#x2026;
 </p>
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #51afef;">@</span> <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">Int</span>](<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>).traverse((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> (<span style="color: #da8548; font-weight: bold;">1</span> + a)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Id</span>[<span style="color: #a9a1e1;">Int</span>])
 <span style="color: #5B6268;">// </span><span style="color: #5B6268;">Id[List[Int]] = List(2, 3, 4)</span>
 </pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgcbf9417" class="outline-3">
+<h3 id="orgcbf9417">Monoids are phantom Applicative functors</h3>
+<div class="outline-text-3" id="text-orgcbf9417">
+<p>
+This section of the paper, part four if you are reading along, has an intriguing
+title. Whilst short, there is a lot of information in a small space on how we
+can use Monoids, Applicatives and Traverse to do some cool things. I will go
+much slower than the paper as some of the concepts take some time to get your
+head around.
+</p>
+
+<p>
+Monoids are a type class that provides an interface to join things together such
+as appending strings or adding numbers. In addition they give us a way to
+represent a zero value for the data type, which will be useful in a moment. If
+you want to dig into Monoids in more detail I have written a couple of posts on
+the subject&#x2026;
+</p>
+
+<ul class="org-ul">
+<li><a href="http://justinhj.github.io/2019/06/10/monoids-for-production.html">Monoids for Production [2019]​</a></li>
+<li><a href="https://medium.com/yoppworks-reactive-systems/persistent-entities-with-monoids-a44212a157fb">Persistent Entities with Monoids [2020]​</a></li>
+</ul>
+</div>
+
+<div id="outline-container-orgfdcac99" class="outline-4">
+<h4 id="orgfdcac99">Every Applicative is a Monoid</h4>
+<div class="outline-text-4" id="text-orgfdcac99">
+<p>
+It&rsquo;s possible to implement a Monoid instance that works for any Applicative. In
+Scala it looks like this&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">appMonoid</span>[<span style="color: #a9a1e1;">A</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>] <span style="color: #51afef;">=</span> <span style="color: #51afef;">new</span> <span style="color: #ECBE7B;">Monoid</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">A</span>]] {
+  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">empty</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">F</span>].pure((<span style="color: #a9a1e1;">Monoid</span>[<span style="color: #a9a1e1;">A</span>].empty))
+  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">combine</span>(x<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>], y<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span>
+    <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">F</span>].map2(x,y)(<span style="color: #a9a1e1;">Monoid</span>[<span style="color: #a9a1e1;">A</span>].combine)
+}
+</pre>
+</div>
+
+<p>
+What does this give us? We can join Applicative Effects togther, and when we do
+so they are joined in the <code>idiom</code> of the effect type. So for example when
+combining a list with its default Monoid instance it will simply append the
+lists like this&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>) |+| <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>,<span style="color: #da8548; font-weight: bold;">6</span>)
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Int] = List(1, 2, 3, 4, 5, 6)</span>
+</pre>
+</div>
+
+<p>
+But if instead we bring into scope a monoid for List we get the applicative
+application instead&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">m</span> <span style="color: #51afef;">=</span> appMonoid[<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">List</span>]
+<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>) |+| <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>,<span style="color: #da8548; font-weight: bold;">6</span>)
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Int] = List(5, 6, 7, 6, 7, 8, 7, 8, 9)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org95ad538" class="outline-4">
+<h4 id="org95ad538">Magical Folding with Traverse</h4>
+<div class="outline-text-4" id="text-org95ad538">
+<p>
+It does not work the other way around, but some types with Monoid instances can
+use those instances in their Applicative implementation. For example <code>Tuple2</code> in
+the Cats library does just that. The actual implementation is split into two
+because of the way the Cats class hierarchy is organized, so here&rsquo;s a simplified
+version so you can see what&rsquo;s going on&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">appTuple2</span>[<span style="color: #a9a1e1;">X</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>] <span style="color: #51afef;">=</span> <span style="color: #51afef;">new</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">Tuple2</span>[<span style="color: #a9a1e1;">X</span>,?]] {
+  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">pure</span>[<span style="color: #a9a1e1;">A</span>](a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">X</span>, <span style="color: #a9a1e1;">A</span>) <span style="color: #51afef;">=</span> (<span style="color: #a9a1e1;">Monoid</span>[<span style="color: #a9a1e1;">X</span>].empty, a)
+
+  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">ap</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](ff<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">X</span>, <span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>))(fa<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">X</span>, <span style="color: #a9a1e1;">A</span>))<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">X</span>, <span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=</span> {
+    (ff._1.combine(fa._1),
+     ff._2(fa._2))
+  }
+}
+</pre>
+</div>
+
+<p>
+You can see how the fact that Monoids have an empty (or zero) value is useful
+here because when we implement <code>pure</code> we need a value of type X to build the
+response but we only have an A. By using the <code>Monoid.empty</code> function we can
+fulfill the contract.
+</p>
+
+<p>
+The implementation of <code>ap</code> is also interesting. What happens is that the X values
+(which have a Monoid instance), are simply combined. The new value B is created
+by applying the function in ff to the value in fa and now we have our new
+Tuple2.
+</p>
+
+<p>
+Recall the function signature for traverse on a List&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">traverse</span>[<span style="color: #a9a1e1;">G</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>, <span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>])(f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">G</span>[<span style="color: #a9a1e1;">B</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">G</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">B</span>]]
+</pre>
+</div>
+
+<p>
+The <code>G</code> in traverse is used to apply the function f to each element of our
+collection, and so when we traverse and use Tuple2 as our G, it will use that
+Monoid implementation we see above. Take a list and reducing it to a single
+value is called various names including folding, reducing, crushing. In Scala
+we&rsquo;d typically fold a list of elements with a Monadic structure. We can now do
+the same thing with traverse.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">Id</span>[<span style="color: #a9a1e1;">Int</span>]](<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>))((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Tuple2</span>(n,n))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: (Int, List[Int]) = (6, List(1, 2, 3))</span>
+</pre>
+</div>
+
+<p>
+You can see that the resulting tuple consists of two things, the sum of the
+integers in the list (6) and second element is the list of results. That gives
+us the ability to transform a collection into a an aggregated (folded) value,
+and map it to a new collection at the same time!
+</p>
+
+<p>
+Now often you may want to just fold the values and you don&rsquo;t care about the
+other collection. In that case you could just drop it by calling <code>._2</code> on the
+result.
+</p>
+
+<p>
+There&rsquo;s a better way, and we can now move onto finding out about Phantom types
+and how they can help us here.
+</p>
+</div>
+</div>
+<div id="outline-container-org8cd54f7" class="outline-4">
+<h4 id="org8cd54f7">Phantom types</h4>
+<div class="outline-text-4" id="text-org8cd54f7">
+<p>
+Now we can rejoin the paper. We are introduced the <code>Accy</code> type which is called
+<code>Const</code> in Cats. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #51afef;">newtype</span> <span style="color: #ECBE7B;">Accy</span> o a <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Acc</span>{acc <span style="color: #dcaeea;">::</span> o }
+</pre>
+</div>
+
+<p>
+In Scala&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">const</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)(b<span style="color: #51afef;">:</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=</span> a
+</pre>
+</div>
+
+<p>
+Const, or Accy, is a strange looking data type that takes two type parameters,
+and in fact takes two values, but we only store the first. This is why the
+second parameter is called a <code>phantom</code>. We can create a Const with any crazy
+type we want for the <code>B</code> parameter because it won&rsquo;t be used at all&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">import</span> com.oracle.webservices.internal.api.message.<span style="color: #a9a1e1;">MessageContext</span>
+<span style="color: #a9a1e1;">Const</span>[<span style="color: #a9a1e1;">Int</span>,<span style="color: #a9a1e1;">MessageContext</span>](<span style="color: #da8548; font-weight: bold;">12</span>).getConst
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Int = 12</span>
+</pre>
+</div>
+
+<p>
+So what use is Const? Well we can create an applicative functor for it just like
+we did with Tuple, but now we can drop the pretense that we cared about the
+second value and just get the folded value, saving us CPU time and memory as the
+computation progresses&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>))(a <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Const</span>[<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">String</span>](a)).getConst
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Int = 15</span>
+</pre>
+</div>
+
+<p>
+Let&rsquo;s convert the examples in the paper of using this technique into Scala&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">accumulate</span> <span style="color: #dcaeea;">::</span> (<span style="color: #ECBE7B;">Traversable</span> t, <span style="color: #ECBE7B;">Monoid</span> o) <span style="color: #dcaeea;">&#8658;</span> (a <span style="color: #dcaeea;">&#8594;</span> o) <span style="color: #dcaeea;">&#8594;</span> t a <span style="color: #dcaeea;">&#8594;</span> o
+<span style="color: #c678dd;">accumulate</span> f <span style="color: #dcaeea;">=</span> acc <span style="color: #dcaeea;">&#183;</span> traverse (<span style="color: #ECBE7B;">Acc</span> <span style="color: #dcaeea;">&#183;</span> f )
+<span style="color: #c678dd;">reduce</span> <span style="color: #dcaeea;">::</span> (<span style="color: #ECBE7B;">Traversable</span> t, <span style="color: #ECBE7B;">Monoid</span> o) <span style="color: #dcaeea;">&#8658;</span> t o <span style="color: #dcaeea;">&#8594;</span> o
+<span style="color: #c678dd;">reduce</span> <span style="color: #dcaeea;">=</span> accumulate id
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">accumulate</span>[<span style="color: #a9a1e1;">F</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Traverse</span>, <span style="color: #a9a1e1;">B</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>)(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span> <span style="color: #51afef;">=</span> {
+  <span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">F</span>].traverse(f(a))
+}
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">reduce</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Traverse</span>, <span style="color: #a9a1e1;">A</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=</span> {
+  cats.<span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">F</span>].traverse(fa)((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">A</span>](a)).getConst
+}
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Accumulate</span>
+println(<span style="color: #98be65;">"accumulate: "</span> + accumulate((s<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">=&gt;</span> s.size)(<span style="color: #a9a1e1;">List</span>(<span style="color: #98be65;">"ten"</span>, <span style="color: #98be65;">"twenty"</span>, <span style="color: #98be65;">"thirty"</span>)))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">15</span>
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Reduce</span>
+println(<span style="color: #98be65;">"reduce: "</span> + reduce(<span style="color: #a9a1e1;">List</span>(<span style="color: #98be65;">"ten"</span>, <span style="color: #98be65;">"twenty"</span>, <span style="color: #98be65;">"thirty"</span>)))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">tentwentythirty</span>
+</pre>
+</div>
+
+<p>
+And we can convert the following without much change&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #c678dd;">flatten</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Tree</span> a <span style="color: #dcaeea;">&#8594;</span> [a ]
+<span style="color: #c678dd;">flatten</span> <span style="color: #dcaeea;">=</span> accumulate (<span style="color: #ECBE7B;">:</span>[ ])
+<span style="color: #c678dd;">concat</span> <span style="color: #dcaeea;">::</span> [[a ]] <span style="color: #dcaeea;">&#8594;</span> [a ]
+<span style="color: #c678dd;">concat</span> <span style="color: #dcaeea;">=</span> reduce
+</pre>
+</div>
+
+<p>
+Scala versions&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">treeFlatten</span>[<span style="color: #a9a1e1;">A</span>](tree<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> {
+  accumulate((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">List</span>(a))(tree)
+}
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">concatLists</span>[<span style="color: #a9a1e1;">A</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>]])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> {
+  reduce(fa)
+}
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Tree flattening</span>
+println(<span style="color: #98be65;">"treeFlatten: "</span> + treeFlatten(tree1))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">treeFlatten: List(10, 5, 10)</span>
+
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Concat lists (flatten)</span>
+println(<span style="color: #98be65;">"concatLists: "</span> + concatLists(<span style="color: #a9a1e1;">List</span>(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>), <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>,<span style="color: #da8548; font-weight: bold;">6</span>))))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">concatLists: List(1, 2, 3, 4, 5, 6)</span>
+</pre>
+</div>
+
+<p>
+Last thing in this chapter is an example of how to find if a an element in a
+list (or really anything we can Traverse) matches some predicate&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #51afef;">newtype</span> <span style="color: #ECBE7B;">Mighty</span> <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Might</span>{might <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Bool</span>}
+
+<span style="color: #51afef;">instance</span> <span style="color: #ECBE7B;">Monoid</span> <span style="color: #ECBE7B;">Mighty</span> <span style="color: #51afef;">where</span>
+<span style="color: #dcaeea;">&#8709;</span> <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Might</span> <span style="color: #ECBE7B;">False</span>
+<span style="color: #ECBE7B;">Might</span> x <span style="color: #dcaeea;">&#8853;</span> <span style="color: #ECBE7B;">Might</span> y <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Might</span> (x <span style="color: #dcaeea;">&#8744;</span> y)
+
+<span style="color: #c678dd;">any</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Traversable</span> t <span style="color: #dcaeea;">&#8658;</span> (a <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Bool</span>) <span style="color: #dcaeea;">&#8594;</span> t a <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Bool</span>
+<span style="color: #c678dd;">any</span> p <span style="color: #dcaeea;">=</span> might <span style="color: #dcaeea;">&#183;</span> accumulate (<span style="color: #ECBE7B;">Might</span> <span style="color: #dcaeea;">&#183;</span> p)
+</pre>
+</div>
+
+<p>
+What&rsquo;s going on here is that we get a new type called Mighty which has a Monoid
+instance for it representing disjunction (boolean or). There is no default
+Monoid for boolean in Cats so we have to define one first.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">mightyBoolean</span> <span style="color: #51afef;">=</span> <span style="color: #51afef;">new</span> <span style="color: #ECBE7B;">Monoid</span>[<span style="color: #a9a1e1;">Boolean</span>] {
+  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">empty</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">false</span>
+  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">combine</span>(a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Boolean</span>, b<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Boolean</span>) <span style="color: #51afef;">=</span> a || b
+}
+
+<span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>))(a <span style="color: #51afef;">=&gt;</span>
+  <span style="color: #51afef;">if</span>(a &gt; <span style="color: #da8548; font-weight: bold;">2</span>) <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #a9a1e1;">true</span>)
+  <span style="color: #51afef;">else</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #a9a1e1;">false</span>))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Const[Boolean, List[Any]] = Const(true)</span>
+
+<span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>))(a <span style="color: #51afef;">=&gt;</span>
+  <span style="color: #51afef;">if</span>(a &gt; <span style="color: #da8548; font-weight: bold;">5</span>) <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #a9a1e1;">true</span>)
+  <span style="color: #51afef;">else</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #a9a1e1;">false</span>))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Const[Boolean, List[Any]] = Const(false)</span>
+</pre>
+</div>
+
+<p>
+Instead of using boolean we can rely on the Integer addition boolean to count
+how many times a predicate is matched in a traversable structure&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>))(a <span style="color: #51afef;">=&gt;</span> <span style="color: #51afef;">if</span>(a &gt; <span style="color: #da8548; font-weight: bold;">2</span>) <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #da8548; font-weight: bold;">1</span>) <span style="color: #51afef;">else</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #da8548; font-weight: bold;">0</span>))
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Const[Int, List[Any]] = Const(3)</span>
+</pre>
+</div>
 </div>
 </div>
 </div>
