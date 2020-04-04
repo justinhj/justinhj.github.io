@@ -1131,3 +1131,104 @@ how many times a predicate is matched in a traversable structure...
 Traverse[List].traverse(List(1,2,3,4,5))(a => if(a > 2) Const.of[Any](1) else Const.of[Any](0))
 // res: Const[Int, List[Any]] = Const(3)
 #+END_SRC
+
+*** Comparing Monad with Applicative
+We know that all Monads are Applicatives. Why? Because all Monads implement
+~pure~ and they can also implement ~ap~ as follows...
+
+#+BEGIN_SRC scala
+def ap[A, B](ff: List[A => B])(fa: List[A]) = {
+  ff.flatMap(f =>
+    fa.map(f))
+}
+#+END_SRC
+
+But all Applicatives are not Monads. For example you cannot implement flatMap
+for Const...
+
+#+BEGIN_SRC scala
+def flatMap[A,B](fa: MyConst[X,A])(f: A => MyConst[X,B]): MyConst[X,B] = {
+  val x = fa.unConst
+  val a = ???
+  // f(a)
+  ???
+}
+#+END_SRC
+
+We need an A to apply the function f, but there's no way to get one. Therefore
+Const is no Monad.
+
+#+BEGIN_QUOTE
+So now we know: there are strictly more Applicative functors than Monads. Should
+we just throw the Monad class away and use Applicative instead? Of course not! The
+reason there are fewer monads is just that the Monad structure is more powerful.
+#+END_QUOTE
+
+Next we contrast how Monad and Applicative differ in terms of a function called
+miffy (for doing a monadic if) and iffy (an applicative if)...
+
+#+BEGIN_SRC scala
+def miffy[A, F[_]: Monad](mb: F[Boolean], fa: F[A], fb: F[A]): F[A] = {
+  mb.flatMap{
+    b =>
+    if(b) fa
+    else fb
+  }
+}
+
+def iffy[A, F[_]: Applicative](mb: F[Boolean], fa: F[A], fb: F[A]): F[A] = {
+  Applicative[F].map3(mb, fa, fb){
+    case (cond, a, b) =>
+      if(cond) a else b
+  }
+}
+
+// miffy(Option(true), Option(1), None)
+// res: Option[Int] = Some(1)
+
+// iffy(Option(true), Option(1), None)
+// res: Option[Int] = None
+#+END_SRC
+
+Here you can see that whilst miffy will succeed if the input is true even though
+the else effect failed (it was None). But with the applicative version we have
+to evaluate all the effects first, and if one of them fails they all fail.
+
+#+BEGIN_QUOTE
+The moral is this: if you’ve got an Applicative functor, that’s good; if you’ve also
+got a Monad, that’s even better! And the dual of the moral is this: if you want a
+Monad, that’s good; if you only want an Applicative functor, that’s even better!
+#+END_QUOTE
+
+**** Composing Applicatives
+Not all Monads compose but all Applicatives do; /the Applicative class is closed
+under composition/.
+
+#+BEGIN_SRC haskell
+instance (Applicative f ,Applicative g) ⇒ Applicative (f ◦ g) where
+pure x = Comp J (pure x ) K
+Comp fs ~ Comp xs = Comp J (~) fs xs K
+#+END_SRC
+
+What does it mean to compose an Applicative? It means that we get the effects of
+both. For example we can use the full suite of Applicative functionality on a
+List of Options...
+
+#+BEGIN_SRC scala
+val x: List[Option[Int]] = List(10.some, 9.some, 8.some)
+val y: List[Option[Int]] = List(7.some, 6.some, 5.some)
+
+Applicative[List].compose[Option].map2(x, y)(_ + _)
+// res: List[Option[Int]] =
+//   List(Some(17), None, Some(15),
+//   Some(16), None, Some(14),
+//   Some(15), None, Some(13))
+#+END_SRC
+
+**** Accumulating Exceptions
+In this section its noted that we could accumulate errors from computations
+using a type such as...
+
+#+BEGIN_SRC haskell
+data Except err a = OK a | Failed err
+#+END_SRC
