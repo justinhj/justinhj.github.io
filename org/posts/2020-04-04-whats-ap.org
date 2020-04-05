@@ -9,8 +9,8 @@
 ---
 layout: post
 title: What's Ap?
-date: '2020-03-19T00:00:00.000-08:00'
-tags: [pure-functional-programming, cats, scala, applicative]
+date: '2020-04-04T00:00:00.000-08:00'
+tags: [pure-functional-programming, cats, scala, applicative, monads, functors]
 ---
 #+END_EXPORT
 
@@ -29,15 +29,16 @@ tags: [pure-functional-programming, cats, scala, applicative]
 <img class="img" src="../../../images/whatsap.png" border="0" alt="A cow is transformed to four cows" width="600"/>
 #+END_EXPORT
 
-** Applicative Functors
+** Introduction
 This post is aimed at the Scala programmer who is familiar with the basics of
 the language and ideally becoming interested, or already deeply entrenched, in
 pure functional programming and curious about ~Applicative Functors~. We'll
 delve into the original paper in which they were introduced, converting the
-Haskell code to modern Scala, and then look at an efficient implementation of
-blending two images using Applicative progamming.
+Haskell code to modern Scala, both custom code and using Cats, Cats Effect and
+Zio. Finally, we'll look at an efficient implementation of blending two images
+using Applicative programming.
 ** Functor and Monad
-As a Scala programmer you will be no doubt be familar with the ~map~ and
+As a Scala programmer, you will be no doubt be familiar with the ~map~ and
 ~flatMap~ functions, which you will find in some of the collections and other
 data types in the standard Scala library. If you're interested in pure
 functional programming, and have used the Cats or Scalaz libraries, you may know
@@ -49,10 +50,10 @@ Functors and Monads.
 
 Remember, the goal of functional programming is to do most of our work using
 pure functions. We use structures like Functors and Monads to manage effects
-that are not pure; letting us use pure functions in an effectful world. The
-Functor type class gives us the power to take a pure function like ~a => a + 1~
-and apply it to the value inside an effect. Here's an example using instances of
-the Functor monad for List and Option...
+(things that are not pure); letting us use pure functions in an effectful world.
+The Functor type class gives us the power to take a pure function like ~a => a +
+1~ and apply it to the value inside an effect. Here are a couple of examples of
+using Functor's map on two data types...
 
 #+BEGIN_SRC scala
 List(1,2,3).map(a => a + 1)
@@ -62,7 +63,7 @@ Option(1).map(a => a + 1)
 // res: Option[Int] = Some(2)
 #+END_SRC
 
-Whilst Functor gives you the ability to reach inside an effect, apply a pure
+Functor gives you the ability to reach inside an effect, apply a pure
 function to the value inside there, and wrap it up inside an effect of the same
 type. The type signature of map is ~map[A,B](fa: F[A], f: A => B): F[B]~.
 
@@ -108,10 +109,10 @@ care of flattening the result for us...
 #+BEGIN_SRC scala
 val accountStatus = getUser("bob@google.com")
   .flatMap(user => getAccountStatus(user.accountId))
-// accountStatus has type [Future[AccountStatus]
+// accountStatus has type Future[AccountStatus]
 #+END_SRC
 
-That is the essence of Monad's; being able to compose effects together. Note
+That is the essence of Monads; being able to compose effects together. Note
 that the second call is dependent on the first. It would make no sense to call
 ~getAccountStatus~ before we called ~getUser~ because we need the user's account
 ID. In fact, even if these two effects were completely independent, we would
@@ -168,7 +169,7 @@ The ap function for Option, then, behaves probably as you'd expect. When you
 /apply/ the function, if the ~ff~ argument is ~None~ then there's nothing to
 apply and we get the result ~None~. If there is a function in there, we extract
 it so that we have a /pure function/ that we can /apply/ to the effectful
-argument ~F[A]~. Again, if that is empty we get ~None~, otherwise we get the
+argument ~F[A]~. Again, if that is empty we get ~None~, otherwise, we get the
 value ~f(a)~ which will be wrapped back up in the effect giving ~Some(30)~.
 
 *** Applicative instance for List
@@ -212,16 +213,14 @@ applied.run(10).value
 //res: (Int, Int) = (10, 20)
 #+END_SRC
 
-So, everything that has an Applicative can handle pure functions that have been
-lifted into effects. In some cases that seems marginally useful and in other
-cases seems rather weird. Why is that? I'm going to bury the lede and in the
-next section we'll look back to 2008 when Applicative Functors first show up in
-academic literature...
+I don't think you can get the answer to "What's Ap" just by looking at type
+signatures and examples. To really understand applicative style in depth I
+thought I would walk through the seminal paper on the subject and get it from
+the originators...
 
 ** Applicative Programming with Effects
-
 *** Let's Apply ourselves
-Applicative Functors first saw light of day in the 2008 paper by McBride and
+Applicative Functors first saw the light of day in the 2008 paper by McBride and
 Patterson, "Applicative Programming with Effects" which you can find here...
 
 [[https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf]]
@@ -231,7 +230,7 @@ The paper begins with three motivating examples for the use of Applicative style
 #+BEGIN_QUOTE
 This is the story of a pattern that popped up time and again in our daily work,
 programming in Haskell (Peyton Jones, 2003), until the temptation to abstract it
-became irresistable. Let us illustrate with some examples.
+became irresistible. Let us illustrate with some examples.
 #+END_QUOTE
 
 We'll walk through each of these examples and convert them to use Scala...
@@ -341,7 +340,7 @@ result of the first effect before you can evaluate the second. So whilst the
 first implementation of ~sequence~ in the paper will absolutely work, it will
 not let us implement our sleep sort, nor let us parallelize the IO's in general.
 
-Anyway let's get back to the paper, at this point the authors observe...
+Back to the paper, at this point the authors observe...
 
 #+BEGIN_QUOTE
 In the (c : cs) case, we collect the values of some effectful computations, which we
@@ -393,7 +392,7 @@ so if you're not interested then skip to the next paragraph.
 #+BEGIN_aside
 The ~pure~ function is straightforward, it just wraps a pure value in a
 succeeded ZIO. The ~ap~ function is more interesting. Whilst it's not obvious
-how you would implemented ap in for ZIO, it is really easy to implement ~map2~.
+how you would implement ap in for ZIO, it is really easy to implement ~map2~.
 ~map2~ comes in handy because it lets you take the results of two effects and
 pass them to a pure function. The function has the signature ~f: (A, B) => C~.
 We use the ZIO function ~zipPar~ to execute the two effects _in parallel_, and
@@ -484,7 +483,7 @@ repeat x = x : repeat x
 Let's translate this to Scala. The algorithm works by taking each row in turn
 and /zipping/ it with each subsequent row.
 
-First we need to be careful about the function ~repeat~ which returns an
+First, we need to be careful about the function ~repeat~ which returns an
 infinite number of whatever x is. This is used in the transpose for the last row
 of the matrix where we want a number of empty lists to finish our recursion but
 we don't know how many, so we want to just keep taking them. Since Haskell is by
@@ -503,7 +502,7 @@ The function ~zipWith~ has the following type signature...
 zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
 #+END_SRC
 
-In other words it takes two lists and a pure function of two arguments, and
+In other words, it takes two lists and a pure function of two arguments, and
 creates a new list by applying the function to each element. It will stop once
 it runs out of elements in one of the lists. Here's the Scala version.
 
@@ -597,7 +596,7 @@ complicating the example with error handling, if a variable is not present in
 the environment I just default to returning zero.
 
 Following the pattern of the previous two examples, the authors then pull some
-magic to make the applicative pattern more noticable...
+magic to make the applicative pattern more noticeable...
 
 #+BEGIN_QUOTE
 We can eliminate the clutter of the explicitly threaded environment with a little
@@ -661,7 +660,7 @@ apply a function that is wrapped in these effects. What we needed, and got with
 ~ap~, is a way to lift a pure function so we can apply it to a chain of effects
 of the same effect type.
 
-Next in the paper the authors describe the laws which an instance of the
+Next in the paper, the authors describe the laws which an instance of the
 Applicative type class must adhere to, which is out of scope for this post but
 is put succinctly in English as follows...
 
@@ -673,8 +672,8 @@ long as the order of the genuinely effectful computations is preserved.
 
 For more detail on the applicative laws check out chapter 12, section 5 of [[https://livebook.manning.com/book/functional-programming-in-scala/chapter-12/80][The Red Book]]
 
-Next we are show that /Applicatives are all Functors/ (hence the name
-Applicative Functors), because you can implement the map operation as follows...
+/Applicatives are all Functors/ (hence the name Applicative Functors), because
+you can implement the map operation as follows...
 
 #+BEGIN_SRC scala
 // Declare map in terms of pure and ap
@@ -728,7 +727,7 @@ Both are instances of the applicative distributor for lists.
 
 At this point in the paper we have seen the birth of the Applicative type class
 which encapsulates the ~ap~ and ~pure~ functions needed to implement the
-patterns above. Next the authors describe another new type class, ~Traverse~,
+patterns above. Next, the authors describe another new type class, ~Traverse~,
 which lets us generalize the pattern further...
 
 #+BEGIN_SRC haskell
@@ -772,7 +771,7 @@ We could override the Cats instance for Option with our own. What we do instead
 is create Applicative versions of type classes. For example, our monadic friend
 Either (which represents an error or a success value) has an applicative
 alter-ego ~Validated~. Rather than short-circuit on failure, Validated allows us
-to acculate errors so we can provide valuable feeback ot the caller. That is one
+to accumulate errors so we can provide valuable feeback ot the caller. That is one
 of the super-powers of Applicatives!
 
 #+BEGIN_SRC scala
@@ -788,18 +787,16 @@ Just by changing data types we have completely changed the behaviour from
 short-circuiting to being able to //accumulate the errors/. Just imagine that these
 are expensive computations or slow network calls, and you can see how avoiding
 sequencing can really save us in computing costs, and thereby save us money.
-Furthermore we can improve user experience. We can validate a whole form from
+Furthermore, we can improve user experience. We can validate a whole form from
 the user at once and send all the corrections needed rather than necessitate a
-painful back and forth until the whole form is valid.
-
-Anyway enough real world talk let's get back to ~dist~.
+painful back and forth until the whole form is valid. Now get back to ~dist~.
 
 #+BEGIN_QUOTE
 Distribution is often used together with ‘map’.
 #+END_QUOTE
 
 Fair enough. The ~dist~ function we developed above would be enhanced in
-usefullness if it could map a list of pure values into some effect type first.
+usefulness if it could map a list of pure values into some effect type first.
 Let's take a look at a poor way to implement that...
 
 #+BEGIN_SRC haskell
@@ -857,7 +854,7 @@ def sequence[A, F[_]](fs: List[F[A]])
 }
 #+END_SRC
 
-Finally we get to the Traverse type class, which gives us an interface to write
+Finally, we get to the Traverse type class, which gives us an interface to write
 traverse for two effect types rather than just List and another effect. We have
 two functions, traverse and dist, which are represented in Scala today as
 traverse and sequence.
@@ -920,7 +917,7 @@ much slower than the paper as some of the concepts take some time to get your
 head around.
 
 Monoids are a type class that provides an interface to join things together such
-as appending strings or adding numbers. In addition they give us a way to
+as appending strings or adding numbers. In addition, they give us a way to
 represent a zero value for the data type, which will be useful in a moment. If
 you want to dig into Monoids in more detail I have written a couple of posts on
 the subject...
@@ -980,7 +977,7 @@ implicit def appTuple2[X: Monoid] = new Applicative[Tuple2[X,?]] {
 You can see how the fact that Monoids have an empty (or zero) value is useful
 here because when we implement =pure= we need a value of type X to build the
 response but we only have an A. By using the ~Monoid.empty~ function we can
-fulfill the contract.
+fulfil the contract.
 
 The implementation of ~ap~ is also interesting. What happens is that the X values
 (which have a Monoid instance), are simply combined. The new value B is created
@@ -1030,7 +1027,7 @@ In Scala...
 def const[A, B](a: A)(b: => B): A = a
 #+END_SRC
 
-Const, or Accy, is a strange looking data type that takes two type parameters,
+Const, or Accy, is a strange-looking data type that takes two type parameters,
 and in fact takes two values, but we only store the first. This is why the
 second parameter is called a ~phantom~. We can create a Const with any crazy
 type we want for the ~B~ parameter because it won't be used at all...
@@ -1041,8 +1038,8 @@ Const[Int,MessageContext](12).getConst
 // res: Int = 12
 #+END_SRC
 
-So what use is Const? Well we can create an applicative functor for it just like
-we did with Tuple, but now we can drop the pretense that we cared about the
+So what use is Const? For one, we can create an applicative functor for it just
+like we did with Tuple, but now we can drop the pretense that we cared about the
 second value and just get the folded value, saving us CPU time and memory as the
 computation progresses...
 
@@ -1242,7 +1239,7 @@ Applicative[List].compose[Option].map2(x, y)(_ + _)
 #+END_SRC
 
 **** Accumulating Exceptions
-In this section its noted that we could accumulate errors from computations
+In this section, it's noted that we could accumulate errors from computations
 using a type such as...
 
 #+BEGIN_SRC haskell
@@ -1260,7 +1257,7 @@ work by Duncan Coutts), or to summarise them in some way.
 This is in fact exactly what we did when looking at the ~Validated~ type above.
 
 *** Applicative functors and Arrows
-In this section the paper discusses ~arrows~ which have some similarities with
+In this section, the paper discusses ~arrows~ which have some similarities with
 the ~Applicative~ interface, but it's out of scope for purposes of this blog
 post. I may come back to it in a future post.
 
@@ -1305,7 +1302,10 @@ Fans of category theory will recognise the above laws as the properties of a lax
 monoidal functor for the monoidal structure given by products.
 #+END_QUOTE
 
-**** Conclusions
+**** We applied ourselves!
+That's the end of McBride and Patterson's paper; here are some conclusions they
+made...
+
 - Applicative Functors have been identified
 - They lie between Functor and Monad in power
 - Unlike Monads, Applicatives are closed under composition
@@ -1325,7 +1325,7 @@ peculiar and incompatible notations.
 Plug for idiom brackets was snipped.
 
 ** Back to Ap
-So far in this post we've seen lots of code that uses ap in various ways. We'll
+So far in this post, we've seen lots of code that uses ap in various ways. We'll
 wrap it up with some implementation notes on the useful function ~map2~, and how
 we can arrive at needing the ~ap~ function to do so. Then we'll look at a
 practical example of using Applicative in image processing.
@@ -1389,7 +1389,7 @@ def applicativeMap2[A,B,C,F[_]: Applicative](fa: F[A], fb: F[B])(f: (A,B) => C)
 }
 #+END_SRC
 
-Obviously there's no need to implement map2 because the Applicative instances
+Obviously, there's no need to implement map2 because the Applicative instances
 already have it, but it helps understand further the motivation for ap. The
 value ~ffb~ is actually the result of currying the function ~f~. What we get
 back is of the form ~F[B => C]~. We can then call that function using
@@ -1402,7 +1402,7 @@ So far we've seen some interesting uses of Applicative; accumulating errors
 from network calls, managing multiple concurrent effects, transposing matrices,
 evaluating expressions. In 2019 I wrote a blog post about Comonads that used the
 coflatMap operation to do image processing. One of the takeaways from that post
-is that one of the great advantages of functional programming is composibility.
+is that one of the great advantages of functional programming is composability.
 One thing I'd like to be able to do is to do operations on two images then blend
 them together. In my original code images are stored represented as a
 ~FocusedGrid~ which is just an array of pixels and a focus point, which works
@@ -1460,7 +1460,7 @@ Our work is done; with pure and ap implemented we now have a fully working
 Applicative instance and that means map2 will work.
 
 ** Post-mature optimisation
-Most of the time solving day to day business problems, we don't have to worry to
+Most of the time, solving day to day business problems, we don't have to worry to
 much about performance, but when it comes to things like image processing when
 we are dealing with large numbers of pixels it can be more important to know
 what is going on under the hood, and when to step in and improve it. Profiling
@@ -1479,7 +1479,7 @@ ap(map(fa)(a => (b: B) => (a, b)))(fb)
 
 So with a square image of size 2000 pixels (4 million total), to perform a map2
 we are going to map of the image twice; once to create an image of curried
-functions and a second time to apply them. In addition we're going to create a
+functions and a second time to apply them. In addition, we're going to create a
 lot temporary data that we don't need.
 
 Fortunately there's nothing to stop you from instead of using the default
@@ -1507,15 +1507,15 @@ override def map2[A, B, Z](fa: FocusedGrid[A], fb: FocusedGrid[B])(f: (A, B) => 
 
 Here we make a much more efficient implementation that instead of creating
 temporary data structures will use an iterator on each input grid and a Vector
-builder to efficiently build the output. This is maybe not the /the/ fastest
+builder to efficiently build the output. This is maybe not /the/ fastest
 implementation but it's certainly doing a lot less work. Of course optimizing
 without profiling is a waste of time. I had heard that Array is much faster than
 Vector for this kind of use case, so the sample code also includes an Array
 implementation. The code is somewhat ugly due to some technical constraints
 around Array, and turned out not to be any faster!
 
-In any case should you want to explore this further, the instructions are all in
-the accompanying code to do you run your own benchmarks using =jmh=.
+In any case, should you want to explore this further, the instructions are all
+in the accompanying code to do you run your own benchmarks using =jmh=.
 
 Here's the results from my own benchmarking...
 
@@ -1540,3 +1540,33 @@ You made it to the end! Congratulations, and I hope it made sense. Please feel
 free to contact me if you have any notes, corrections, improvements or
 suggestions!
 
+This post was going to be a five-minute thing but blew up into a monster and
+there are still things that I didn't get to. Some things I may visit in the
+future:
+- Composition - examples of composing Functors and Applicatives
+- Arrows
+- Laws of Applicatives (although they are covered nicely elsewhere)
+- Category theory (esp. of lax monoidal functors in more depth)
+
+** References
+*** Videos
+- [[https://youtu.be/yEYPf44rS2U][Oh, All the things you'll traverse by Luka Jacobowitz]]
+- [[https://youtu.be/sHV4qhbZHgo][When Everything Fits: The Beauty of Composition - Markus Hauck]]
+- [[https://youtu.be/kVnJtiN1dbk][Scale By The Bay 2019: Justin Heyes-Jones, A Gentle Introduction to Comonads]]
+*** Written word
+- [[https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf][Applicative Programming with Effects]] McBride, Patterson 2008
+- [[https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf][The Essence of the Iterator Pattern]] Gibbons, Bruno
+- [[https://pdfs.semanticscholar.org/7e66/7dd0515e4f674e42c0b0860644fee3dd5846.pdf][Do We Need Dependent Types?]] Fridlender
+- [[https://www.jhmcstanton.com/posts/blog/2019-09-23-read-a-paper-applicative-programming-with-effects.html][Read a Paper: Applicative Programming with Effects]]
+- [[https://typelevel.org/cats/typeclasses/applicative.html][Cats Applicative documentation]]
+- [[https://typelevel.org/cats/datatypes/const.html][Cats Const documentation]]
+- [[https://www.manning.com/books/functional-programming-in-scala][Functional Programming in Scala]] aka The Red Book
+- [[https://leanpub.com/fpmortals][Functional Programmers for Mortals]] aka The Blue Book
+*** Code
+- [[https://github.com/justinhj/applicatives][applicatives]] (Scala conversion from the paper and lots of Applicative stuff)
+- [[https://github.com/justinhj/comonad][comonad]] (Image processing example with new Applicative demo)
+- [[https://github.com/fosskers/scala-benchmarks][Scala Benchmarks]] (How to benchmark Scala by Colin Woodbury)
+- [[https://github.com/sammthomson/IdiomEars][Idiom Ears]] (Get those fancy ears in your applicative programming)
+- [[https://github.com/aztek/scala-workflow][Scala Workflow]] (A full on system for Monadic and Applicative programming)
+
+\copy 2020 Justin Heyes-Jones. All Rights Reserved.

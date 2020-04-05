@@ -1,8 +1,8 @@
 ---
 layout: post
 title: What's Ap?
-date: '2020-03-19T00:00:00.000-08:00'
-tags: [pure-functional-programming, cats, scala, applicative]
+date: '2020-04-04T00:00:00.000-08:00'
+tags: [pure-functional-programming, cats, scala, applicative, monads, functors]
 ---
 
 <style>
@@ -18,24 +18,25 @@ tags: [pure-functional-programming, cats, scala, applicative]
 </style>
 <img class="img" src="../../../images/whatsap.png" border="0" alt="A cow is transformed to four cows" width="600"/>
 
-<div id="outline-container-org26ff951" class="outline-2">
-<h2 id="org26ff951">Applicative Functors</h2>
-<div class="outline-text-2" id="text-org26ff951">
+<div id="outline-container-orgf1be7fd" class="outline-2">
+<h2 id="orgf1be7fd">Introduction</h2>
+<div class="outline-text-2" id="text-orgf1be7fd">
 <p>
 This post is aimed at the Scala programmer who is familiar with the basics of
 the language and ideally becoming interested, or already deeply entrenched, in
 pure functional programming and curious about <code>Applicative Functors</code>. We&rsquo;ll
 delve into the original paper in which they were introduced, converting the
-Haskell code to modern Scala, and then look at an efficient implementation of
-blending two images using Applicative progamming.
+Haskell code to modern Scala, both custom code and using Cats, Cats Effect and
+Zio. Finally, we&rsquo;ll look at an efficient implementation of blending two images
+using Applicative programming.
 </p>
 </div>
 </div>
-<div id="outline-container-org38ebe47" class="outline-2">
-<h2 id="org38ebe47">Functor and Monad</h2>
-<div class="outline-text-2" id="text-org38ebe47">
+<div id="outline-container-orgb14ae0e" class="outline-2">
+<h2 id="orgb14ae0e">Functor and Monad</h2>
+<div class="outline-text-2" id="text-orgb14ae0e">
 <p>
-As a Scala programmer you will be no doubt be familar with the <code>map</code> and
+As a Scala programmer, you will be no doubt be familiar with the <code>map</code> and
 <code>flatMap</code> functions, which you will find in some of the collections and other
 data types in the standard Scala library. If you&rsquo;re interested in pure
 functional programming, and have used the Cats or Scalaz libraries, you may know
@@ -51,10 +52,10 @@ Functors and Monads.
 <p>
 Remember, the goal of functional programming is to do most of our work using
 pure functions. We use structures like Functors and Monads to manage effects
-that are not pure; letting us use pure functions in an effectful world. The
-Functor type class gives us the power to take a pure function like <code>a =&gt; a + 1</code>
-and apply it to the value inside an effect. Here&rsquo;s an example using instances of
-the Functor monad for List and Option&#x2026;
+(things that are not pure); letting us use pure functions in an effectful world.
+The Functor type class gives us the power to take a pure function like <code>a =&gt; a +
+1</code> and apply it to the value inside an effect. Here are a couple of examples of
+using Functor&rsquo;s map on two data types&#x2026;
 </p>
 
 <div class="org-src-container">
@@ -67,7 +68,7 @@ the Functor monad for List and Option&#x2026;
 </div>
 
 <p>
-Whilst Functor gives you the ability to reach inside an effect, apply a pure
+Functor gives you the ability to reach inside an effect, apply a pure
 function to the value inside there, and wrap it up inside an effect of the same
 type. The type signature of map is <code>map[A,B](fa: F[A], f: A =&gt; B): F[B]</code>.
 </p>
@@ -124,12 +125,12 @@ care of flattening the result for us&#x2026;
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">accountStatus</span> <span style="color: #51afef;">=</span> getUser(<span style="color: #98be65;">"bob@google.com"</span>)
   .flatMap(user <span style="color: #51afef;">=&gt;</span> getAccountStatus(user.accountId))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">accountStatus has type [Future[AccountStatus]</span>
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">accountStatus has type Future[AccountStatus]</span>
 </pre>
 </div>
 
 <p>
-That is the essence of Monad&rsquo;s; being able to compose effects together. Note
+That is the essence of Monads; being able to compose effects together. Note
 that the second call is dependent on the first. It would make no sense to call
 <code>getAccountStatus</code> before we called <code>getUser</code> because we need the user&rsquo;s account
 ID. In fact, even if these two effects were completely independent, we would
@@ -140,9 +141,9 @@ these calls concurrently instead of in sequence.
 </p>
 </div>
 </div>
-<div id="outline-container-orgffa620d" class="outline-2">
-<h2 id="orgffa620d">What&rsquo;s Ap?</h2>
-<div class="outline-text-2" id="text-orgffa620d">
+<div id="outline-container-orgf310bd6" class="outline-2">
+<h2 id="orgf310bd6">What&rsquo;s Ap?</h2>
+<div class="outline-text-2" id="text-orgf310bd6">
 <p>
 Now we&rsquo;re caught up Functors and Monads, let&rsquo;s look at the <code>Applicative</code>
 typeclass. It is defined as follows in Cats, with some details removed&#x2026;
@@ -182,9 +183,9 @@ does for various implementations.
 </p>
 </div>
 
-<div id="outline-container-orgc54ea37" class="outline-3">
-<h3 id="orgc54ea37">Applicative instance for Option</h3>
-<div class="outline-text-3" id="text-orgc54ea37">
+<div id="outline-container-org2031d08" class="outline-3">
+<h3 id="org2031d08">Applicative instance for Option</h3>
+<div class="outline-text-3" id="text-org2031d08">
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #a9a1e1;">Option</span>((a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">10</span>).ap(<span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">20</span>))
 <span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[Int] = Some(30)</span>
@@ -205,15 +206,15 @@ The ap function for Option, then, behaves probably as you&rsquo;d expect. When y
 <i>apply</i> the function, if the <code>ff</code> argument is <code>None</code> then there&rsquo;s nothing to
 apply and we get the result <code>None</code>. If there is a function in there, we extract
 it so that we have a <i>pure function</i> that we can <i>apply</i> to the effectful
-argument <code>F[A]</code>. Again, if that is empty we get <code>None</code>, otherwise we get the
+argument <code>F[A]</code>. Again, if that is empty we get <code>None</code>, otherwise, we get the
 value <code>f(a)</code> which will be wrapped back up in the effect giving <code>Some(30)</code>.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org78882d1" class="outline-3">
-<h3 id="org78882d1">Applicative instance for List</h3>
-<div class="outline-text-3" id="text-org78882d1">
+<div id="outline-container-orgdac2c3c" class="outline-3">
+<h3 id="orgdac2c3c">Applicative instance for List</h3>
+<div class="outline-text-3" id="text-orgdac2c3c">
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #a9a1e1;">List</span>((a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">1</span>,
      (a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a - <span style="color: #da8548; font-weight: bold;">10</span>,
@@ -229,9 +230,9 @@ function in the list is applied to each argument in the input list.
 </div>
 </div>
 
-<div id="outline-container-org422c4d1" class="outline-3">
-<h3 id="org422c4d1">Idomaticly apply all the things</h3>
-<div class="outline-text-3" id="text-org422c4d1">
+<div id="outline-container-org2fe785d" class="outline-3">
+<h3 id="org2fe785d">Idomaticly apply all the things</h3>
+<div class="outline-text-3" id="text-org2fe785d">
 <p>
 All data types that have instances of Applicative have a way to apply a
 function wrapped in an effect of that type, and the way that it is applied is
@@ -266,25 +267,24 @@ applied.run(<span style="color: #da8548; font-weight: bold;">10</span>).value
 </div>
 
 <p>
-So, everything that has an Applicative can handle pure functions that have been
-lifted into effects. In some cases that seems marginally useful and in other
-cases seems rather weird. Why is that? I&rsquo;m going to bury the lede and in the
-next section we&rsquo;ll look back to 2008 when Applicative Functors first show up in
-academic literature&#x2026;
+I don&rsquo;t think you can get the answer to &ldquo;What&rsquo;s Ap&rdquo; just by looking at type
+signatures and examples. To really understand applicative style in depth I
+thought I would walk through the seminal paper on the subject and get it from
+the originators&#x2026;
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orga1a6532" class="outline-2">
-<h2 id="orga1a6532">Applicative Programming with Effects</h2>
-<div class="outline-text-2" id="text-orga1a6532">
+<div id="outline-container-org5d97a7e" class="outline-2">
+<h2 id="org5d97a7e">Applicative Programming with Effects</h2>
+<div class="outline-text-2" id="text-org5d97a7e">
 </div>
-<div id="outline-container-org4887ecc" class="outline-3">
-<h3 id="org4887ecc">Let&rsquo;s Apply ourselves</h3>
-<div class="outline-text-3" id="text-org4887ecc">
+<div id="outline-container-org2310e1f" class="outline-3">
+<h3 id="org2310e1f">Let&rsquo;s Apply ourselves</h3>
+<div class="outline-text-3" id="text-org2310e1f">
 <p>
-Applicative Functors first saw light of day in the 2008 paper by McBride and
+Applicative Functors first saw the light of day in the 2008 paper by McBride and
 Patterson, &ldquo;Applicative Programming with Effects&rdquo; which you can find here&#x2026;
 </p>
 
@@ -300,7 +300,7 @@ The paper begins with three motivating examples for the use of Applicative style
 <p>
 This is the story of a pattern that popped up time and again in our daily work,
 programming in Haskell (Peyton Jones, 2003), until the temptation to abstract it
-became irresistable. Let us illustrate with some examples.
+became irresistible. Let us illustrate with some examples.
 </p>
 </blockquote>
 
@@ -309,9 +309,9 @@ We&rsquo;ll walk through each of these examples and convert them to use Scala&#x
 </p>
 </div>
 
-<div id="outline-container-org9719544" class="outline-4">
-<h4 id="org9719544">Sequencing Commands</h4>
-<div class="outline-text-4" id="text-org9719544">
+<div id="outline-container-orgb8cfd8f" class="outline-4">
+<h4 id="orgb8cfd8f">Sequencing Commands</h4>
+<div class="outline-text-4" id="text-orgb8cfd8f">
 <blockquote>
 <p>
 One often wants to execute a sequence of commands and
@@ -444,7 +444,7 @@ not let us implement our sleep sort, nor let us parallelize the IO&rsquo;s in ge
 </p>
 
 <p>
-Anyway let&rsquo;s get back to the paper, at this point the authors observe&#x2026;
+Back to the paper, at this point the authors observe&#x2026;
 </p>
 
 <blockquote>
@@ -510,7 +510,7 @@ so if you&rsquo;re not interested then skip to the next paragraph.
 <p>
 The <code>pure</code> function is straightforward, it just wraps a pure value in a
 succeeded ZIO. The <code>ap</code> function is more interesting. Whilst it&rsquo;s not obvious
-how you would implemented ap in for ZIO, it is really easy to implement <code>map2</code>.
+how you would implement ap in for ZIO, it is really easy to implement <code>map2</code>.
 <code>map2</code> comes in handy because it lets you take the results of two effects and
 pass them to a pure function. The function has the signature <code>f: (A, B) =&gt; C</code>.
 We use the ZIO function <code>zipPar</code> to execute the two effects <span class="underline">in parallel</span>, and
@@ -582,9 +582,9 @@ benefits of avoiding Monad when effects are not dependent on each other.
 </div>
 </div>
 
-<div id="outline-container-org9f06115" class="outline-4">
-<h4 id="org9f06115">Matrix Transposition</h4>
-<div class="outline-text-4" id="text-org9f06115">
+<div id="outline-container-org4d47b79" class="outline-4">
+<h4 id="org4d47b79">Matrix Transposition</h4>
+<div class="outline-text-4" id="text-org4d47b79">
 <p>
 The second example in the paper is that of Matrix transposition, which takes a
 matrix and flips it along a diagonal. For example&#x2026;
@@ -624,7 +624,7 @@ and <i>zipping</i> it with each subsequent row.
 </p>
 
 <p>
-First we need to be careful about the function <code>repeat</code> which returns an
+First, we need to be careful about the function <code>repeat</code> which returns an
 infinite number of whatever x is. This is used in the transpose for the last row
 of the matrix where we want a number of empty lists to finish our recursion but
 we don&rsquo;t know how many, so we want to just keep taking them. Since Haskell is by
@@ -649,7 +649,7 @@ The function <code>zipWith</code> has the following type signature&#x2026;
 </div>
 
 <p>
-In other words it takes two lists and a pure function of two arguments, and
+In other words, it takes two lists and a pure function of two arguments, and
 creates a new list by applying the function to each element. It will stop once
 it runs out of elements in one of the lists. Here&rsquo;s the Scala version.
 </p>
@@ -705,9 +705,9 @@ applicative style, even though we are working with vectors.
 </div>
 </div>
 
-<div id="outline-container-org15f9128" class="outline-4">
-<h4 id="org15f9128">Evaluating Expressions</h4>
-<div class="outline-text-4" id="text-org15f9128">
+<div id="outline-container-org4b60a52" class="outline-4">
+<h4 id="org4b60a52">Evaluating Expressions</h4>
+<div class="outline-text-4" id="text-org4b60a52">
 <p>
 The third example of applicative style is an expression evaluator that can add
 numbers, both literals and numbers bound to strings and stored in an environment.
@@ -770,7 +770,7 @@ the environment I just default to returning zero.
 
 <p>
 Following the pattern of the previous two examples, the authors then pull some
-magic to make the applicative pattern more noticable&#x2026;
+magic to make the applicative pattern more noticeable&#x2026;
 </p>
 
 <blockquote>
@@ -844,9 +844,9 @@ println(s<span style="color: #98be65;">"Eval : </span><span style="color: #dcaee
 </div>
 </div>
 
-<div id="outline-container-org01f79f5" class="outline-3">
-<h3 id="org01f79f5">The Applicative Type class</h3>
-<div class="outline-text-3" id="text-org01f79f5">
+<div id="outline-container-org30d6ddd" class="outline-3">
+<h3 id="org30d6ddd">The Applicative Type class</h3>
+<div class="outline-text-3" id="text-org30d6ddd">
 <p>
 To summarize, we&rsquo;ve seen three different effects used in applicative style; IO
 (or ZIO), List and Reader. Now you can see why it makes sense to be able to
@@ -856,7 +856,7 @@ of the same effect type.
 </p>
 
 <p>
-Next in the paper the authors describe the laws which an instance of the
+Next in the paper, the authors describe the laws which an instance of the
 Applicative type class must adhere to, which is out of scope for this post but
 is put succinctly in English as follows&#x2026;
 </p>
@@ -874,8 +874,8 @@ For more detail on the applicative laws check out chapter 12, section 5 of <a hr
 </p>
 
 <p>
-Next we are show that <i>Applicatives are all Functors</i> (hence the name
-Applicative Functors), because you can implement the map operation as follows&#x2026;
+<i>Applicatives are all Functors</i> (hence the name Applicative Functors), because
+you can implement the map operation as follows&#x2026;
 </p>
 
 <div class="org-src-container">
@@ -934,9 +934,9 @@ the code into my project rather than spend time updating it.
 </div>
 </div>
 
-<div id="outline-container-org2ca2038" class="outline-3">
-<h3 id="org2ca2038">Moving right along to Traverse</h3>
-<div class="outline-text-3" id="text-org2ca2038">
+<div id="outline-container-org6fb6df3" class="outline-3">
+<h3 id="org6fb6df3">Moving right along to Traverse</h3>
+<div class="outline-text-3" id="text-org6fb6df3">
 <blockquote>
 <p>
 Have you noticed that sequence and transpose now look rather alike? The details
@@ -948,7 +948,7 @@ Both are instances of the applicative distributor for lists.
 <p>
 At this point in the paper we have seen the birth of the Applicative type class
 which encapsulates the <code>ap</code> and <code>pure</code> functions needed to implement the
-patterns above. Next the authors describe another new type class, <code>Traverse</code>,
+patterns above. Next, the authors describe another new type class, <code>Traverse</code>,
 which lets us generalize the pattern further&#x2026;
 </p>
 
@@ -1000,7 +1000,7 @@ We could override the Cats instance for Option with our own. What we do instead
 is create Applicative versions of type classes. For example, our monadic friend
 Either (which represents an error or a success value) has an applicative
 alter-ego <code>Validated</code>. Rather than short-circuit on failure, Validated allows us
-to acculate errors so we can provide valuable feeback ot the caller. That is one
+to accumulate errors so we can provide valuable feeback ot the caller. That is one
 of the super-powers of Applicatives!
 </p>
 
@@ -1019,13 +1019,9 @@ Just by changing data types we have completely changed the behaviour from
 short-circuiting to being able to <i>/accumulate the errors</i>. Just imagine that these
 are expensive computations or slow network calls, and you can see how avoiding
 sequencing can really save us in computing costs, and thereby save us money.
-Furthermore we can improve user experience. We can validate a whole form from
+Furthermore, we can improve user experience. We can validate a whole form from
 the user at once and send all the corrections needed rather than necessitate a
-painful back and forth until the whole form is valid.
-</p>
-
-<p>
-Anyway enough real world talk let&rsquo;s get back to <code>dist</code>.
+painful back and forth until the whole form is valid. Now get back to <code>dist</code>.
 </p>
 
 <blockquote>
@@ -1036,7 +1032,7 @@ Distribution is often used together with ‘map’.
 
 <p>
 Fair enough. The <code>dist</code> function we developed above would be enhanced in
-usefullness if it could map a list of pure values into some effect type first.
+usefulness if it could map a list of pure values into some effect type first.
 Let&rsquo;s take a look at a poor way to implement that&#x2026;
 </p>
 
@@ -1109,7 +1105,7 @@ in terms of traverse&#x2026;
 </div>
 
 <p>
-Finally we get to the Traverse type class, which gives us an interface to write
+Finally, we get to the Traverse type class, which gives us an interface to write
 traverse for two effect types rather than just List and another effect. We have
 two functions, traverse and dist, which are represented in Scala today as
 traverse and sequence.
@@ -1176,9 +1172,9 @@ we can use it to use traverse as a functor as follows&#x2026;
 </div>
 </div>
 
-<div id="outline-container-orgcbf9417" class="outline-3">
-<h3 id="orgcbf9417">Monoids are phantom Applicative functors</h3>
-<div class="outline-text-3" id="text-orgcbf9417">
+<div id="outline-container-org440270b" class="outline-3">
+<h3 id="org440270b">Monoids are phantom Applicative functors</h3>
+<div class="outline-text-3" id="text-org440270b">
 <p>
 This section of the paper, part four if you are reading along, has an intriguing
 title. Whilst short, there is a lot of information in a small space on how we
@@ -1189,7 +1185,7 @@ head around.
 
 <p>
 Monoids are a type class that provides an interface to join things together such
-as appending strings or adding numbers. In addition they give us a way to
+as appending strings or adding numbers. In addition, they give us a way to
 represent a zero value for the data type, which will be useful in a moment. If
 you want to dig into Monoids in more detail I have written a couple of posts on
 the subject&#x2026;
@@ -1201,9 +1197,9 @@ the subject&#x2026;
 </ul>
 </div>
 
-<div id="outline-container-orgfdcac99" class="outline-4">
-<h4 id="orgfdcac99">Every Applicative is a Monoid</h4>
-<div class="outline-text-4" id="text-orgfdcac99">
+<div id="outline-container-org9c874bd" class="outline-4">
+<h4 id="org9c874bd">Every Applicative is a Monoid</h4>
+<div class="outline-text-4" id="text-org9c874bd">
 <p>
 It&rsquo;s possible to implement a Monoid instance that works for any Applicative. In
 Scala it looks like this&#x2026;
@@ -1245,9 +1241,9 @@ application instead&#x2026;
 </div>
 </div>
 
-<div id="outline-container-org95ad538" class="outline-4">
-<h4 id="org95ad538">Magical Folding with Traverse</h4>
-<div class="outline-text-4" id="text-org95ad538">
+<div id="outline-container-org1abdaca" class="outline-4">
+<h4 id="org1abdaca">Magical Folding with Traverse</h4>
+<div class="outline-text-4" id="text-org1abdaca">
 <p>
 It does not work the other way around, but some types with Monoid instances can
 use those instances in their Applicative implementation. For example <code>Tuple2</code> in
@@ -1272,7 +1268,7 @@ version so you can see what&rsquo;s going on&#x2026;
 You can see how the fact that Monoids have an empty (or zero) value is useful
 here because when we implement <code>pure</code> we need a value of type X to build the
 response but we only have an A. By using the <code>Monoid.empty</code> function we can
-fulfill the contract.
+fulfil the contract.
 </p>
 
 <p>
@@ -1325,9 +1321,9 @@ and how they can help us here.
 </p>
 </div>
 </div>
-<div id="outline-container-org8cd54f7" class="outline-4">
-<h4 id="org8cd54f7">Phantom types</h4>
-<div class="outline-text-4" id="text-org8cd54f7">
+<div id="outline-container-org33cc97a" class="outline-4">
+<h4 id="org33cc97a">Phantom types</h4>
+<div class="outline-text-4" id="text-org33cc97a">
 <p>
 Now we can rejoin the paper. We are introduced the <code>Accy</code> type which is called
 <code>Const</code> in Cats.
@@ -1348,7 +1344,7 @@ In Scala&#x2026;
 </div>
 
 <p>
-Const, or Accy, is a strange looking data type that takes two type parameters,
+Const, or Accy, is a strange-looking data type that takes two type parameters,
 and in fact takes two values, but we only store the first. This is why the
 second parameter is called a <code>phantom</code>. We can create a Const with any crazy
 type we want for the <code>B</code> parameter because it won&rsquo;t be used at all&#x2026;
@@ -1362,8 +1358,8 @@ type we want for the <code>B</code> parameter because it won&rsquo;t be used at 
 </div>
 
 <p>
-So what use is Const? Well we can create an applicative functor for it just like
-we did with Tuple, but now we can drop the pretense that we cared about the
+So what use is Const? For one, we can create an applicative functor for it just
+like we did with Tuple, but now we can drop the pretense that we cared about the
 second value and just get the folded value, saving us CPU time and memory as the
 computation progresses&#x2026;
 </p>
@@ -1493,9 +1489,9 @@ how many times a predicate is matched in a traversable structure&#x2026;
 </div>
 </div>
 
-<div id="outline-container-org66a439e" class="outline-3">
-<h3 id="org66a439e">Comparing Monad with Applicative</h3>
-<div class="outline-text-3" id="text-org66a439e">
+<div id="outline-container-orgae244a5" class="outline-3">
+<h3 id="orgae244a5">Comparing Monad with Applicative</h3>
+<div class="outline-text-3" id="text-orgae244a5">
 <p>
 We know that all Monads are Applicatives. Why? Because all Monads implement
 <code>pure</code> and they can also implement <code>ap</code> as follows&#x2026;
@@ -1581,9 +1577,9 @@ Monad, that’s good; if you only want an Applicative functor, that’s even bet
 </blockquote>
 </div>
 
-<div id="outline-container-orgb57becc" class="outline-4">
-<h4 id="orgb57becc">Composing Applicatives</h4>
-<div class="outline-text-4" id="text-orgb57becc">
+<div id="outline-container-org527836c" class="outline-4">
+<h4 id="org527836c">Composing Applicatives</h4>
+<div class="outline-text-4" id="text-org527836c">
 <p>
 Not all Monads compose but all Applicatives do; <i>the Applicative class is closed
 under composition</i>.
@@ -1616,11 +1612,11 @@ List of Options&#x2026;
 </div>
 </div>
 
-<div id="outline-container-orge0fdb86" class="outline-4">
-<h4 id="orge0fdb86">Accumulating Exceptions</h4>
-<div class="outline-text-4" id="text-orge0fdb86">
+<div id="outline-container-org0d49771" class="outline-4">
+<h4 id="org0d49771">Accumulating Exceptions</h4>
+<div class="outline-text-4" id="text-org0d49771">
 <p>
-In this section its noted that we could accumulate errors from computations
+In this section, it&rsquo;s noted that we could accumulate errors from computations
 using a type such as&#x2026;
 </p>
 
@@ -1648,20 +1644,20 @@ This is in fact exactly what we did when looking at the <code>Validated</code> t
 </div>
 </div>
 
-<div id="outline-container-orge4cde1d" class="outline-3">
-<h3 id="orge4cde1d">Applicative functors and Arrows</h3>
-<div class="outline-text-3" id="text-orge4cde1d">
+<div id="outline-container-orge29b70d" class="outline-3">
+<h3 id="orge29b70d">Applicative functors and Arrows</h3>
+<div class="outline-text-3" id="text-orge29b70d">
 <p>
-In this section the paper discusses <code>arrows</code> which have some similarities with
+In this section, the paper discusses <code>arrows</code> which have some similarities with
 the <code>Applicative</code> interface, but it&rsquo;s out of scope for purposes of this blog
 post. I may come back to it in a future post.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org5dbdb60" class="outline-3">
-<h3 id="org5dbdb60">Applicative functors, categorically</h3>
-<div class="outline-text-3" id="text-org5dbdb60">
+<div id="outline-container-org7b69621" class="outline-3">
+<h3 id="org7b69621">Applicative functors, categorically</h3>
+<div class="outline-text-3" id="text-org7b69621">
 <p>
 We now see a different, but equivalent way to define the Applicative class. Take
 a look at this Haskell code&#x2026;
@@ -1716,9 +1712,14 @@ monoidal functor for the monoidal structure given by products.
 </blockquote>
 </div>
 
-<div id="outline-container-org1898b29" class="outline-4">
-<h4 id="org1898b29">Conclusions</h4>
-<div class="outline-text-4" id="text-org1898b29">
+<div id="outline-container-org2d0af95" class="outline-4">
+<h4 id="org2d0af95">We applied ourselves!</h4>
+<div class="outline-text-4" id="text-org2d0af95">
+<p>
+That&rsquo;s the end of McBride and Patterson&rsquo;s paper; here are some conclusions they
+made&#x2026;
+</p>
+
 <ul class="org-ul">
 <li>Applicative Functors have been identified</li>
 <li>They lie between Functor and Monad in power</li>
@@ -1749,11 +1750,11 @@ Plug for idiom brackets was snipped.
 </div>
 </div>
 
-<div id="outline-container-org8279b05" class="outline-2">
-<h2 id="org8279b05">Back to Ap</h2>
-<div class="outline-text-2" id="text-org8279b05">
+<div id="outline-container-orgdb51505" class="outline-2">
+<h2 id="orgdb51505">Back to Ap</h2>
+<div class="outline-text-2" id="text-orgdb51505">
 <p>
-So far in this post we&rsquo;ve seen lots of code that uses ap in various ways. We&rsquo;ll
+So far in this post, we&rsquo;ve seen lots of code that uses ap in various ways. We&rsquo;ll
 wrap it up with some implementation notes on the useful function <code>map2</code>, and how
 we can arrive at needing the <code>ap</code> function to do so. Then we&rsquo;ll look at a
 practical example of using Applicative in image processing.
@@ -1830,7 +1831,7 @@ build the function without it&#x2026;
 </div>
 
 <p>
-Obviously there&rsquo;s no need to implement map2 because the Applicative instances
+Obviously, there&rsquo;s no need to implement map2 because the Applicative instances
 already have it, but it helps understand further the motivation for ap. The
 value <code>ffb</code> is actually the result of currying the function <code>f</code>. What we get
 back is of the form <code>F[B =&gt; C]</code>. We can then call that function using
@@ -1843,15 +1844,15 @@ By successively currying we can use the same trick to write map3, map4 and so on
 </div>
 </div>
 
-<div id="outline-container-org4ad6daa" class="outline-2">
-<h2 id="org4ad6daa">Map2&#x2026; does it blend?</h2>
-<div class="outline-text-2" id="text-org4ad6daa">
+<div id="outline-container-orga29f767" class="outline-2">
+<h2 id="orga29f767">Map2&#x2026; does it blend?</h2>
+<div class="outline-text-2" id="text-orga29f767">
 <p>
 So far we&rsquo;ve seen some interesting uses of Applicative; accumulating errors
 from network calls, managing multiple concurrent effects, transposing matrices,
 evaluating expressions. In 2019 I wrote a blog post about Comonads that used the
 coflatMap operation to do image processing. One of the takeaways from that post
-is that one of the great advantages of functional programming is composibility.
+is that one of the great advantages of functional programming is composability.
 One thing I&rsquo;d like to be able to do is to do operations on two images then blend
 them together. In my original code images are stored represented as a
 <code>FocusedGrid</code> which is just an array of pixels and a focus point, which works
@@ -1924,11 +1925,11 @@ Applicative instance and that means map2 will work.
 </div>
 </div>
 
-<div id="outline-container-orgd0c7e44" class="outline-2">
-<h2 id="orgd0c7e44">Post-mature optimisation</h2>
-<div class="outline-text-2" id="text-orgd0c7e44">
+<div id="outline-container-org70b5ec8" class="outline-2">
+<h2 id="org70b5ec8">Post-mature optimisation</h2>
+<div class="outline-text-2" id="text-org70b5ec8">
 <p>
-Most of the time solving day to day business problems, we don&rsquo;t have to worry to
+Most of the time, solving day to day business problems, we don&rsquo;t have to worry to
 much about performance, but when it comes to things like image processing when
 we are dealing with large numbers of pixels it can be more important to know
 what is going on under the hood, and when to step in and improve it. Profiling
@@ -1953,7 +1954,7 @@ And product is &#x2026;
 <p>
 So with a square image of size 2000 pixels (4 million total), to perform a map2
 we are going to map of the image twice; once to create an image of curried
-functions and a second time to apply them. In addition we&rsquo;re going to create a
+functions and a second time to apply them. In addition, we&rsquo;re going to create a
 lot temporary data that we don&rsquo;t need.
 </p>
 
@@ -1986,7 +1987,7 @@ implementation of map2 we can implement our own&#x2026;
 <p>
 Here we make a much more efficient implementation that instead of creating
 temporary data structures will use an iterator on each input grid and a Vector
-builder to efficiently build the output. This is maybe not the <i>the</i> fastest
+builder to efficiently build the output. This is maybe not <i>the</i> fastest
 implementation but it&rsquo;s certainly doing a lot less work. Of course optimizing
 without profiling is a waste of time. I had heard that Array is much faster than
 Vector for this kind of use case, so the sample code also includes an Array
@@ -1995,8 +1996,8 @@ around Array, and turned out not to be any faster!
 </p>
 
 <p>
-In any case should you want to explore this further, the instructions are all in
-the accompanying code to do you run your own benchmarks using <code>jmh</code>.
+In any case, should you want to explore this further, the instructions are all
+in the accompanying code to do you run your own benchmarks using <code>jmh</code>.
 </p>
 
 <p>
@@ -2095,21 +2096,83 @@ Here&rsquo;s the results from my own benchmarking&#x2026;
 </tbody>
 </table>
 
+
 <p>
-Notable that optimized map2 is 4x faster on the large image than slowAp and
-the array version is actually slower than the vector version.
+What is notable that optimized map2 is 4x faster on the large image than slowAp
+and the array version is actually slower than the vector version. Just goes to
+show, if performance matters then always benchmark your original code and your
+solution to make sure your assumptions are correct. There&rsquo;s also a balance
+between opimised code keeping your code easy to read and reason about.
 </p>
 </div>
 </div>
 
-
-<div id="outline-container-org4ac965b" class="outline-2">
-<h2 id="org4ac965b">Conclusion</h2>
-<div class="outline-text-2" id="text-org4ac965b">
+<div id="outline-container-org4df915a" class="outline-2">
+<h2 id="org4df915a">Conclusion</h2>
+<div class="outline-text-2" id="text-org4df915a">
 <p>
 You made it to the end! Congratulations, and I hope it made sense. Please feel
 free to contact me if you have any notes, corrections, improvements or
 suggestions!
 </p>
+
+<p>
+This post was going to be a five-minute thing but blew up into a monster and
+there are still things that I didn&rsquo;t get to. Some things I may visit in the
+future:
+</p>
+<ul class="org-ul">
+<li>Composition - examples of composing Functors and Applicatives</li>
+<li>Arrows</li>
+<li>Laws of Applicatives (although they are covered nicely elsewhere)</li>
+<li>Category theory (esp. of lax monoidal functors in more depth)</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org82714e4" class="outline-2">
+<h2 id="org82714e4">References</h2>
+<div class="outline-text-2" id="text-org82714e4">
+</div>
+<div id="outline-container-org793014f" class="outline-3">
+<h3 id="org793014f">Videos</h3>
+<div class="outline-text-3" id="text-org793014f">
+<ul class="org-ul">
+<li><a href="https://youtu.be/yEYPf44rS2U">Oh, All the things you&rsquo;ll traverse by Luka Jacobowitz</a></li>
+<li><a href="https://youtu.be/sHV4qhbZHgo">When Everything Fits: The Beauty of Composition - Markus Hauck</a></li>
+<li><a href="https://youtu.be/kVnJtiN1dbk">Scale By The Bay 2019: Justin Heyes-Jones, A Gentle Introduction to Comonads</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org6adfb7d" class="outline-3">
+<h3 id="org6adfb7d">Written word</h3>
+<div class="outline-text-3" id="text-org6adfb7d">
+<ul class="org-ul">
+<li><a href="https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf">Applicative Programming with Effects</a> McBride, Patterson 2008</li>
+<li><a href="https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf">The Essence of the Iterator Pattern</a> Gibbons, Bruno</li>
+<li><a href="https://pdfs.semanticscholar.org/7e66/7dd0515e4f674e42c0b0860644fee3dd5846.pdf">Do We Need Dependent Types?</a> Fridlender</li>
+<li><a href="https://www.jhmcstanton.com/posts/blog/2019-09-23-read-a-paper-applicative-programming-with-effects.html">Read a Paper: Applicative Programming with Effects</a></li>
+<li><a href="https://typelevel.org/cats/typeclasses/applicative.html">Cats Applicative documentation</a></li>
+<li><a href="https://typelevel.org/cats/datatypes/const.html">Cats Const documentation</a></li>
+<li><a href="https://www.manning.com/books/functional-programming-in-scala">Functional Programming in Scala</a> aka The Red Book</li>
+<li><a href="https://leanpub.com/fpmortals">Functional Programmers for Mortals</a> aka The Blue Book</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgac932de" class="outline-3">
+<h3 id="orgac932de">Code</h3>
+<div class="outline-text-3" id="text-orgac932de">
+<ul class="org-ul">
+<li><a href="https://github.com/justinhj/applicatives">applicatives</a> (Scala conversion from the paper and lots of Applicative stuff)</li>
+<li><a href="https://github.com/justinhj/comonad">comonad</a> (Image processing example with new Applicative demo)</li>
+<li><a href="https://github.com/fosskers/scala-benchmarks">Scala Benchmarks</a> (How to benchmark Scala by Colin Woodbury)</li>
+<li><a href="https://github.com/sammthomson/IdiomEars">Idiom Ears</a> (Get those fancy ears in your applicative programming)</li>
+<li><a href="https://github.com/aztek/scala-workflow">Scala Workflow</a> (A full on system for Monadic and Applicative programming)</li>
+</ul>
+
+<p>
+&copy; 2020 Justin Heyes-Jones. All Rights Reserved.
+</p>
+</div>
 </div>
 </div>
