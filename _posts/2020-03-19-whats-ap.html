@@ -5,11 +5,18 @@ date: '2020-03-19T00:00:00.000-08:00'
 tags: [pure-functional-programming, cats, scala, applicative]
 ---
 
-<pre class="example">
-#+CAPTION: Photo by Ryan Song on Unsplash
-#+ATTR_HTML: :alt A picture of a cow ap'd to 4 cows :width 400
-[[../../../images/whatsap.jpg]]
-</pre>
+<style>
+.img {
+  width: 600px;
+  border:2px solid #fff;
+  box-shadow: 6px 6px 2px #ccc;
+  -moz-box-shadow: 6px 6px 2px #ccc;
+  -webkit-box-shadow: 6px 6px 2px #ccc;
+  -khtml-box-shadow: 6px 6px 2px #ccc;
+  margin-bottom: 40px;
+}
+</style>
+<img class="img" src="../../../images/whatsap.png" border="0" alt="A cow is transformed to four cows" width="600"/>
 
 <div id="outline-container-org26ff951" class="outline-2">
 <h2 id="org26ff951">Applicative Functors</h2>
@@ -1323,7 +1330,7 @@ and how they can help us here.
 <div class="outline-text-4" id="text-org8cd54f7">
 <p>
 Now we can rejoin the paper. We are introduced the <code>Accy</code> type which is called
-<code>Const</code> in Cats. 
+<code>Const</code> in Cats.
 </p>
 
 <div class="org-src-container">
@@ -1840,8 +1847,269 @@ By successively currying we can use the same trick to write map3, map4 and so on
 <h2 id="org4ad6daa">Map2&#x2026; does it blend?</h2>
 <div class="outline-text-2" id="text-org4ad6daa">
 <p>
-So far we&rsquo;ve seen some very practical uses of Applicative; accumulating errors
-from network calls, managing multiple concurrent effects,
+So far we&rsquo;ve seen some interesting uses of Applicative; accumulating errors
+from network calls, managing multiple concurrent effects, transposing matrices,
+evaluating expressions. In 2019 I wrote a blog post about Comonads that used the
+coflatMap operation to do image processing. One of the takeaways from that post
+is that one of the great advantages of functional programming is composibility.
+One thing I&rsquo;d like to be able to do is to do operations on two images then blend
+them together. In my original code images are stored represented as a
+<code>FocusedGrid</code> which is just an array of pixels and a focus point, which works
+nicely for the coflatMap. The blend operation just needs a function to average
+out the pixels and a map2&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">blend</span>(a<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>), b<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>))<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>) <span style="color: #51afef;">=</span>
+  ((a._1 + b._1) / <span style="color: #da8548; font-weight: bold;">2</span>, (a._2 + b._2) / <span style="color: #da8548; font-weight: bold;">2</span>, (a._3 + b._3) / <span style="color: #da8548; font-weight: bold;">2</span>)
+
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">leftImage</span> <span style="color: #51afef;">=</span> originalImage2
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">rightImage</span> <span style="color: #51afef;">=</span> originalImage2.coflatMap(mirrorHorizontal)
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">upImage</span> <span style="color: #51afef;">=</span> originalImage2.coflatMap(mirrorVertical)
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">downImage</span> <span style="color: #51afef;">=</span> rightImage.coflatMap(mirrorVertical)
+
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">leftAndRight</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">FocusedGrid</span>].map2(leftImage, rightImage)(blend <span style="color: #51afef;">_</span>)
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">upAndDown</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">FocusedGrid</span>].map2(upImage, downImage)(
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">finalImage</span> <span style="color: #51afef;">=</span> leftAndRight.map2(upAndDown)(blend <span style="color: #51afef;">_</span>))
+</pre>
+</div>
+
+<p>
+These few lines are all that is needed in user code to create the cows image at
+the top of this post. If you want to know what the coflatMap is all about please
+checkout my earlier post Comonads for Life or the related talk at Scale by the
+Bay 2020 <a href="https://youtu.be/kVnJtiN1dbk">A gentle introduction to comonads</a>.
+</p>
+
+<p>
+But in the background we also need to implement an Applicative instance for the
+FocusedGrid datatype. Let&rsquo;s start with pure&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">pure</span>[<span style="color: #a9a1e1;">A</span>](a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">FocusedGrid</span>((<span style="color: #da8548; font-weight: bold;">0</span>,<span style="color: #da8548; font-weight: bold;">0</span>), <span style="color: #a9a1e1;">Vector</span>(<span style="color: #a9a1e1;">Vector</span>(a)))
+</pre>
+</div>
+
+<p>
+Just like with the pure function for a List Applicative (or Monad), all we do is
+lift a pure value into a FocusedGrid with a singe row and column.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">ap</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](ff<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>])(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">B</span>] <span style="color: #51afef;">=</span> {
+  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">newGrid</span> <span style="color: #51afef;">=</span> ff.grid.mapWithIndex {
+    (row, i) <span style="color: #51afef;">=&gt;</span>
+    row.zip(fa.grid(i)).map {
+      <span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">f</span>, <span style="color: #dcaeea;">a</span>) <span style="color: #51afef;">=&gt;</span>
+        f(a)
+    }
+  }
+  <span style="color: #a9a1e1;">FocusedGrid</span>(ff.focus, newGrid)
+}
+</pre>
+</div>
+
+<p>
+Remember that with List we implemented an Applicative instance that took all the
+functions in the input list and applied them in turn to each element in the list
+of parameters. Ap for FocusedGrid iterates over a <i>grid of functions</i> and
+applies them to the target row and column in the input parameter.
+</p>
+
+<p>
+Our work is done; with pure and ap implemented we now have a fully working
+Applicative instance and that means map2 will work.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd0c7e44" class="outline-2">
+<h2 id="orgd0c7e44">Post-mature optimisation</h2>
+<div class="outline-text-2" id="text-orgd0c7e44">
+<p>
+Most of the time solving day to day business problems, we don&rsquo;t have to worry to
+much about performance, but when it comes to things like image processing when
+we are dealing with large numbers of pixels it can be more important to know
+what is going on under the hood, and when to step in and improve it. Profiling
+should be your guide, but if you look at the default implementation of map2 in
+Cats you can see that it is doing a lot of work that is not needed &#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">map(product(fa, fb))(f.tupled)
+</pre>
+</div>
+
+<p>
+And product is &#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">ap(map(fa)(a <span style="color: #51afef;">=&gt;</span> (b<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span>) <span style="color: #51afef;">=&gt;</span> (a, b)))(fb)
+</pre>
+</div>
+
+<p>
+So with a square image of size 2000 pixels (4 million total), to perform a map2
+we are going to map of the image twice; once to create an image of curried
+functions and a second time to apply them. In addition we&rsquo;re going to create a
+lot temporary data that we don&rsquo;t need.
+</p>
+
+<p>
+Fortunately there&rsquo;s nothing to stop you from instead of using the default
+implementation of map2 we can implement our own&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">override</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">map2</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">Z</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">A</span>], fb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">B</span>])(f<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Z</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">Z</span>] <span style="color: #51afef;">=</span> {
+  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">faRowIter</span> <span style="color: #51afef;">=</span> fa.grid.iterator
+  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">fbRowIter</span> <span style="color: #51afef;">=</span> fb.grid.iterator
+  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">rowBuilder</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Vector</span>.newBuilder[<span style="color: #a9a1e1;">Vector</span>[<span style="color: #a9a1e1;">Z</span>]]
+
+  <span style="color: #51afef;">while</span>(faRowIter.hasNext &amp;&amp; fbRowIter.hasNext) {
+    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">faColIter</span> <span style="color: #51afef;">=</span> faRowIter.next.iterator
+    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">fbColIter</span> <span style="color: #51afef;">=</span> fbRowIter.next.iterator
+    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">colBuilder</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Vector</span>.newBuilder[<span style="color: #a9a1e1;">Z</span>]
+
+    <span style="color: #51afef;">while</span>(faColIter.hasNext &amp;&amp; fbColIter.hasNext) {
+      colBuilder.addOne(f(faColIter.next, fbColIter.next))
+    }
+    rowBuilder.addOne(colBuilder.result)
+  }
+  <span style="color: #a9a1e1;">FocusedGrid</span>(fa.focus, rowBuilder.result)
+}
+</pre>
+</div>
+
+<p>
+Here we make a much more efficient implementation that instead of creating
+temporary data structures will use an iterator on each input grid and a Vector
+builder to efficiently build the output. This is maybe not the <i>the</i> fastest
+implementation but it&rsquo;s certainly doing a lot less work. Of course optimizing
+without profiling is a waste of time. I had heard that Array is much faster than
+Vector for this kind of use case, so the sample code also includes an Array
+implementation. The code is somewhat ugly due to some technical constraints
+around Array, and turned out not to be any faster!
+</p>
+
+<p>
+In any case should you want to explore this further, the instructions are all in
+the accompanying code to do you run your own benchmarks using <code>jmh</code>.
+</p>
+
+<p>
+Here&rsquo;s the results from my own benchmarking&#x2026;
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Benchmark</th>
+<th scope="col" class="org-left">Mode</th>
+<th scope="col" class="org-right">Cnt</th>
+<th scope="col" class="org-right">Score</th>
+<th scope="col" class="org-left">Error</th>
+<th scope="col" class="org-right">Units</th>
+<th scope="col" class="org-left">&#xa0;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">FocusedGridArrayBench.withMap2Large</td>
+<td class="org-left">avgt</td>
+<td class="org-right">5</td>
+<td class="org-right">171099.587</td>
+<td class="org-left">±</td>
+<td class="org-right">65471.687</td>
+<td class="org-left">us/op</td>
+</tr>
+
+<tr>
+<td class="org-left">FocusedGridArrayBench.withMap2Small</td>
+<td class="org-left">avgt</td>
+<td class="org-right">5</td>
+<td class="org-right">54.418</td>
+<td class="org-left">±</td>
+<td class="org-right">25.669</td>
+<td class="org-left">us/op</td>
+</tr>
+
+<tr>
+<td class="org-left">FocusedGridBench.withMap2Large</td>
+<td class="org-left">avgt</td>
+<td class="org-right">5</td>
+<td class="org-right">152831.655</td>
+<td class="org-left">±</td>
+<td class="org-right">40709.521</td>
+<td class="org-left">us/op</td>
+</tr>
+
+<tr>
+<td class="org-left">FocusedGridBench.withMap2Small</td>
+<td class="org-left">avgt</td>
+<td class="org-right">5</td>
+<td class="org-right">59.168</td>
+<td class="org-left">±</td>
+<td class="org-right">15.346</td>
+<td class="org-left">us/op</td>
+</tr>
+
+<tr>
+<td class="org-left">FocusedGridBench.withSlowApLarge</td>
+<td class="org-left">avgt</td>
+<td class="org-right">5</td>
+<td class="org-right">649442.291</td>
+<td class="org-left">±</td>
+<td class="org-right">215248.298</td>
+<td class="org-left">us/op</td>
+</tr>
+
+<tr>
+<td class="org-left">FocusedGridBench.withSlowApSmall</td>
+<td class="org-left">avgt</td>
+<td class="org-right">5</td>
+<td class="org-right">141.025</td>
+<td class="org-left">±</td>
+<td class="org-right">78.928</td>
+<td class="org-left">us/op</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Notable that optimized map2 is 4x faster on the large image than slowAp and
+the array version is actually slower than the vector version.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org4ac965b" class="outline-2">
+<h2 id="org4ac965b">Conclusion</h2>
+<div class="outline-text-2" id="text-org4ac965b">
+<p>
+You made it to the end! Congratulations, and I hope it made sense. Please feel
+free to contact me if you have any notes, corrections, improvements or
+suggestions!
 </p>
 </div>
 </div>

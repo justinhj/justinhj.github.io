@@ -1,4 +1,4 @@
-#+TITLE: What's Ap?
+#+TITLE: #+TITLE: What's Ap?
 #+AUTHOR: Justin Heyes-Jones
 #+DATE: 2020
 #+STARTUP: showall
@@ -13,6 +13,22 @@ date: '2020-03-19T00:00:00.000-08:00'
 tags: [pure-functional-programming, cats, scala, applicative]
 ---
 #+END_EXPORT
+
+#+BEGIN_EXPORT html
+<style>
+.img {
+  width: 600px;
+  border:2px solid #fff;
+  box-shadow: 6px 6px 2px #ccc;
+  -moz-box-shadow: 6px 6px 2px #ccc;
+  -webkit-box-shadow: 6px 6px 2px #ccc;
+  -khtml-box-shadow: 6px 6px 2px #ccc;
+  margin-bottom: 40px;
+}
+</style>
+<img class="img" src="../../../images/whatsap.png" border="0" alt="A cow is transformed to four cows" width="600"/>
+#+END_EXPORT
+
 ** Applicative Functors
 This post is aimed at the Scala programmer who is familiar with the basics of
 the language and ideally becoming interested, or already deeply entrenched, in
@@ -1002,7 +1018,7 @@ There's a better way, and we can now move onto finding out about Phantom types
 and how they can help us here.
 **** Phantom types
 Now we can rejoin the paper. We are introduced the ~Accy~ type which is called
-~Const~ in Cats. 
+~Const~ in Cats.
 
 #+BEGIN_SRC haskell
 newtype Accy o a = Acc{acc :: o }
@@ -1232,3 +1248,295 @@ using a type such as...
 #+BEGIN_SRC haskell
 data Except err a = OK a | Failed err
 #+END_SRC
+
+You may recognize this as Scala's ~Either~, which stores with an error or a
+success in its Left and Right sides.
+
+#+BEGIN_QUOTE
+This could be used to collect errors by using the list monoid (as in unpublished
+work by Duncan Coutts), or to summarise them in some way.
+#+END_QUOTE
+
+This is in fact exactly what we did when looking at the ~Validated~ type above.
+
+*** Applicative functors and Arrows
+In this section the paper discusses ~arrows~ which have some similarities with
+the ~Applicative~ interface, but it's out of scope for purposes of this blog
+post. I may come back to it in a future post.
+
+*** Applicative functors, categorically
+We now see a different, but equivalent way to define the Applicative class. Take
+a look at this Haskell code...
+
+#+BEGIN_SRC haskell
+class Functor f ⇒ Monoidal f where
+unit :: f ()
+(*) :: f a → f b → f (a, b)
+#+END_SRC
+
+This means given a type f with a Functor instance, we can define the class
+~Monoidal~. ~unit~ is the same as pure, whilst the * function takes two effects
+and returns a new effect with the result tupled. This is implemented in Cats for
+Applicative's and known as ~product~.
+
+#+BEGIN_SRC scala
+Applicative[Option].product(Option(22),Option(20))
+// res: Option[(Int, Int)] = Some((22, 20))
+#+END_SRC
+
+Let's show that we can implement Applicative if we have the product function
+(assuming product is not implemented in terms of ap)...
+
+#+BEGIN_SRC scala
+override def ap[F[_], A, B](ff: F[A => B])(fa: F[A]) = {
+  product(ff,fa).map {
+    case (f, a) =>
+      f(a)
+  }
+}
+#+END_SRC
+
+Applicative can be implemented with ap and pure, or pure and product. We'll see
+another choice later. Next in this section is some category theory which I'll
+also skip for now, leaving only this quote for your interest...
+
+#+BEGIN_QUOTE
+Fans of category theory will recognise the above laws as the properties of a lax
+monoidal functor for the monoidal structure given by products.
+#+END_QUOTE
+
+**** Conclusions
+- Applicative Functors have been identified
+- They lie between Functor and Monad in power
+- Unlike Monads, Applicatives are closed under composition
+- Traverable Functors thread Applicative Applications and form a useful toolkit
+
+The paper ends with a great quote that is both positive about borrowing ideas
+from category theory...
+
+#+BEGIN_QUOTE
+The explosion of categorical structure in functional programming: monads,
+comonads, arrows and now applicative functors should not, we suggest, be a cause
+for alarm. Why should we not profit from whatever structure we can sniff out,
+abstract and re-use? The challenge is to avoid a chaotic proliferation of
+peculiar and incompatible notations.
+#+END_QUOTE
+
+Plug for idiom brackets was snipped.
+
+** Back to Ap
+So far in this post we've seen lots of code that uses ap in various ways. We'll
+wrap it up with some implementation notes on the useful function ~map2~, and how
+we can arrive at needing the ~ap~ function to do so. Then we'll look at a
+practical example of using Applicative in image processing.
+
+Let's start with a problem. We have two functions that return Validated as
+output. We want to call a pure function that takes two values as input. In short
+we need map2...
+
+#+BEGIN_SRC scala
+case class User(email: String, name: String, blocked: Boolean)
+case class Account(email: String, balance: Long)
+
+def getUser(email: String) =
+  IO.sleep(10 seconds) *> IO(User("bob@gmail.com", "Bob Jones", false))
+
+def getAccount(email: String) =
+  IO.sleep(10 seconds) *> IO(Account("bob@gmail.com", 100))
+
+def goodStanding(user: User, account: Account): Boolean = {
+  user.blocked == false &&
+  account.balance >= 0
+}
+
+val email = "bob@gmail.com"
+
+val checkBob = Applicative[IO.Par].map2(
+  Par(getUser(email)),
+  Par(getAccount(email)))(goodStanding)
+
+println("run bank check: " + Par.unwrap(checkBob).unsafeRunSync)
+// run bank check: true
+#+END_SRC
+
+So this motivating example works, it runs the (simulated) slow network calls in
+parallel and passes them to our function. (Note that this example is using Cats
+Effect and in order to select Applicative rather than Monadic operation we need
+to wrap the IO in the Par wrapper and then unwrap it at the end).
+
+Given that map2 is a useful function how would we implement it? Just like we saw
+at the start of the paper, we can use flatMap and map to implement it quite
+easily...
+
+#+BEGIN_SRC scala
+def map2[A,B,C,F[_]: Monad](fa: F[A], fb: F[B])(f: (A,B) => C): F[C] =
+  fa.flatMap { a =>
+    fb.map(b => f(a,b))
+  }
+#+END_SRC
+
+That works fine, but sadly it requires that we complete fa before starting
+and we want to allow independent effects. So we can't use Monad's flatMap. Let's
+build the function without it...
+
+#+BEGIN_SRC scala
+def applicativeMap2[A,B,C,F[_]: Applicative](fa: F[A], fb: F[B])(f: (A,B) => C)
+    : F[C] = {
+  val ffb = fa.map {
+    a => (b: B) => f(a,b)
+  }
+  Applicative[F].ap(ffb)(fb)
+}
+#+END_SRC
+
+Obviously there's no need to implement map2 because the Applicative instances
+already have it, but it helps understand further the motivation for ap. The
+value ~ffb~ is actually the result of currying the function ~f~. What we get
+back is of the form ~F[B => C]~. We can then call that function using
+Applicative's ~ap~ giving the correct response ~F[C]~.
+
+By successively currying we can use the same trick to write map3, map4 and so on.
+
+** Map2... does it blend?
+So far we've seen some interesting uses of Applicative; accumulating errors
+from network calls, managing multiple concurrent effects, transposing matrices,
+evaluating expressions. In 2019 I wrote a blog post about Comonads that used the
+coflatMap operation to do image processing. One of the takeaways from that post
+is that one of the great advantages of functional programming is composibility.
+One thing I'd like to be able to do is to do operations on two images then blend
+them together. In my original code images are stored represented as a
+~FocusedGrid~ which is just an array of pixels and a focus point, which works
+nicely for the coflatMap. The blend operation just needs a function to average
+out the pixels and a map2...
+
+#+BEGIN_SRC scala
+def blend(a: (Int, Int, Int), b: (Int, Int, Int)): (Int, Int, Int) =
+  ((a._1 + b._1) / 2, (a._2 + b._2) / 2, (a._3 + b._3) / 2)
+
+val leftImage = originalImage2
+val rightImage = originalImage2.coflatMap(mirrorHorizontal)
+val upImage = originalImage2.coflatMap(mirrorVertical)
+val downImage = rightImage.coflatMap(mirrorVertical)
+
+val leftAndRight = Applicative[FocusedGrid].map2(leftImage, rightImage)(blend _)
+val upAndDown = Applicative[FocusedGrid].map2(upImage, downImage)(
+val finalImage = leftAndRight.map2(upAndDown)(blend _))
+#+END_SRC
+
+These few lines are all that is needed in user code to create the cows image at
+the top of this post. If you want to know what the coflatMap is all about please
+checkout my earlier post Comonads for Life or the related talk at Scale by the
+Bay 2020 [[https://youtu.be/kVnJtiN1dbk][A gentle introduction to comonads]].
+
+But in the background we also need to implement an Applicative instance for the
+FocusedGrid datatype. Let's start with pure...
+
+#+BEGIN_SRC scala
+def pure[A](a: A): FocusedGrid[A] = FocusedGrid((0,0), Vector(Vector(a)))
+#+END_SRC
+
+Just like with the pure function for a List Applicative (or Monad), all we do is
+lift a pure value into a FocusedGrid with a singe row and column.
+
+#+BEGIN_SRC scala
+def ap[A, B](ff: FocusedGrid[A => B])(fa: FocusedGrid[A]): FocusedGrid[B] = {
+  val newGrid = ff.grid.mapWithIndex {
+    (row, i) =>
+    row.zip(fa.grid(i)).map {
+      case (f, a) =>
+        f(a)
+    }
+  }
+  FocusedGrid(ff.focus, newGrid)
+}
+#+END_SRC
+
+Remember that with List we implemented an Applicative instance that took all the
+functions in the input list and applied them in turn to each element in the list
+of parameters. Ap for FocusedGrid iterates over a /grid of functions/ and
+applies them to the target row and column in the input parameter.
+
+Our work is done; with pure and ap implemented we now have a fully working
+Applicative instance and that means map2 will work.
+
+** Post-mature optimisation
+Most of the time solving day to day business problems, we don't have to worry to
+much about performance, but when it comes to things like image processing when
+we are dealing with large numbers of pixels it can be more important to know
+what is going on under the hood, and when to step in and improve it. Profiling
+should be your guide, but if you look at the default implementation of map2 in
+Cats you can see that it is doing a lot of work that is not needed ...
+
+#+BEGIN_SRC scala
+map(product(fa, fb))(f.tupled)
+#+END_SRC
+
+And product is ...
+
+#+BEGIN_SRC scala
+ap(map(fa)(a => (b: B) => (a, b)))(fb)
+#+END_SRC
+
+So with a square image of size 2000 pixels (4 million total), to perform a map2
+we are going to map of the image twice; once to create an image of curried
+functions and a second time to apply them. In addition we're going to create a
+lot temporary data that we don't need.
+
+Fortunately there's nothing to stop you from instead of using the default
+implementation of map2 we can implement our own...
+
+#+BEGIN_SRC scala
+override def map2[A, B, Z](fa: FocusedGrid[A], fb: FocusedGrid[B])(f: (A, B) => Z): FocusedGrid[Z] = {
+  val faRowIter = fa.grid.iterator
+  val fbRowIter = fb.grid.iterator
+  val rowBuilder = Vector.newBuilder[Vector[Z]]
+
+  while(faRowIter.hasNext && fbRowIter.hasNext) {
+    val faColIter = faRowIter.next.iterator
+    val fbColIter = fbRowIter.next.iterator
+    val colBuilder = Vector.newBuilder[Z]
+
+    while(faColIter.hasNext && fbColIter.hasNext) {
+      colBuilder.addOne(f(faColIter.next, fbColIter.next))
+    }
+    rowBuilder.addOne(colBuilder.result)
+  }
+  FocusedGrid(fa.focus, rowBuilder.result)
+}
+#+END_SRC
+
+Here we make a much more efficient implementation that instead of creating
+temporary data structures will use an iterator on each input grid and a Vector
+builder to efficiently build the output. This is maybe not the /the/ fastest
+implementation but it's certainly doing a lot less work. Of course optimizing
+without profiling is a waste of time. I had heard that Array is much faster than
+Vector for this kind of use case, so the sample code also includes an Array
+implementation. The code is somewhat ugly due to some technical constraints
+around Array, and turned out not to be any faster!
+
+In any case should you want to explore this further, the instructions are all in
+the accompanying code to do you run your own benchmarks using =jmh=.
+
+Here's the results from my own benchmarking...
+
+| Benchmark                           | Mode | Cnt |      Score | Error |      Units |       |
+|-------------------------------------+------+-----+------------+-------+------------+-------|
+| FocusedGridArrayBench.withMap2Large | avgt |   5 | 171099.587 | ±     |  65471.687 | us/op |
+| FocusedGridArrayBench.withMap2Small | avgt |   5 |     54.418 | ±     |     25.669 | us/op |
+| FocusedGridBench.withMap2Large      | avgt |   5 | 152831.655 | ±     |  40709.521 | us/op |
+| FocusedGridBench.withMap2Small      | avgt |   5 |     59.168 | ±     |     15.346 | us/op |
+| FocusedGridBench.withSlowApLarge    | avgt |   5 | 649442.291 | ±     | 215248.298 | us/op |
+| FocusedGridBench.withSlowApSmall    | avgt |   5 |    141.025 | ±     |     78.928 | us/op |
+
+
+What is notable that optimized map2 is 4x faster on the large image than slowAp
+and the array version is actually slower than the vector version. Just goes to
+show, if performance matters then always benchmark your original code and your
+solution to make sure your assumptions are correct. There's also a balance
+between opimised code keeping your code easy to read and reason about.
+
+** Conclusion
+You made it to the end! Congratulations, and I hope it made sense. Please feel
+free to contact me if you have any notes, corrections, improvements or
+suggestions!
+
