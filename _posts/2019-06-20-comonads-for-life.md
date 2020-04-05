@@ -113,7 +113,7 @@ trait Comonad[F[_]] extends Functor[F] {
 }
 ```
 
-`extract` is the dual of `pure`. In some libraries or languages `extract` is known as `counit` (and `pure` is known as `unit`), making the relationship between the two more obvious. Remember that pure lifts values into a context. The type signature shows us that `extract` instead can reach into the context `F[A]` and give us an `A`. Not all data types have an implementation of extract. Our example of List above does not, because Lists can be empty and the there would be way to extract a value. In pure functional programming we can't simply return null or throw an exception; in order to remain pure we have to return an `A`, so any data types that cannot implement extract do not have Comonad instances.
+`extract` is the dual of `pure`. In some libraries or languages `extract` is known as `counit` (and `pure` is known as `unit`), making the relationship between the two more obvious. Remember that pure lifts values into a context. The type signature shows us that `extract` instead can reach into the context `F[A]` and give us an `A`. Not all data types have an implementation of extract. Our example of List above does not, because Lists can be empty and the there would be no way to extract a value. In pure functional programming we can't simply return null or throw an exception; in order to remain pure we have to return an `A`, so any data types that cannot implement extract do not have Comonad instances.
 
 For our purposes let's switch to `NonEmptyList`, which you can find in Cats and represents a list that cannot be empty. Since it cannot be empty we can always extract a value.
 
