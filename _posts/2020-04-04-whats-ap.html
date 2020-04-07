@@ -1297,7 +1297,7 @@ the same thing with traverse.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">Id</span>[<span style="color: #a9a1e1;">Int</span>]](<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>))((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Tuple2</span>(n,n))
+<pre class="src src-scala"><span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">Int</span>](<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>))((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Tuple2</span>(n,n))
 <span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: (Int, List[Int]) = (6, List(1, 2, 3))</span>
 </pre>
 </div>
@@ -1335,7 +1335,17 @@ Now we can rejoin the paper. We are introduced the <code>Accy</code> type which 
 </div>
 
 <p>
-In Scala&#x2026;
+In Scala the Const type can be implemented like this&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">final</span> <span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">MyConst</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>](unConst<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)
+</pre>
+</div>
+
+<p>
+If it helps, this is a type level version of a function that takes two
+parameters; an A and a B, and just drops the B returning the A&#x2026;
 </p>
 
 <div class="org-src-container">
@@ -1383,11 +1393,11 @@ Let&rsquo;s convert the examples in the paper of using this technique into Scala
 </div>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">accumulate</span>[<span style="color: #a9a1e1;">F</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Traverse</span>, <span style="color: #a9a1e1;">B</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>)(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span> <span style="color: #51afef;">=</span> {
-  <span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">F</span>].traverse(f(a))
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">accumulate</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Traverse</span>, <span style="color: #a9a1e1;">B</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>)(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span> <span style="color: #51afef;">=</span> {
+  <span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">F</span>].traverse(fa)((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">B</span>](f(a))).getConst
 }
 <span style="color: #51afef;">def</span> <span style="color: #c678dd;">reduce</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Traverse</span>, <span style="color: #a9a1e1;">A</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=</span> {
-  cats.<span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">F</span>].traverse(fa)((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">A</span>](a)).getConst
+  <span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">F</span>].traverse(fa)((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">A</span>](a)).getConst
 }
 <span style="color: #5B6268;">// </span><span style="color: #5B6268;">Accumulate</span>
 println(<span style="color: #98be65;">"accumulate: "</span> + accumulate((s<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">=&gt;</span> s.size)(<span style="color: #a9a1e1;">List</span>(<span style="color: #98be65;">"ten"</span>, <span style="color: #98be65;">"twenty"</span>, <span style="color: #98be65;">"thirty"</span>)))
@@ -1400,7 +1410,18 @@ println(<span style="color: #98be65;">"reduce: "</span> + reduce(<span style="co
 </div>
 
 <p>
-And we can convert the following without much change&#x2026;
+Note that we could implement reduce with accumulate as follows&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">reduceWithAccumulate</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Traverse</span>, <span style="color: #a9a1e1;">A</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=</span> {
+  accumulate[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">F</span>, <span style="color: #a9a1e1;">A</span>](identity)(fa)
+}
+</pre>
+</div>
+
+<p>
+We can also convert the following without much difficulty&#x2026;
 </p>
 
 <div class="org-src-container">
@@ -2169,10 +2190,21 @@ future:
 <li><a href="https://github.com/sammthomson/IdiomEars">Idiom Ears</a> (Get those fancy ears in your applicative programming)</li>
 <li><a href="https://github.com/aztek/scala-workflow">Scala Workflow</a> (A full on system for Monadic and Applicative programming)</li>
 </ul>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgbc1f50d" class="outline-2">
+<h2 id="orgbc1f50d">#ScalaLove</h2>
+<div class="outline-text-2" id="text-orgbc1f50d">
+<p>
+Thank you to the tireless Scala community for providing so many great libraries
+and tutorials for me to learn from
+Thank you to Hermann Hueck for his suggestions and improvements on this post
+</p>
 
 <p>
 &copy; 2020 Justin Heyes-Jones. All Rights Reserved.
 </p>
-</div>
 </div>
 </div>

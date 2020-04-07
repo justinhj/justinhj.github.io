@@ -998,7 +998,7 @@ we'd typically fold a list of elements with a Monadic structure. We can now do
 the same thing with traverse.
 
 #+BEGIN_SRC scala
-Traverse[List].traverse(List[Id[Int]](1,2,3))((n: Int) => Tuple2(n,n))
+Traverse[List].traverse(List[Int](1,2,3))((n: Int) => Tuple2(n,n))
 // res: (Int, List[Int]) = (6, List(1, 2, 3))
 #+END_SRC
 
@@ -1021,7 +1021,14 @@ Now we can rejoin the paper. We are introduced the ~Accy~ type which is called
 newtype Accy o a = Acc{acc :: o }
 #+END_SRC
 
-In Scala...
+In Scala the Const type can be implemented like this...
+
+#+BEGIN_SRC scala
+final case class MyConst[A,B](unConst: A)
+#+END_SRC
+
+If it helps, this is a type level version of a function that takes two
+parameters; an A and a B, and just drops the B returning the A...
 
 #+BEGIN_SRC scala
 def const[A, B](a: A)(b: => B): A = a
@@ -1058,11 +1065,11 @@ reduce = accumulate id
 #+END_SRC
 
 #+BEGIN_SRC scala
-def accumulate[F: Traverse, B: Monoid](f: A => B)(fa: F[A]): B = {
-  Traverse[F].traverse(f(a))
+def accumulate[A,F[_]: Traverse, B: Monoid](f: A => B)(fa: F[A]): B = {
+  Traverse[F].traverse(fa)((a: A) => Const.of[B](f(a))).getConst
 }
 def reduce[F[_]: Traverse, A: Monoid](fa: F[A]): A = {
-  cats.Traverse[F].traverse(fa)((a: A) => Const.of[A](a)).getConst
+  Traverse[F].traverse(fa)((a: A) => Const.of[A](a)).getConst
 }
 // Accumulate
 println("accumulate: " + accumulate((s: String) => s.size)(List("ten", "twenty", "thirty")))
@@ -1073,7 +1080,15 @@ println("reduce: " + reduce(List("ten", "twenty", "thirty")))
 // tentwentythirty
 #+END_SRC
 
-And we can convert the following without much change...
+Note that we could implement reduce with accumulate as follows...
+
+#+BEGIN_SRC scala
+def reduceWithAccumulate[F[_]: Traverse, A: Monoid](fa: F[A]): A = {
+  accumulate[A, F, A](identity)(fa)
+}
+#+END_SRC
+
+We can also convert the following without much difficulty...
 
 #+BEGIN_SRC haskell
 flatten :: Tree a → [a ]
@@ -1568,5 +1583,10 @@ future:
 - [[https://github.com/fosskers/scala-benchmarks][Scala Benchmarks]] (How to benchmark Scala by Colin Woodbury)
 - [[https://github.com/sammthomson/IdiomEars][Idiom Ears]] (Get those fancy ears in your applicative programming)
 - [[https://github.com/aztek/scala-workflow][Scala Workflow]] (A full on system for Monadic and Applicative programming)
+
+** #ScalaLove
+Thank you to the tireless Scala community for providing so many great libraries
+and tutorials for me to learn from
+Thank you to Hermann Hueck for his suggestions and improvements on this post
 
 \copy 2020 Justin Heyes-Jones. All Rights Reserved.
