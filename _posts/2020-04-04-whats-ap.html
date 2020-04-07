@@ -1624,10 +1624,9 @@ List of Options&#x2026;
 <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">y</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">Option</span>[<span style="color: #a9a1e1;">Int</span>]] <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">7</span>.some, <span style="color: #da8548; font-weight: bold;">6</span>.some, <span style="color: #da8548; font-weight: bold;">5</span>.some)
 
 <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">List</span>].compose[<span style="color: #a9a1e1;">Option</span>].map2(x, y)(<span style="color: #51afef;">_</span> + <span style="color: #51afef;">_</span>)
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Option[Int]] =</span>
-<span style="color: #5B6268;">//   </span><span style="color: #5B6268;">List(Some(17), None, Some(15),</span>
-<span style="color: #5B6268;">//   </span><span style="color: #5B6268;">Some(16), None, Some(14),</span>
-<span style="color: #5B6268;">//   </span><span style="color: #5B6268;">Some(15), None, Some(13))</span>
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">List[Option[Int]] = List(Some(17), Some(16), Some(15),</span>
+<span style="color: #5B6268;">//   </span><span style="color: #5B6268;">Some(16), Some(15), Some(14),</span>
+<span style="color: #5B6268;">//   </span><span style="color: #5B6268;">Some(15), Some(14), Some(13))</span>
 </pre>
 </div>
 </div>

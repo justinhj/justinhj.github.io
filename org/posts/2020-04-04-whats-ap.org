@@ -1247,10 +1247,9 @@ val x: List[Option[Int]] = List(10.some, 9.some, 8.some)
 val y: List[Option[Int]] = List(7.some, 6.some, 5.some)
 
 Applicative[List].compose[Option].map2(x, y)(_ + _)
-// res: List[Option[Int]] =
-//   List(Some(17), None, Some(15),
-//   Some(16), None, Some(14),
-//   Some(15), None, Some(13))
+// List[Option[Int]] = List(Some(17), Some(16), Some(15),
+//   Some(16), Some(15), Some(14),
+//   Some(15), Some(14), Some(13))
 #+END_SRC
 
 **** Accumulating Exceptions
