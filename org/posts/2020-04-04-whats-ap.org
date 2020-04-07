@@ -1585,8 +1585,8 @@ future:
 - [[https://github.com/aztek/scala-workflow][Scala Workflow]] (A full on system for Monadic and Applicative programming)
 
 ** #ScalaLove
-Thank you to the tireless Scala community for providing so many great libraries
+- Thank you to the tireless Scala community for providing so many great libraries
 and tutorials for me to learn from
-Thank you to Hermann Hueck for his suggestions and improvements on this post
+- Thank you to Hermann Hueck for his suggestions and improvements on this post
 
 \copy 2020 Justin Heyes-Jones. All Rights Reserved.
