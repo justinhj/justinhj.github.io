@@ -784,7 +784,7 @@ println("Validated failure example: " + dist(someValidateds))
 #+END_SRC
 
 Just by changing data types we have completely changed the behaviour from
-short-circuiting to being able to //accumulate the errors/. Just imagine that these
+short-circuiting to being able to /accumulate the errors/. Just imagine that these
 are expensive computations or slow network calls, and you can see how avoiding
 sequencing can really save us in computing costs, and thereby save us money.
 Furthermore, we can improve user experience. We can validate a whole form from
@@ -961,7 +961,7 @@ It does not work the other way around, but some types with Monoid instances can
 use those instances in their Applicative implementation. For example =Tuple2= in
 the Cats library does just that. The actual implementation is split into two
 because of the way the Cats class hierarchy is organized, so here's a simplified
-version so you can see what's going on...
+version where it is more clear what's going on...
 
 #+BEGIN_SRC scala
 implicit def appTuple2[X: Monoid] = new Applicative[Tuple2[X,?]] {
@@ -1117,7 +1117,7 @@ println("concatLists: " + concatLists(List(List(1,2,3), List(4,5,6))))
 // concatLists: List(1, 2, 3, 4, 5, 6)
 #+END_SRC
 
-Last thing in this chapter is an example of how to find if a an element in a
+The last thing in this section is an example of how to find if a an element in a
 list (or really anything we can Traverse) matches some predicate...
 
 #+BEGIN_SRC haskell
@@ -1583,9 +1583,9 @@ future:
 - [[https://github.com/sammthomson/IdiomEars][Idiom Ears]] (Get those fancy ears in your applicative programming)
 - [[https://github.com/aztek/scala-workflow][Scala Workflow]] (A full on system for Monadic and Applicative programming)
 
-** #ScalaLove
-- Thank you to the tireless Scala community for providing so many great libraries
-and tutorials for me to learn from
+** Acknowledgements
+- Thank you to the welcoming members of the Scala community who generously share
+  their knowledge and libraries
 - Thank you to Hermann Hueck for his suggestions and improvements on this post
 
 \copy 2020 Justin Heyes-Jones. All Rights Reserved.

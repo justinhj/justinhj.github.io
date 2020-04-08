@@ -1016,7 +1016,7 @@ println(<span style="color: #98be65;">"Validated failure example: "</span> + dis
 
 <p>
 Just by changing data types we have completely changed the behaviour from
-short-circuiting to being able to <i>/accumulate the errors</i>. Just imagine that these
+short-circuiting to being able to <i>accumulate the errors</i>. Just imagine that these
 are expensive computations or slow network calls, and you can see how avoiding
 sequencing can really save us in computing costs, and thereby save us money.
 Furthermore, we can improve user experience. We can validate a whole form from
@@ -1249,7 +1249,7 @@ It does not work the other way around, but some types with Monoid instances can
 use those instances in their Applicative implementation. For example <code>Tuple2</code> in
 the Cats library does just that. The actual implementation is split into two
 because of the way the Cats class hierarchy is organized, so here&rsquo;s a simplified
-version so you can see what&rsquo;s going on&#x2026;
+version where it is more clear what&rsquo;s going on&#x2026;
 </p>
 
 <div class="org-src-container">
@@ -1456,7 +1456,7 @@ println(<span style="color: #98be65;">"concatLists: "</span> + concatLists(<span
 </div>
 
 <p>
-Last thing in this chapter is an example of how to find if a an element in a
+The last thing in this section is an example of how to find if a an element in a
 list (or really anything we can Traverse) matches some predicate&#x2026;
 </p>
 
@@ -2193,16 +2193,12 @@ future:
 </div>
 </div>
 
-<div id="outline-container-orgbc1f50d" class="outline-2">
-<h2 id="orgbc1f50d">#ScalaLove</h2>
-<div class="outline-text-2" id="text-orgbc1f50d">
+<div id="outline-container-org76a27ea" class="outline-2">
+<h2 id="org76a27ea">Acknowledgements</h2>
+<div class="outline-text-2" id="text-org76a27ea">
 <ul class="org-ul">
-<li>Thank you to the tireless Scala community for providing so many great libraries</li>
-</ul>
-<p>
-and tutorials for me to learn from
-</p>
-<ul class="org-ul">
+<li>Thank you to the welcoming members of the Scala community who generously share
+their knowledge and libraries</li>
 <li>Thank you to Hermann Hueck for his suggestions and improvements on this post</li>
 </ul>
 
