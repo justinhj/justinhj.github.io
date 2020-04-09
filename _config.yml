@@ -8,8 +8,10 @@
 # Site settings
 title: Functional[Justin]
 email: justinhj+blog@gmail.com
-description: Justin Heyes-Jones is a British/Canadian living Vancouver. He blogs about software development, emacs and pure functional programming
-url: "http://justinhj.github.io" 
+description: >
+  Justin is a British Canadian software developer at Yoppworks.
+  He blogs about Emacs, functional programming and Scala
+url: "http://justinhj.github.io"
 twitter_username: justinhj
 github_username:  justinhj
 
