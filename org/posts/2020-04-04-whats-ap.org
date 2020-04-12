@@ -144,7 +144,7 @@ You can see that ~Apply~ extends Functor which means it has map. Also it has the
 function ~ap~ which is, of course, the main subject of this post. What a curious
 type signature! Just like with ~map~ we are dealing with an effect type ~F~, and
 a parameter ~F[A]~. The difference is the function we want to /apply/ (~ff: F[A
-=> B]=~) is also /inside the effect/.
+=> B]~) is also /inside the effect/.
 
 Before talking about what this is useful for, let's look at what it actually
 does for various implementations.
@@ -1344,7 +1344,7 @@ wrap it up with some implementation notes on the useful function ~map2~, and how
 we can arrive at needing the ~ap~ function to do so. Then we'll look at a
 practical example of using Applicative in image processing.
 
-Let's start with a problem. We have two functions that return Validated as
+Let's start with a problem. We have two functions that return IO's as
 output. We want to call a pure function that takes two values as input. In short
 we need map2...
 

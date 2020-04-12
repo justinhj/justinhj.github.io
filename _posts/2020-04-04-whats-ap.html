@@ -174,7 +174,7 @@ You can see that <code>Apply</code> extends Functor which means it has map. Also
 function <code>ap</code> which is, of course, the main subject of this post. What a curious
 type signature! Just like with <code>map</code> we are dealing with an effect type <code>F</code>, and
 a parameter <code>F[A]</code>. The difference is the function we want to <i>apply</i> (<code>ff: F[A
-=&gt; B]=</code>) is also <i>inside the effect</i>.
+=&gt; B]</code>) is also <i>inside the effect</i>.
 </p>
 
 <p>
@@ -1781,7 +1781,7 @@ practical example of using Applicative in image processing.
 </p>
 
 <p>
-Let&rsquo;s start with a problem. We have two functions that return Validated as
+Let&rsquo;s start with a problem. We have two functions that return IO&rsquo;s as
 output. We want to call a pure function that takes two values as input. In short
 we need map2&#x2026;
 </p>
