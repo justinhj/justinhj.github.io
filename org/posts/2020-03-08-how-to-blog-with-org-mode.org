@@ -32,7 +32,7 @@ define and render diagrams inline in the org manuscript.
 
 Just a heads up, I host the blog (at the time of writing) on Github Pages which
 uses [[https://jekyllrb.com][Jekyll]], a static site generator ideal for blogs and other content creation.
-Some of the information here is not relavent if you don't use Jekyll, but you
+Some of the information here is not relevant if you don't use Jekyll, but you
 can still use these steps to generate HTML and upload that to your site.
 
 I followed the steps in this post on [[https://orgmode.org/worg/org-tutorials/org-jekyll.html][Using org to Blog with Jekyll]] with some
