@@ -194,10 +194,19 @@ pre {
  */
 .icon {
 
-    > svg {
+    > img {
         display: inline-block;
         width: 16px;
         height: 16px;
+        vertical-align: middle;
+        padding: 8px;
+
+    }
+
+    > svg {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
         vertical-align: middle;
 
         path {
