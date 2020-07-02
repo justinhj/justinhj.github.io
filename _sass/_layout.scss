@@ -24,6 +24,25 @@
     }
 }
 
+.my-links {
+    align: center;
+    line-height: 56px;
+
+    .menu-icon {
+        display: none;
+    }
+
+    .page-link {
+        color: $text-color;
+        line-height: $base-line-height;
+
+        // Gaps between nav items, but not on the last one
+        &:not(:last-child) {
+            margin-right: 20px;
+        }
+    }
+}
+
 .site-nav {
     float: right;
     line-height: 56px;
@@ -162,6 +181,9 @@
     }
 }
 
+.talk-text {
+    padding-bottom: 20px;
+}
 
 
 /**
