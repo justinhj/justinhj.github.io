@@ -2,9 +2,9 @@
   position: relative;
 
   &:after {
-    background-color: rgba(#000, .03);
+    background-color: red;
     content: "";
-    height: 3px;
+    height: 30px;
     left: 0;
     position: absolute;
     top: 100%;
@@ -16,7 +16,7 @@
 .site-title {
   font-size: 22px;
   font-weight: bold;
-  margin: 0 34px 0 0;
+  margin: 0 50px 0 0;
 
   @include breakpoint {
     margin: 0;
