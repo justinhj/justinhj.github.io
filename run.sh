@@ -1,2 +1,2 @@
 #!/bin/bash
-bundle exec jekyll serve --incremental --port 4001
+bundle exec jekyll serve --incremental --port 4003

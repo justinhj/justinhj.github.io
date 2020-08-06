@@ -1,5 +1,5 @@
 ;; -*- flycheck-disabled-checkers: (emacs-lisp-checkdoc); byte-compile-warnings: (not free-vars) -*-
-;; Run this then M-x org-publish
+;; Eval this buffer then M-x org-publish
 
 (setq project-root (locate-dominating-file "." "_config.yml"))
 

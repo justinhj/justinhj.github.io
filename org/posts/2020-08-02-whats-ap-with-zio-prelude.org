@@ -1,0 +1,1581 @@
+#+TITLE: #+TITLE: What's Ap with zio-prelude?
+#+AUTHOR: Justin Heyes-Jones
+#+DATE: 2020
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+HTML_HTML5_FANCY:
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: What's Ap with zio-prelude?
+date: '2020-08-02T00:00:00.000-08:00'
+tags: [pure-functional-programming, cats, scala, applicative, monads, functors, zio]
+---
+#+END_EXPORT
+
+** Introduction
+Back in April I did a deep dive into ~Applicative Functors~ and produced a
+lengthy blog post that explains the practical use of Applicatives in Scala, how
+they are implemented and where these ideas came from. If you are not familiar
+with functional programming in Scala using Cats, and the Applicative type class
+in particular, I'd recommend at least scanning the post below or checking out
+one of the related talks in the links above.
+
+#+BEGIN_EXPORT html
+<a href="/2020/04/04/whats-ap.html">What's Ap?</a>
+#+END_EXPORT
+
+It can be challenging to explain the implementation of Applicative in Scala, and
+especially the ~ap~ operation itself, which as the following tweet points out,
+relies on currying to do its work. You can see this in some of the example code
+in my post where I translated Haskell from the original 2008 paper "Applicative
+Programming with Effects" into Scala. The lack of implied currying in Scala makes
+working with applicatives involve a bit more typing than in Haskell, and
+operates in a way that many Scala programmers will not be familiar with.
+
+#+BEGIN_EXPORT html
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">For a decade, &#39;ap&#39; from Applicative has infected Scala code:<br><br>def ap[A, B](f: F[A =&gt; B], fa: F[A]): F[B]<br><br>Cryptic &amp; confusing, did you know the raison d&#39;être of &#39;ap&#39; is Haskell&#39;s curried functions, not category theory?<br><br>Learn how we can do better! 👇<a href="https://t.co/IL2FnBbPOy">https://t.co/IL2FnBbPOy</a></p>&mdash; John A De Goes (@jdegoes) <a href="https://twitter.com/jdegoes/status/1288134300349718530?ref_src=twsrc%5Etfw">July 28, 2020</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+#+END_EXPORT
+
+Is this criticism fair? In this post we'll check out the new type class encoding
+that you will find in the new functional programming library ~Zio-Prelude~, and
+compare it with the established encoding and hierarchy that you will find in
+Cats, and that was closely modelled on Haskell.
+
+https://github.com/zio/zio-prelude
+
+** zio-prelude in a nutshell
+I've only been aware of prelude for a couple of days, so I'm not an expert by
+any means. What I have learned so far is based on a recent talk at SF Scala for
+which you can find the slides here:
+
+https://www.slideshare.net/jdegoes/refactoring-functional-type-classes
+
+Unlike Scalaz and Cats, prelude was not initially a public project, and was
+developed as part of John De Goes' ongoing functional programming classes.
+However it is now fully open sourced and the Scala community as a whole can take
+part in the project.
+
+As you'll see in the slide deck, the goals of prelude are the following:
+
+- Radical
+- Orthogonal
+- Principled
+- Scala-First
+- Minimal
+- Pragmatic
+- Accessible
+- Opinionated
+
+The goals I find most compelling here are accessible and orthogonal. As an fp
+advocate and educator, I am very interested in any steps towards greater
+accessibility. The orthogonal part is also big, as I believe that composability is
+one of the biggest wins of pure functional programs.
+
+** Algebra not Category Theory
+With Cats, almost all of the concepts come from category theory. We have Monads,
+Functors, Monoids, Monoidal Functors and so on. The idea with prelude is that
+algebra is more familiar to us, as non-mathematician programmers, than category
+theory. Algebra's are also more composable, so the idea is to start with a small
+number of primitive things(?) and combining them into more powerful objects.
+
+The big question that prelude puts out there is this; is Category Theory an
+obstacle to adoption of pure functional programming, and would abstract algebra
+be a better way to both introduce newcomers, and provide a better solution
+overall to the problems and applications that Cats et al already address?
+
+** Functor and Monad
+*** Functors
+In my original post I introduce Functor and Monad as the gateway to Applicative.
+Functor is a simple and beautiful thing, in that it allows us to combine pure
+functions with "effectful" computations, mapping an F[A] to an F[B]. In prelude
+Functor and Monad do not exist as first class entities, although we can see them
+defined as type aliases as follows...
+
+#+BEGIN_SRC scala
+type Functor[F[+_]] = Covariant[F]
+type Monad[F[+_]] = Covariant[F] with IdentityFlatten[F]
+#+END_SRC
+
+In Cats the Functor type class is actually short for Covariant Functor. What
+does that mean? First of all one of the best discussions of covariance in Scala
+I know can be found here on the scala-lang.org site:
+
+https://docs.scala-lang.org/tour/variances.html
+
+But in essence a covariant type parameter for some type A (denoted +A), means
+that you can pass the type or super types of the type as that parameter.
+
+The Cats Functor is also covariant in that if you have a function that can map
+an A to a B, you can map a higher kinded type F[A] to F[B] too using the
+Covariant Functor.
+
+In Cats a Functor is defined as a higher kinded type with a map function. In
+Prelude a Functor is just something that implements the Covariant type and
+follows its laws.
+
+In other words although Functor has essentially changed names in Prelude, it is
+very much the same as the Cats Functor...
+
+#+BEGIN_SRC scala
+List(1,2,3).map(a => a + 1)
+// List[Int] = List(2, 3, 4)
+Option(1).map(a => a + 1)
+// Option[Int] = Some(2)
+#+END_SRC
+
+There is an excellent post about variance and functors on the Typelevel site:
+
+https://typelevel.org/blog/2016/02/04/variance-and-functors.html
+
+*** Monads
+In Cats we extend Functor with Applicative and add the ~flatMap~ operation to get
+Monad. Applicative brings us both ~ap~ and ~pure~. Leaving ap aside for the
+moment, pure is the important ability to lift a pure value into the context of
+some effect, represented as a higher kinded type.
+
+Let's take a look at sequencing two Futures together using prelude. In
+order to do that with Cats we would use the Monad flatmap operation.
+
+#+BEGIN_SRC scala
+def getUser(email: String): Future[User] = ???
+
+def getAccountStatus(id: String): Future[AccountStatus] = ???
+
+val accountStatus = getUser("bob@google.com")
+  .flatMap(user => getAccountStatus(user.accountId))
+#+END_SRC
+
+In prelude you would do the same, since nothing overrides flatMap from ZIO or
+the standard library, you can simply call flatMap, but you wouldn't be
+exercising the new prelude types. If you want to see how flatMap can be written
+stay tuned.
+
+Remember above that Monad is defined as the composition of IdentityFlatten and
+Covariant. We already saw that Covariant is Functor and provides map (remember
+that all Monad's are functors).
+
+IdentityFlatten is the composition of prelude types Associative, Identity and
+Flatten. Flatten is easy it just gives us the ability to flatten an effect from
+an F[F[A]] to an F[A]. For example the somewhat contrived code below executes a
+ZIO that is nested inside another, resulting in a ZIO[ZIO[A]]. We can use the
+ZIO Flatten instance to flatten and run the effects...
+
+#+BEGIN_SRC scala
+import zio._
+val runtime = Runtime.default
+val effect = ZIO{putStrLn("Hello!"); ZIO.succeed(10)}
+runtime.unsafeRun(effect.flatten)
+// Hello!
+// Int = 10
+#+END_SRC
+
+Whilst most types, including ZIO effects, Future, Option and List all have
+flatMap, we ~could~ define it in terms of ~Covariant~ and ~IdentityFlatten~ as follows.
+
+
+#+BEGIN_SRC scala
+def flatMap[F[+_]: Covariant : IdentityFlatten, A, B](fa: F[A])(fab: A => F[B]): F[B] = {
+  fa.map(a => fab(a)).flatten
+}
+#+END_SRC
+
+Monad also traditionally defines pure, a way to lift pure values into an effect
+context. We can do that with Covariant's ~map~ and IdentityFlatten's ~any~.
+~any~ summons an effect out of thin air for us, and we can then use map to sneak
+our pure value into that effect. Whilst this seems a little tricky, it gives a
+bit more flexibility. As Adam Fraser puts it, this "also allows you to express
+constraints on the types of values that can be injected through implementing
+CovariantSubset instead of Covariant".
+
+#+BEGIN_SRC scala
+def pure[F[+_] : Covariant : IdentityFlatten, A](a: A)(implicit i : IdentityFlatten[F]): F[A] = {
+  i.any.map(_ => a)
+}
+pure[Option,Int](12)
+// Option[Int] = Some(12)
+pure[List,String]("Hello")
+// List[String] = List(Hello)
+#+END_SRC
+
+** Applicatives in Prelude
+You can skip back to <a href="/2020/04/04/whats-ap.html">What's Ap?</a> if you
+need to and read about Applicative again, but lets see how life is without it.
+
+In my original post we used the ap function to apply a function to an option
+using the ap function. Whilst the purpose of this was to go to explain currying
+so we can apply a function to multiple effects, as parameters, here let's just
+replicated it with prelude.
+
+In prelude the equivalent to Applicative is defined as follows.
+
+#+BEGIN_SRC scala
+type Applicative[F[+_]] = Covariant[F] with IdentityBoth[F]
+#+END_SRC
+
+Covariant should be familiar, it is Functor and gives us map. IdentityBoth is
+Identity with AssociativeBoth.
+
+Associative both is product from Cats. (product can be implemented with the ap
+function from Applicative)
+
+#+BEGIN_SRC scala
+override def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] =
+  ap(map(fa)(a => (b: B) => (a, b)))(fb)
+
+Applicative[Option].product(Option(10), Option(12)).map{case (a,b) => a + b}
+// Option[Int] = Some(22)
+#+END_SRC
+
+In prelude product is essentialy defined directly as AssociativeBoth which
+implements a binary associative operator to combine two effects into an effect
+containing a tuple, in other words product.
+
+#+BEGIN_SRC scala
+AssociativeBoth[Option].both(Option(10), Option(12)).map{case (a,b) => a + b}
+// Option[Int] = Some(22)
+#+END_SRC
+
+Traditional Applicative requires map, ap and pure. We have map from
+Covariant, the equivalent of ap using both from AssociativeBoth and pure uses
+Identity just like with our Monad example...
+
+#+BEGIN_SRC scala
+def pure[F[+_] : Covariant : IdentityBoth, A](a: A)(implicit i : IdentityBoth[F]): F[A] = {
+  i.any.map(_ => a)
+}
+pure[Option,Int](12)
+// res1: Option[Int] = Some(12)
+pure[List,String]("Hello")
+// res2: List[String] = List(Hello)
+#+END_SRC
+
+** Sequence
+In the seminal paper Applicative programming with Effects, the first motivating
+example for applicative programming is the sequence function. You have a list of
+effects, specifically Haskell IO effects, and you would like to turn them into
+an IO[List[A]]. You might recognise this as having the same shape and purpose as
+Future.sequence from the Scala standard library.
+
+To demonstrate this sequence running let's write an implementation of a silly
+algorithm called Sleep Sort. Sleep Sort works by waiting an amount of time based
+on the value of the number. Emitting the numbers in this way sorts them
+(assuming your scheduler is accurate enough). Let's be clear, this is a stupid
+way to sort numbers, but it's handy as a way to illustrate our ~monadicSequence~
+function.
+
+#+BEGIN_SRC scala
+import zio._
+import zio.prelude._
+import zio.console._
+import zio.clock._
+def delayedPrintNumber(s: Int): ZIO[Console with Clock,String,Int] = {
+    putStrLn(s"Preparing to say number in $s seconds") *>
+    putStrLn(s"$s").delay(s.seconds) *>
+    ZIO.succeed(s)
+}
+val ios = NonEmptyList(6,5,2,1,3,8,4,7).map(delayedPrintNumber)
+// ios: NonEmptyList[ZIO[Console with Clock,String,Int]]
+#+END_SRC
+
+From my previous post you will know that we eventually get from sequence to a
+more generalised function, traverse, of which sequence is a special case. In
+prelude we also have traverse, and as you might guess, the operation of traverse
+depends on which prelude data types we pass to it.
+
+#+BEGIN_SRC
+val runtime = Runtime.default
+runtime.unsafeRun(NonEmptyTraversable[NonEmptyList].flip1(ios))
+#+END_SRC
+
+Questions: why is there no IdentityBoth for ZIO so I cannot traverse an empty
+list of ZIO.
+Why is there no way to do commutativeboth with NonEmptyTraversable?
+
+In Cats you can traverse an empty list of Cats Effect no problem.
+
+
+
+
+OLD STUFF
+
+
+The function creates an IO effect, which when run will immediately print a
+message and then wait ~s~ seconds before printing the number. We map the
+function across a list of numbers to generate a list of IO effects, which we can
+then run.
+
+You may be surprised that this does not work. Instead of running all the effects
+at once and printing them out in order it just executes the first IO (wait 6
+seconds), then the second (wait 5 seconds).
+
+#+BEGIN_SRC
+Monadic version
+
+Preparing to say number in 6 seconds
+6
+Preparing to say number in 5 seconds
+5
+// ... and so on for a while
+#+END_SRC
+
+If you were not surprised maybe you're ahead of me, and know that our
+~monadicSequence~ function cannot possibly run all the effects at once by virtue
+of it being monadic in the first place.
+
+That ~for~ comprehension is really hiding that we are calling flatMap on each
+successive IO, and flatMap sequences things together. You must wait for the
+result of the first effect before you can evaluate the second. So whilst the
+first implementation of ~sequence~ in the paper will absolutely work, it will
+not let us implement our sleep sort, nor let us parallelize the IO's in general.
+
+Back to the paper, at this point the authors observe...
+
+#+BEGIN_QUOTE
+In the (c : cs) case, we collect the values of some effectful computations, which we
+then use as the arguments to a pure function (:). We could avoid the need for names
+to wire these values through to their point of usage if we had a kind of ‘effectful
+application’.
+#+END_QUOTE
+
+By effectful application they are talking about the ~ap~ function, and they go
+on to say that it lives in the Haskell Monad library. Given that function they
+rewrite the ~sequence~ function as follows...
+
+#+BEGIN_SRC haskell
+sequence :: [IO a ] → IO [a ]
+sequence [ ] = return [ ]
+sequence (c : cs) = return (:) ‘ap‘ c ‘ap‘ sequence cs
+#+END_SRC
+
+#+BEGIN_QUOTE
+Except for the noise of the returns and aps, this definition is in a fairly standard
+applicative style, even though effects are present.
+#+END_QUOTE
+
+Note that the ~ap~ they are using here is in the Monad library, and implemented
+using flatMap, so it will not yet allow our sleep sort to work. However, I've
+implemented an Applicative instance for ZIO which does not have that
+limitation...
+
+#+BEGIN_SRC scala
+implicit def zioApplicative[Z,E] = new Applicative[ZIO[Z,E,?]] {
+    def pure[A](x: A) = ZIO.succeed(x)
+    def ap[A, B](ff: ZIO[Z,E,A => B])(fa: ZIO[Z,E,A]) = {
+      map2(ff, fa){
+        (f,a) =>
+          f(a)
+      }
+    }
+    override def map2[A, B, C](fa: ZIO[Z,E,A], fb: ZIO[Z,E,B])(f: (A, B) => C) :
+      ZIO[Z,E,C] = {
+        fa.zipPar(fb).map{case (a,b) => f(a,b)}
+    }
+  }
+#+END_SRC
+
+It's not important to understand all the details here, all you need understand
+is we now have an ~ap~ that we can apply to ZIO effects that is truly parallel,
+so if you're not interested then skip to the next paragraph.
+
+#+BEGIN_aside
+The ~pure~ function is straightforward, it just wraps a pure value in a
+succeeded ZIO. The ~ap~ function is more interesting. Whilst it's not obvious
+how you would implement ap in for ZIO, it is really easy to implement ~map2~.
+~map2~ comes in handy because it lets you take the results of two effects and
+pass them to a pure function. The function has the signature ~f: (A, B) => C~.
+We use the ZIO function ~zipPar~ to execute the two effects _in parallel_, and
+if both ~fa~ and ~fb~ yield values then they are mapped with the pure function
+giving us a ZIO with the final result inside. Happily, you can implement ap in
+terms of map2, so that solves our problem.
+#+END_aside
+
+Here's the conversion of the applicative version of ~sequence~ to Scala...
+
+#+BEGIN_SRC scala
+def applicativeSequence[Z,E,A](ios: List[ZIO[Z, E, A]]): ZIO[Z, E, List[A]] = {
+    ios match {
+      case Nil =>
+        ZIO.succeed(List.empty[A])
+      case c :: cs =>
+        val ff: ZIO[Z,E, A => (List[A] => List[A])] =
+          zioApplicative.pure(((a: A) => (listA: List[A]) => a +: listA))
+        val p1 = ff.ap(c)
+        p1.ap(applicativeSequence(cs))
+    }
+  }
+#+END_SRC
+
+It's a little bit noisier than the Haskell code, but most of that is having to
+be more verbose about the types to keep the type checker happy. In fact the
+parts of each implementation match up together.
+
+Now we can run that and you will see that the effects are now parellelised and
+our sleep sort works!
+
+#+BEGIN_SRC
+Applicative version
+
+Preparing to say number in 6 seconds
+Preparing to say number in 2 seconds
+Preparing to say number in 1 seconds
+Preparing to say number in 3 seconds
+Preparing to say number in 8 seconds
+Preparing to say number in 4 seconds
+Preparing to say number in 7 seconds
+Preparing to say number in 5 seconds
+1
+2
+3
+4
+5
+6
+7
+8
+#+END_SRC
+
+Note that the point the authors were making here was just to show that the
+~sequence~ function is a pattern that came up often, that could be more
+succinctly expressed with ~ap~. Showing that it also enables our effects to run
+in parallel, given the correct implementation, was just to show one of the
+benefits of avoiding Monad when effects are not dependent on each other.
+
+**** Matrix Transposition
+The second example in the paper is that of Matrix transposition, which takes a
+matrix and flips it along a diagonal. For example...
+
+#+BEGIN_SRC
+Original matrix
+ 1  2  3  4  5
+ 6  7  8  9 10
+11 12 13 14 15
+
+Transposed matrix
+ 1  6 11
+ 2  7 12
+ 3  8 13
+ 4  9 14
+ 5 10 15
+#+END_SRC
+
+In Haskell, we first see this implememtation of transpose...
+
+#+BEGIN_SRC haskell
+transpose :: [[a ]] → [[a ]]
+transpose [ ] = repeat [ ]
+transpose (xs : xss) = zipWith (:) xs (transpose xss)
+
+repeat :: a → [a ]
+repeat x = x : repeat x
+#+END_SRC
+
+Let's translate this to Scala. The algorithm works by taking each row in turn
+and /zipping/ it with each subsequent row.
+
+First, we need to be careful about the function ~repeat~ which returns an
+infinite number of whatever x is. This is used in the transpose for the last row
+of the matrix where we want a number of empty lists to finish our recursion but
+we don't know how many, so we want to just keep taking them. Since Haskell is by
+default lazily evaluated this will work fine. In Scala as soon as we evaluate
+repeat we will run into an infinite loop. That's easily fixed by switching to
+~LazyList~ which is part of the standard library. (Before Scala 2.13 it was
+called Stream).
+
+#+BEGIN_SRC scala
+def repeat[A](a: A): LazyList[A] = a #:: repeat(a)
+#+END_SRC
+
+The function ~zipWith~ has the following type signature...
+
+#+BEGIN_SRC haskell
+zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+#+END_SRC
+
+In other words, it takes two lists and a pure function of two arguments, and
+creates a new list by applying the function to each element. It will stop once
+it runs out of elements in one of the lists. Here's the Scala version.
+
+#+BEGIN_SRC scala
+def zipWith[A, B, C](as: LazyList[A], bs: LazyList[B])(
+      f: (A, B) => C): LazyList[C] = {
+    as.zip(bs).map { case (a, b) => f(a, b) }
+  }
+#+END_SRC
+
+With the pieces in place I can now implement the transpose as follows...
+
+#+BEGIN_SRC scala
+def transpose[A](matrix: LazyList[LazyList[A]]): LazyList[LazyList[A]] = {
+  matrix match {
+    case LazyList() => repeat(LazyList.empty)
+    case xs #:: xss =>
+      zipWith(xs, transpose(xss)) {
+        case (a, as) =>
+          a +: as
+      }
+  }
+}
+#+END_SRC
+
+The next step in the paper is to make this look a bit more /applicative/ by
+using a combination of ~repeat~ and ~zapp~...
+
+#+BEGIN_SRC haskell
+zapp :: [a → b ] → [a ] → [b ]
+zapp (f : fs) (x : xs) = f x : zapp fs xs
+zapp = [ ]
+
+transpose :: [[a ]] → [[a ]]
+transpose [ ] = repeat [ ]
+transpose (xs : xss) = repeat (:) ‘zapp‘ xs ‘zapp‘ transpose xss
+#+END_SRC
+
+#+BEGIN_QUOTE
+Except for the noise of the repeats and zapps, this definition is in a fairly standard
+applicative style, even though we are working with vectors.
+#+END_QUOTE
+
+**** Evaluating Expressions
+The third example of applicative style is an expression evaluator that can add
+numbers, both literals and numbers bound to strings and stored in an environment.
+
+#+BEGIN_QUOTE
+When implementing an evaluator for a language of expressions, it is customary to
+pass around an environment, giving values to the free variables.
+#+END_QUOTE
+
+The Haskell code looks like this...
+
+#+BEGIN_SRC haskell
+data Exp v = Var v
+  | Val Int
+  | Add (Exp v) (Exp v)
+
+eval :: Exp v → Env v → Int
+eval (Var x ) γ = fetch x γ
+eval (Val i) γ = i
+eval (Add p q) γ = eval p γ + eval q γ
+#+END_SRC
+
+Converting to Scala is straightforward...
+
+#+BEGIN_SRC scala
+sealed trait Exp
+case class Val(value: Int) extends Exp
+case class Add(left: Exp, right: Exp) extends Exp
+case class Var(key: String) extends Exp
+
+case class Env[K](kv: Map[K,Int])
+
+def fetch(key: String)(env: Env[String]) : Int =
+  env.kv.getOrElse(key, 0)
+
+def eval(exp: Exp, env: Env[String]) : Int = {
+  exp match {
+    case Val(value) => value
+    case Var(key) => fetch(key)(env)
+    case Add(left, right) =>
+      eval(left, env) + eval(right, env)
+  }
+}
+#+END_SRC
+
+Here I've made the environment a simple key value store, and, to avoid
+complicating the example with error handling, if a variable is not present in
+the environment I just default to returning zero.
+
+Following the pattern of the previous two examples, the authors then pull some
+magic to make the applicative pattern more noticeable...
+
+#+BEGIN_QUOTE
+We can eliminate the clutter of the explicitly threaded environment with a little
+help from some very old friends, designed for this purpose
+#+END_QUOTE
+
+#+BEGIN_SRC haskell
+eval :: Exp v → Env v → Int
+eval (Var x ) = fetch x
+eval (Val i) = K i
+eval (Add p q) = K (+) ‘S‘ eval p ‘S‘ eval q
+
+where
+K :: a → env → a
+K x γ = x
+
+S :: (env → a → b) → (env → a) → (env → b)
+S ef es γ = (ef γ) (es γ)
+#+END_SRC
+
+So this all looks a bit cryptic. Who are the old friends? Well, if you look at
+the type signature of ~K~ it is actually the ~pure~ function, and ~S~
+is the ~ap~ function. This is in fact what we'd call the ~Reader~ Monad in
+Scala.
+
+By old friends, the authors are referring to the [[https://en.wikipedia.org/wiki/SKI_combinator_calculus][SKI Combinator Calculus]].
+
+Let's reimplement in Scala using the ~Reader~.
+
+#+BEGIN_SRC scala
+def fetchR(key: String) = Reader[Map[String,Int], Int](env => env.getOrElse(key, 0))
+def pureR(value: Int) = Reader[Map[String,Int], Int](env => value)
+
+def evalR(exp: Exp): Reader[Map[String,Int], Int] = {
+  exp match {
+    case Val(value) => pureR(value)
+    case Var(key) => fetchR(key)
+    case Add(left, right) =>
+      val f = Reader((env:Map[String,Int]) =>
+        (a:Int) => (b:Int) => a + b)
+      val leftEval = evalR(left).ap(f)
+      evalR(right).ap(leftEval)
+  }
+}
+#+END_SRC
+
+And take it for a test drive...
+
+#+BEGIN_SRC scala
+val env1 = Env(Map("x" -> 3, "y" -> 10))
+val exp1 = Add(Val(10), Add(Var("x"), Var("y")))
+
+println(s"Eval : ${eval(exp1, env1)}")
+// Eval : 23
+#+END_SRC
+
+*** The Applicative Type class
+To summarize, we've seen three different effects used in applicative style; IO
+(or ZIO), List and Reader. Now you can see why it makes sense to be able to
+apply a function that is wrapped in these effects. What we needed, and got with
+~ap~, is a way to lift a pure function so we can apply it to a chain of effects
+of the same effect type.
+
+Next in the paper, the authors describe the laws which an instance of the
+Applicative type class must adhere to, which is out of scope for this post but
+is put succinctly in English as follows...
+
+#+BEGIN_QUOTE
+The idea is that pure embeds pure computations into the pure fragment of an
+effectful world—the resulting computations may thus be shunted around freely, as
+long as the order of the genuinely effectful computations is preserved.
+#+END_QUOTE
+
+For more detail on the applicative laws check out chapter 12, section 5 of [[https://livebook.manning.com/book/functional-programming-in-scala/chapter-12/80][The Red Book]]
+
+/Applicatives are all Functors/ (hence the name Applicative Functors), because
+you can implement the map operation as follows...
+
+#+BEGIN_SRC scala
+// Declare map in terms of pure and ap
+def map[A,B,F[_]: Applicative](fa: F[A], f: A => B): F[B] = {
+  Applicative[F].pure(f).ap(fa)
+}
+
+// Map a function over a list
+map(List(1,2,3,4,5), (a:Int) => a + 1)
+// res: List[Int] = List(2, 3, 4, 5, 6)
+#+END_SRC
+
+Note that you don't have to do this with Cats instances because all
+Applicatives have their Functor instance taken care of too.
+
+The paper then notes that all uses of Applicatives follow this pattern of
+lifting a pure function and applying it to a chain of effects, and suggests a
+new syntax for shifting into the /Idiom/ of the applicative functor. The syntax
+is a special pair of brackets...
+
+#+BEGIN_SRC haskell
+[[ ff f1 f2 f3 ... fn ]]
+#+END_SRC
+
+Although this has not been widely adopted in either Haskell or Scala as far as I
+can tell, you can try it yourself using this delightfully named (and
+implemented) Scala library: [[https://github.com/sammthomson/IdiomEars][Idiom Ears]]. This will let you closely match the
+syntax from the paper; for example...
+
+#+BEGIN_SRC scala
+val f = (a: Int) => (b: Int) => a * b
+⊏| (f) (List(1, 2)) (List(3, 4)) |⊐
+// List(3, 4, 6, 8)
+
+// Which is equivalent to
+Applicative[List].pure(f).ap(List(1,2)).ap(List(3,4))
+#+END_SRC
+
+If you do fall in love with the idiom brackets of McBride and Patterson then
+knock yourself out, but you may have to invest some time bringing the project
+back to life as it has suffered some bitrot since 2016. There is a demo of
+IdiomEars in the Github repository accompanying this post, but I simply copied
+the code into my project rather than spend time updating it.
+
+*** Moving right along to Traverse
+#+BEGIN_QUOTE
+Have you noticed that sequence and transpose now look rather alike? The details
+that distinguish the two programs are inferred by the compiler from their types.
+Both are instances of the applicative distributor for lists.
+#+END_QUOTE
+
+At this point in the paper we have seen the birth of the Applicative type class
+which encapsulates the ~ap~ and ~pure~ functions needed to implement the
+patterns above. Next, the authors describe another new type class, ~Traverse~,
+which lets us generalize the pattern further...
+
+#+BEGIN_SRC haskell
+dist :: Applicative f ⇒ [f a ] → f [a ]
+dist [ ] = ⊏| [ ] |⊐
+dist (v : vs) = ⊏| (:) v (dist vs) |⊐
+#+END_SRC
+
+Note that I'm using the unicode from Idiom Ears to replace the fancy brackets
+from the paper which I cannot reproduce here, but you get the idea. Let's
+rewrite in Scala...
+
+#+BEGIN_SRC scala
+// applicative distributor for lists
+def dist[A, F[_]](fs: List[F[A]])(implicit app: Applicative[F]): F[List[A]] = {
+  fs match {
+    case Nil =>
+      app.pure(List.empty[A])
+    case c :: cs =>
+      val w1 = app.pure((a: A) => (listA: List[A]) => a +: listA)
+      val w2 = w1.ap(c)
+      w2.ap(dist(cs))
+  }
+}
+
+// dist a list of options
+println(dist(List(Option(10), Option(10), Option(3), Option(4))))
+// Some(List(10, 10, 3, 4))
+
+// Note that we have short circuiting
+println(dist(List(None, Option(10), Option(3), Option(4))))
+// None
+#+END_SRC
+
+Note that this short-circuits. We fail as soon as a single ~None~ shows up. Why?
+It's because although applicative allows us to avoid the enforced sequencing of
+Monad's flatMap, many types have instances of ~ap~ implemented in terms of
+flatMap anyway, because that matches the expectation of users for that type.
+
+We could override the Cats instance for Option with our own. What we do instead
+is create Applicative versions of type classes. For example, our monadic friend
+Either (which represents an error or a success value) has an applicative
+alter-ego ~Validated~. Rather than short-circuit on failure, Validated allows us
+to accumulate errors so we can provide valuable feeback ot the caller. That is one
+of the super-powers of Applicatives!
+
+#+BEGIN_SRC scala
+val someValidateds: List[Validated[NonEmptyList[String],Int]] =
+  (List("Had some error".invalidNel, 10.valid, "Another error".invalidNel, 4.valid))
+
+// Try the same with Validated that has an Applicative instance
+println("Validated failure example: " + dist(someValidateds))
+// Validated failure example: Invalid(NonEmptyList(Had some error, Another error))
+#+END_SRC
+
+Just by changing data types we have completely changed the behaviour from
+short-circuiting to being able to /accumulate the errors/. Just imagine that these
+are expensive computations or slow network calls, and you can see how avoiding
+sequencing can really save us in computing costs, and thereby save us money.
+Furthermore, we can improve user experience. We can validate a whole form from
+the user at once and send all the corrections needed rather than necessitate a
+painful back and forth until the whole form is valid. Now get back to ~dist~.
+
+#+BEGIN_QUOTE
+Distribution is often used together with ‘map’.
+#+END_QUOTE
+
+Fair enough. The ~dist~ function we developed above would be enhanced in
+usefulness if it could map a list of pure values into some effect type first.
+Let's take a look at a poor way to implement that...
+
+#+BEGIN_SRC haskell
+flakyMap :: (a → Maybe b) → [a ] → Maybe [b ]
+flakyMap f ss = dist (fmap f ss)
+#+END_SRC
+
+We can translate pretty much directly to Scala...
+
+#+BEGIN_SRC scala
+def flakyMap[A,B](f: A => Option[B], as: List[A]): Option[List[B]] = {
+  dist(as.map(f))
+}
+
+println("Flakymap success: " + flakyMap((n: Int) => Option(n * 2), List(1,2,3)))
+// Flakymap success: Some(List(2, 4, 6))
+println("Flakymap failure: " + flakyMap((n: Int) => if(n%2==1) Some(n) else None, List(1,2,3)))
+// Flakymap failure: None
+#+END_SRC
+
+That's clearly useful, and it works, but it's flaky because we have to process
+the list twice. First we map over the list to transform it, then we do it again
+with the dist function. How about we do both at once? That's ~Traverse~...
+
+#+BEGIN_SRC haskell
+traverse :: Applicative f ⇒ (a → f b) → [a ] → f [b ]
+traverse f [ ] = ⊏| [ ] |⊐
+traverse f (x : xs) = ⊏| (:) (f x ) (traverse f xs) |⊐
+#+END_SRC
+
+And a Scala version...
+
+#+BEGIN_SRC scala
+def listTraverse[A, B, F[_]](f: A => F[B], fs: List[A])
+     (implicit app: Applicative[F]): F[List[B]] = {
+  fs match {
+    case Nil =>
+      app.pure(List.empty[B])
+    case c :: cs =>
+      val w1 = app.pure((b: B) => (listB: List[B]) => b +: listB)
+      val w2 = w1.ap(f(c))
+      w2.ap(listTraverse(f, cs))
+  }
+}
+// Output is the same as flakyMap
+#+END_SRC
+
+By providing the identity function for ~f~ we get the ~sequence~ function back
+in terms of traverse...
+
+#+BEGIN_SRC scala
+def sequence[A, F[_]](fs: List[F[A]])
+    (implicit app: Applicative[F]): F[List[A]] = {
+  listTraverse((fa: F[A]) => fa, fs)
+}
+#+END_SRC
+
+Finally, we get to the Traverse type class, which gives us an interface to write
+traverse for two effect types rather than just List and another effect. We have
+two functions, traverse and dist, which are represented in Scala today as
+traverse and sequence.
+
+#+BEGIN_SRC haskell
+class Traversable t where
+traverse :: Applicative f ⇒ (a → f b) → t a → f (t b)
+dist :: Applicative f ⇒ t (f a) → f (t a)
+dist = traverse id
+#+END_SRC
+
+There's no need to show the Scala because we can rely on the implementations in
+the Cats library, but the instance implementations for list are as above. In the
+paper we see that you can also traverse more complex structures such as a
+tree...
+
+#+BEGIN_SRC scala
+sealed trait Tree[+A]
+case object Leaf extends Tree[Nothing]
+case class Node[A](left: Tree[A], a: A, right: Tree[A]) extends Tree[A]
+
+def treeTraverse[A, B, F[_]](f: A => F[B], fs: Tree[A])
+                (implicit app: Applicative[F]): F[Tree[B]] = {
+  fs match {
+    case Leaf =>
+      app.pure(Leaf)
+    case Node(left, a, right) =>
+      val w1 = app.pure((l: Tree[B]) =>
+        (v: B) =>
+        (r: Tree[B]) => Node(l,v,r))
+      val w2 = w1.ap(treeTraverse(f,left))
+      val w3 = w2.ap(f(a))
+      w3.ap(treeTraverse(f,right))
+  }
+}
+
+val tree1 = Node(Leaf, 10, Node(Leaf, 5, Node(Leaf, 10, Leaf)))
+println("treeTraverse: " + treeTraverse((n: Int) => Option(n + 1), tree1))
+// treeTraverse: Some(Node(Leaf,11,Node(Leaf,6,Node(Leaf,11,Leaf))))
+#+END_SRC
+
+Note that in your own code you would usually lean on the Traverse type class and
+override some methods to provide your own implementations.
+
+Another thing to highlight the expressive power of traverse is that we can use
+it to do a ~map~ just like a ~~Functor~ by using the Id (identity) Monad as our
+effect type. The Id monad simply wraps a pure value and has no other effect, so
+we can use it to use traverse as a functor as follows...
+
+#+BEGIN_SRC scala
+@ List[Int](1,2,3).traverse((a: Int) => (1 + a): Id[Int])
+// Id[List[Int]] = List(2, 3, 4)
+#+END_SRC
+
+*** Monoids are phantom Applicative functors
+This section of the paper, part four if you are reading along, has an intriguing
+title. Whilst short, there is a lot of information in a small space on how we
+can use Monoids, Applicatives and Traverse to do some cool things. I will go
+much slower than the paper as some of the concepts take some time to get your
+head around.
+
+Monoids are a type class that provides an interface to join things together such
+as appending strings or adding numbers. In addition, they give us a way to
+represent a zero value for the data type, which will be useful in a moment. If
+you want to dig into Monoids in more detail I have written a couple of posts on
+the subject...
+
+- [[http://justinhj.github.io/2019/06/10/monoids-for-production.html][Monoids for Production [2019]​]]
+- [[https://medium.com/yoppworks-reactive-systems/persistent-entities-with-monoids-a44212a157fb][Persistent Entities with Monoids [2020]​]]
+
+**** Every Applicative is a Monoid
+It's possible to implement a Monoid instance that works for any Applicative. In
+Scala it looks like this...
+
+#+BEGIN_SRC scala
+implicit def appMonoid[A: Monoid, F[_]: Applicative] = new Monoid[F[A]] {
+  def empty: F[A] = Applicative[F].pure((Monoid[A].empty))
+  def combine(x: F[A], y: F[A]): F[A] =
+    Applicative[F].map2(x,y)(Monoid[A].combine)
+}
+#+END_SRC
+
+What does this give us? We can join Applicative Effects togther, and when we do
+so they are joined in the =idiom= of the effect type. So for example when
+combining a list with its default Monoid instance it will simply append the
+lists like this...
+
+#+BEGIN_SRC scala
+List(1,2,3) |+| List(4,5,6)
+// res: List[Int] = List(1, 2, 3, 4, 5, 6)
+#+END_SRC
+
+But if instead we bring into scope a monoid for List we get the applicative
+application instead...
+
+#+BEGIN_SRC scala
+implicit val m = appMonoid[Int, List]
+List(1,2,3) |+| List(4,5,6)
+// res: List[Int] = List(5, 6, 7, 6, 7, 8, 7, 8, 9)
+#+END_SRC
+
+**** Magical Folding with Traverse
+It does not work the other way around, but some types with Monoid instances can
+use those instances in their Applicative implementation. For example =Tuple2= in
+the Cats library does just that. The actual implementation is split into two
+because of the way the Cats class hierarchy is organized, so here's a simplified
+version where it is more clear what's going on...
+
+#+BEGIN_SRC scala
+implicit def appTuple2[X: Monoid] = new Applicative[Tuple2[X,?]] {
+  def pure[A](a: A): (X, A) = (Monoid[X].empty, a)
+
+  def ap[A, B](ff: (X, A => B))(fa: (X, A)): (X, B) = {
+    (ff._1.combine(fa._1),
+     ff._2(fa._2))
+  }
+}
+#+END_SRC
+
+You can see how the fact that Monoids have an empty (or zero) value is useful
+here because when we implement =pure= we need a value of type X to build the
+response but we only have an A. By using the ~Monoid.empty~ function we can
+fulfil the contract.
+
+The implementation of ~ap~ is also interesting. What happens is that the X values
+(which have a Monoid instance), are simply combined. The new value B is created
+by applying the function in ff to the value in fa and now we have our new
+Tuple2.
+
+Recall the function signature for traverse on a List...
+
+#+BEGIN_SRC scala
+def traverse[G[_]: Applicative, A, B](fa: List[A])(f: A => G[B]): G[List[B]]
+#+END_SRC
+
+The ~G~ in traverse is used to apply the function f to each element of our
+collection, and so when we traverse and use Tuple2 as our G, it will use that
+Monoid implementation we see above. Take a list and reducing it to a single
+value is called various names including folding, reducing, crushing. In Scala
+we'd typically fold a list of elements with a Monadic structure. We can now do
+the same thing with traverse.
+
+#+BEGIN_SRC scala
+Traverse[List].traverse(List[Int](1,2,3))((n: Int) => Tuple2(n,n))
+// res: (Int, List[Int]) = (6, List(1, 2, 3))
+#+END_SRC
+
+You can see that the resulting tuple consists of two things, the sum of the
+integers in the list (6) and second element is the list of results. That gives
+us the ability to transform a collection into a an aggregated (folded) value,
+and map it to a new collection at the same time!
+
+Now often you may want to just fold the values and you don't care about the
+other collection. In that case you could just drop it by calling ~._2~ on the
+result.
+
+There's a better way, and we can now move onto finding out about Phantom types
+and how they can help us here.
+**** Phantom types
+Now we can rejoin the paper. We are introduced the ~Accy~ type which is called
+~Const~ in Cats.
+
+#+BEGIN_SRC haskell
+newtype Accy o a = Acc{acc :: o }
+#+END_SRC
+
+In Scala the Const type can be implemented like this...
+
+#+BEGIN_SRC scala
+final case class MyConst[A,B](unConst: A)
+#+END_SRC
+
+If it helps, this is a type level version of a function that takes two
+parameters; an A and a B, and just drops the B returning the A...
+
+#+BEGIN_SRC scala
+def const[A, B](a: A)(b: => B): A = a
+#+END_SRC
+
+Const, or Accy, is a strange-looking data type that takes two type parameters,
+and in fact takes two values, but we only store the first. This is why the
+second parameter is called a ~phantom~. We can create a Const with any crazy
+type we want for the ~B~ parameter because it won't be used at all...
+
+#+BEGIN_SRC scala
+import com.oracle.webservices.internal.api.message.MessageContext
+Const[Int,MessageContext](12).getConst
+// res: Int = 12
+#+END_SRC
+
+So what use is Const? For one, we can create an applicative functor for it just
+like we did with Tuple, but now we can drop the pretense that we cared about the
+second value and just get the folded value, saving us CPU time and memory as the
+computation progresses...
+
+#+BEGIN_SRC scala
+Traverse[List].traverse(List(1,2,3,4,5))(a => Const[Int, String](a)).getConst
+// res: Int = 15
+#+END_SRC
+
+Let's convert the examples in the paper of using this technique into Scala...
+
+#+BEGIN_SRC haskell
+accumulate :: (Traversable t, Monoid o) ⇒ (a → o) → t a → o
+accumulate f = acc · traverse (Acc · f )
+reduce :: (Traversable t, Monoid o) ⇒ t o → o
+reduce = accumulate id
+#+END_SRC
+
+#+BEGIN_SRC scala
+def accumulate[A,F[_]: Traverse, B: Monoid](f: A => B)(fa: F[A]): B = {
+  Traverse[F].traverse(fa)((a: A) => Const.of[B](f(a))).getConst
+}
+def reduce[F[_]: Traverse, A: Monoid](fa: F[A]): A = {
+  Traverse[F].traverse(fa)((a: A) => Const.of[A](a)).getConst
+}
+// Accumulate
+println("accumulate: " + accumulate((s: String) => s.size)(List("ten", "twenty", "thirty")))
+// 15
+
+// Reduce
+println("reduce: " + reduce(List("ten", "twenty", "thirty")))
+// tentwentythirty
+#+END_SRC
+
+Note that we could implement reduce with accumulate as follows...
+
+#+BEGIN_SRC scala
+def reduceWithAccumulate[F[_]: Traverse, A: Monoid](fa: F[A]): A = {
+  accumulate[A, F, A](identity)(fa)
+}
+#+END_SRC
+
+We can also convert the following without much difficulty...
+
+#+BEGIN_SRC haskell
+flatten :: Tree a → [a ]
+flatten = accumulate (:[ ])
+concat :: [[a ]] → [a ]
+concat = reduce
+#+END_SRC
+
+Scala versions...
+
+#+BEGIN_SRC scala
+def treeFlatten[A](tree: Tree[A]): List[A] = {
+  accumulate((a: A) => List(a))(tree)
+}
+
+def concatLists[A](fa: List[List[A]]): List[A] = {
+  reduce(fa)
+}
+
+// Tree flattening
+println("treeFlatten: " + treeFlatten(tree1))
+// treeFlatten: List(10, 5, 10)
+
+// Concat lists (flatten)
+println("concatLists: " + concatLists(List(List(1,2,3), List(4,5,6))))
+// concatLists: List(1, 2, 3, 4, 5, 6)
+#+END_SRC
+
+The last thing in this section is an example of how to find if a an element in a
+list (or really anything we can Traverse) matches some predicate...
+
+#+BEGIN_SRC haskell
+newtype Mighty = Might{might :: Bool}
+
+instance Monoid Mighty where
+∅ = Might False
+Might x ⊕ Might y = Might (x ∨ y)
+
+any :: Traversable t ⇒ (a → Bool) → t a → Bool
+any p = might · accumulate (Might · p)
+#+END_SRC
+
+What's going on here is that we get a new type called Mighty which has a Monoid
+instance for it representing disjunction (boolean or). There is no default
+Monoid for boolean in Cats so we have to define one first.
+
+#+BEGIN_SRC scala
+implicit val mightyBoolean = new Monoid[Boolean] {
+  def empty = false
+  def combine(a: Boolean, b: Boolean) = a || b
+}
+
+Traverse[List].traverse(List(1,2,3,4,5))(a =>
+  if(a > 2) Const.of[Any](true)
+  else Const.of[Any](false))
+// res: Const[Boolean, List[Any]] = Const(true)
+
+Traverse[List].traverse(List(1,2,3,4,5))(a =>
+  if(a > 5) Const.of[Any](true)
+  else Const.of[Any](false))
+// res: Const[Boolean, List[Any]] = Const(false)
+#+END_SRC
+
+Instead of using boolean we can rely on the Integer addition boolean to count
+how many times a predicate is matched in a traversable structure...
+
+#+BEGIN_SRC scala
+Traverse[List].traverse(List(1,2,3,4,5))(a => if(a > 2) Const.of[Any](1) else Const.of[Any](0))
+// res: Const[Int, List[Any]] = Const(3)
+#+END_SRC
+
+*** Comparing Monad with Applicative
+We know that all Monads are Applicatives. Why? Because all Monads implement
+~pure~ and they can also implement ~ap~ as follows...
+
+#+BEGIN_SRC scala
+def ap[A, B](ff: List[A => B])(fa: List[A]) = {
+  ff.flatMap(f =>
+    fa.map(f))
+}
+#+END_SRC
+
+But all Applicatives are not Monads. For example you cannot implement flatMap
+for Const...
+
+#+BEGIN_SRC scala
+def flatMap[A,B](fa: MyConst[X,A])(f: A => MyConst[X,B]): MyConst[X,B] = {
+  val x = fa.unConst
+  val a = ???
+  // f(a)
+  ???
+}
+#+END_SRC
+
+We need an A to apply the function f, but there's no way to get one. Therefore
+Const is no Monad.
+
+#+BEGIN_QUOTE
+So now we know: there are strictly more Applicative functors than Monads. Should
+we just throw the Monad class away and use Applicative instead? Of course not! The
+reason there are fewer monads is just that the Monad structure is more powerful.
+#+END_QUOTE
+
+Next we contrast how Monad and Applicative differ in terms of a function called
+miffy (for doing a monadic if) and iffy (an applicative if)...
+
+#+BEGIN_SRC scala
+def miffy[A, F[_]: Monad](mb: F[Boolean], fa: F[A], fb: F[A]): F[A] = {
+  mb.flatMap{
+    b =>
+    if(b) fa
+    else fb
+  }
+}
+
+def iffy[A, F[_]: Applicative](mb: F[Boolean], fa: F[A], fb: F[A]): F[A] = {
+  Applicative[F].map3(mb, fa, fb){
+    case (cond, a, b) =>
+      if(cond) a else b
+  }
+}
+
+// miffy(Option(true), Option(1), None)
+// res: Option[Int] = Some(1)
+
+// iffy(Option(true), Option(1), None)
+// res: Option[Int] = None
+#+END_SRC
+
+Here you can see that whilst miffy will succeed if the input is true even though
+the else effect failed (it was None). But with the applicative version we have
+to evaluate all the effects first, and if one of them fails they all fail.
+
+#+BEGIN_QUOTE
+The moral is this: if you’ve got an Applicative functor, that’s good; if you’ve also
+got a Monad, that’s even better! And the dual of the moral is this: if you want a
+Monad, that’s good; if you only want an Applicative functor, that’s even better!
+#+END_QUOTE
+
+**** Composing Applicatives
+Not all Monads compose but all Applicatives do; /the Applicative class is closed
+under composition/.
+
+#+BEGIN_SRC haskell
+instance (Applicative f ,Applicative g) ⇒ Applicative (f ◦ g) where
+pure x = Comp J (pure x ) K
+Comp fs ~ Comp xs = Comp J (~) fs xs K
+#+END_SRC
+
+What does it mean to compose an Applicative? It means that we get the effects of
+both. For example we can use the full suite of Applicative functionality on a
+List of Options...
+
+#+BEGIN_SRC scala
+val x: List[Option[Int]] = List(10.some, 9.some, 8.some)
+val y: List[Option[Int]] = List(7.some, 6.some, 5.some)
+
+Applicative[List].compose[Option].map2(x, y)(_ + _)
+// List[Option[Int]] = List(Some(17), Some(16), Some(15),
+//   Some(16), Some(15), Some(14),
+//   Some(15), Some(14), Some(13))
+#+END_SRC
+
+**** Accumulating Exceptions
+In this section, it's noted that we could accumulate errors from computations
+using a type such as...
+
+#+BEGIN_SRC haskell
+data Except err a = OK a | Failed err
+#+END_SRC
+
+You may recognize this as Scala's ~Either~, which stores with an error or a
+success in its Left and Right sides.
+
+#+BEGIN_QUOTE
+This could be used to collect errors by using the list monoid (as in unpublished
+work by Duncan Coutts), or to summarise them in some way.
+#+END_QUOTE
+
+This is in fact exactly what we did when looking at the ~Validated~ type above.
+
+*** Applicative functors and Arrows
+In this section, the paper discusses ~arrows~ which have some similarities with
+the ~Applicative~ interface, but it's out of scope for purposes of this blog
+post. I may come back to it in a future post.
+
+*** Applicative functors, categorically
+We now see a different, but equivalent way to define the Applicative class. Take
+a look at this Haskell code...
+
+#+BEGIN_SRC haskell
+class Functor f ⇒ Monoidal f where
+unit :: f ()
+(*) :: f a → f b → f (a, b)
+#+END_SRC
+
+This means given a type f with a Functor instance, we can define the class
+~Monoidal~. ~unit~ is the same as pure, whilst the * function takes two effects
+and returns a new effect with the result tupled. This is implemented in Cats for
+Applicative's and known as ~product~.
+
+#+BEGIN_SRC scala
+Applicative[Option].product(Option(22),Option(20))
+// res: Option[(Int, Int)] = Some((22, 20))
+#+END_SRC
+
+Let's show that we can implement Applicative if we have the product function
+(assuming product is not implemented in terms of ap)...
+
+#+BEGIN_SRC scala
+override def ap[F[_], A, B](ff: F[A => B])(fa: F[A]) = {
+  product(ff,fa).map {
+    case (f, a) =>
+      f(a)
+  }
+}
+#+END_SRC
+
+Applicative can be implemented with ap and pure, or pure and product. We'll see
+another choice later. Next in this section is some category theory which I'll
+also skip for now, leaving only this quote for your interest...
+
+#+BEGIN_QUOTE
+Fans of category theory will recognise the above laws as the properties of a lax
+monoidal functor for the monoidal structure given by products.
+#+END_QUOTE
+
+**** We applied ourselves!
+That's the end of McBride and Patterson's paper; here are some conclusions they
+made...
+
+- Applicative Functors have been identified
+- They lie between Functor and Monad in power
+- Unlike Monads, Applicatives are closed under composition
+- Traverable Functors thread Applicative Applications and form a useful toolkit
+
+The paper ends with a great quote that is both positive about borrowing ideas
+from category theory...
+
+#+BEGIN_QUOTE
+The explosion of categorical structure in functional programming: monads,
+comonads, arrows and now applicative functors should not, we suggest, be a cause
+for alarm. Why should we not profit from whatever structure we can sniff out,
+abstract and re-use? The challenge is to avoid a chaotic proliferation of
+peculiar and incompatible notations.
+#+END_QUOTE
+
+Plug for idiom brackets was snipped.
+
+** Back to Ap
+So far in this post, we've seen lots of code that uses ap in various ways. We'll
+wrap it up with some implementation notes on the useful function ~map2~, and how
+we can arrive at needing the ~ap~ function to do so. Then we'll look at a
+practical example of using Applicative in image processing.
+
+Let's start with a problem. We have two functions that return IO's as
+output. We want to call a pure function that takes two values as input. In short
+we need map2...
+
+#+BEGIN_SRC scala
+case class User(email: String, name: String, blocked: Boolean)
+case class Account(email: String, balance: Long)
+
+def getUser(email: String) =
+  IO.sleep(10 seconds) *> IO(User("bob@gmail.com", "Bob Jones", false))
+
+def getAccount(email: String) =
+  IO.sleep(10 seconds) *> IO(Account("bob@gmail.com", 100))
+
+def goodStanding(user: User, account: Account): Boolean = {
+  user.blocked == false &&
+  account.balance >= 0
+}
+
+val email = "bob@gmail.com"
+
+val checkBob = Applicative[IO.Par].map2(
+  Par(getUser(email)),
+  Par(getAccount(email)))(goodStanding)
+
+println("run bank check: " + Par.unwrap(checkBob).unsafeRunSync)
+// run bank check: true
+#+END_SRC
+
+So this motivating example works, it runs the (simulated) slow network calls in
+parallel and passes them to our function. (Note that this example is using Cats
+Effect and in order to select Applicative rather than Monadic operation we need
+to wrap the IO in the Par wrapper and then unwrap it at the end).
+
+Given that map2 is a useful function how would we implement it? Just like we saw
+at the start of the paper, we can use flatMap and map to implement it quite
+easily...
+
+#+BEGIN_SRC scala
+def map2[A,B,C,F[_]: Monad](fa: F[A], fb: F[B])(f: (A,B) => C): F[C] =
+  fa.flatMap { a =>
+    fb.map(b => f(a,b))
+  }
+#+END_SRC
+
+That works fine, but sadly it requires that we complete fa before starting
+and we want to allow independent effects. So we can't use Monad's flatMap. Let's
+build the function without it...
+
+#+BEGIN_SRC scala
+def applicativeMap2[A,B,C,F[_]: Applicative](fa: F[A], fb: F[B])(f: (A,B) => C)
+    : F[C] = {
+  val ffb = fa.map {
+    a => (b: B) => f(a,b)
+  }
+  Applicative[F].ap(ffb)(fb)
+}
+#+END_SRC
+
+Obviously, there's no need to implement map2 because the Applicative instances
+already have it, but it helps understand further the motivation for ap. The
+value ~ffb~ is actually the result of currying the function ~f~. What we get
+back is of the form ~F[B => C]~. We can then call that function using
+Applicative's ~ap~ giving the correct response ~F[C]~.
+
+By successively currying we can use the same trick to write map3, map4 and so on.
+
+** Map2... does it blend?
+So far we've seen some interesting uses of Applicative; accumulating errors
+from network calls, managing multiple concurrent effects, transposing matrices,
+evaluating expressions. In 2019 I wrote a blog post about Comonads that used the
+coflatMap operation to do image processing. One of the takeaways from that post
+is that one of the great advantages of functional programming is composability.
+One thing I'd like to be able to do is to do operations on two images then blend
+them together. In my original code images are stored represented as a
+~FocusedGrid~ which is just an array of pixels and a focus point, which works
+nicely for the coflatMap. The blend operation just needs a function to average
+out the pixels and a map2...
+
+#+BEGIN_SRC scala
+def blend(a: (Int, Int, Int), b: (Int, Int, Int)): (Int, Int, Int) =
+  ((a._1 + b._1) / 2, (a._2 + b._2) / 2, (a._3 + b._3) / 2)
+
+val leftImage = originalImage2
+val rightImage = originalImage2.coflatMap(mirrorHorizontal)
+val upImage = originalImage2.coflatMap(mirrorVertical)
+val downImage = rightImage.coflatMap(mirrorVertical)
+
+val leftAndRight = Applicative[FocusedGrid].map2(leftImage, rightImage)(blend _)
+val upAndDown = Applicative[FocusedGrid].map2(upImage, downImage)(
+val finalImage = leftAndRight.map2(upAndDown)(blend _))
+#+END_SRC
+
+These few lines are all that is needed in user code to create the cows image at
+the top of this post. If you want to know what the coflatMap is all about please
+checkout my earlier post Comonads for Life or the related talk at Scale by the
+Bay 2020 [[https://youtu.be/kVnJtiN1dbk][A gentle introduction to comonads]].
+
+But in the background we also need to implement an Applicative instance for the
+FocusedGrid datatype. Let's start with pure...
+
+#+BEGIN_SRC scala
+def pure[A](a: A): FocusedGrid[A] = FocusedGrid((0,0), Vector(Vector(a)))
+#+END_SRC
+
+Just like with the pure function for a List Applicative (or Monad), all we do is
+lift a pure value into a FocusedGrid with a singe row and column.
+
+#+BEGIN_SRC scala
+def ap[A, B](ff: FocusedGrid[A => B])(fa: FocusedGrid[A]): FocusedGrid[B] = {
+  val newGrid = ff.grid.mapWithIndex {
+    (row, i) =>
+    row.zip(fa.grid(i)).map {
+      case (f, a) =>
+        f(a)
+    }
+  }
+  FocusedGrid(ff.focus, newGrid)
+}
+#+END_SRC
+
+Remember that with List we implemented an Applicative instance that took all the
+functions in the input list and applied them in turn to each element in the list
+of parameters. Ap for FocusedGrid iterates over a /grid of functions/ and
+applies them to the target row and column in the input parameter.
+
+Our work is done; with pure and ap implemented we now have a fully working
+Applicative instance and that means map2 will work.
+
+** Post-mature optimisation
+Most of the time, solving day to day business problems, we don't have to worry to
+much about performance, but when it comes to things like image processing when
+we are dealing with large numbers of pixels it can be more important to know
+what is going on under the hood, and when to step in and improve it. Profiling
+should be your guide, but if you look at the default implementation of map2 in
+Cats you can see that it is doing a lot of work that is not needed ...
+
+#+BEGIN_SRC scala
+map(product(fa, fb))(f.tupled)
+#+END_SRC
+
+And product is ...
+
+#+BEGIN_SRC scala
+ap(map(fa)(a => (b: B) => (a, b)))(fb)
+#+END_SRC
+
+So with a square image of size 2000 pixels (4 million total), to perform a map2
+we are going to map of the image twice; once to create an image of curried
+functions and a second time to apply them. In addition, we're going to create a
+lot temporary data that we don't need.
+
+Fortunately there's nothing to stop you from instead of using the default
+implementation of map2 we can implement our own...
+
+#+BEGIN_SRC scala
+override def map2[A, B, Z](fa: FocusedGrid[A], fb: FocusedGrid[B])(f: (A, B) => Z): FocusedGrid[Z] = {
+  val faRowIter = fa.grid.iterator
+  val fbRowIter = fb.grid.iterator
+  val rowBuilder = Vector.newBuilder[Vector[Z]]
+
+  while(faRowIter.hasNext && fbRowIter.hasNext) {
+    val faColIter = faRowIter.next.iterator
+    val fbColIter = fbRowIter.next.iterator
+    val colBuilder = Vector.newBuilder[Z]
+
+    while(faColIter.hasNext && fbColIter.hasNext) {
+      colBuilder.addOne(f(faColIter.next, fbColIter.next))
+    }
+    rowBuilder.addOne(colBuilder.result)
+  }
+  FocusedGrid(fa.focus, rowBuilder.result)
+}
+#+END_SRC
+
+Here we make a much more efficient implementation that instead of creating
+temporary data structures will use an iterator on each input grid and a Vector
+builder to efficiently build the output. This is maybe not /the/ fastest
+implementation but it's certainly doing a lot less work. Of course optimizing
+without profiling is a waste of time. I had heard that Array is much faster than
+Vector for this kind of use case, so the sample code also includes an Array
+implementation. The code is somewhat ugly due to some technical constraints
+around Array, and turned out not to be any faster!
+
+In any case, should you want to explore this further, the instructions are all
+in the accompanying code to do you run your own benchmarks using =jmh=.
+
+Here's the results from my own benchmarking...
+
+| Benchmark                           | Mode | Cnt |      Score | Error |      Units |       |
+|-------------------------------------+------+-----+------------+-------+------------+-------|
+| FocusedGridArrayBench.withMap2Large | avgt |   5 | 171099.587 | ±     |  65471.687 | us/op |
+| FocusedGridArrayBench.withMap2Small | avgt |   5 |     54.418 | ±     |     25.669 | us/op |
+| FocusedGridBench.withMap2Large      | avgt |   5 | 152831.655 | ±     |  40709.521 | us/op |
+| FocusedGridBench.withMap2Small      | avgt |   5 |     59.168 | ±     |     15.346 | us/op |
+| FocusedGridBench.withSlowApLarge    | avgt |   5 | 649442.291 | ±     | 215248.298 | us/op |
+| FocusedGridBench.withSlowApSmall    | avgt |   5 |    141.025 | ±     |     78.928 | us/op |
+
+
+What is notable that optimized map2 is 4x faster on the large image than slowAp
+and the array version is actually slower than the vector version. Just goes to
+show, if performance matters then always benchmark your original code and your
+solution to make sure your assumptions are correct. There's also a balance
+between opimised code keeping your code easy to read and reason about.
+
+** Conclusion
+You made it to the end! Congratulations, and I hope it made sense. Please feel
+free to contact me if you have any notes, corrections, improvements or
+suggestions!
+
+This post was going to be a five-minute thing but blew up into a monster and
+there are still things that I didn't get to. Some things I may visit in the
+future:
+- Composition - examples of composing Functors and Applicatives
+- Arrows
+- Laws of Applicatives (although they are covered nicely elsewhere)
+- Category theory (esp. of lax monoidal functors in more depth)
+
+** References
+*** Videos
+- [[https://youtu.be/yEYPf44rS2U][Oh, All the things you'll traverse by Luka Jacobowitz]]
+- [[https://youtu.be/sHV4qhbZHgo][When Everything Fits: The Beauty of Composition - Markus Hauck]]
+- [[https://youtu.be/kVnJtiN1dbk][Scale By The Bay 2019: Justin Heyes-Jones, A Gentle Introduction to Comonads]]
+*** Written word
+- [[https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf][Applicative Programming with Effects]] McBride, Patterson 2008
+- [[https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf][The Essence of the Iterator Pattern]] Gibbons, Bruno
+- [[https://pdfs.semanticscholar.org/7e66/7dd0515e4f674e42c0b0860644fee3dd5846.pdf][Do We Need Dependent Types?]] Fridlender
+- [[https://www.jhmcstanton.com/posts/blog/2019-09-23-read-a-paper-applicative-programming-with-effects.html][Read a Paper: Applicative Programming with Effects]]
+- [[https://typelevel.org/cats/typeclasses/applicative.html][Cats Applicative documentation]]
+- [[https://typelevel.org/cats/datatypes/const.html][Cats Const documentation]]
+- [[https://www.manning.com/books/functional-programming-in-scala][Functional Programming in Scala]] aka The Red Book
+- [[https://leanpub.com/fpmortals][Functional Programmers for Mortals]] aka The Blue Book
+*** Code
+- [[https://github.com/justinhj/applicatives][applicatives]] (Scala conversion from the paper and lots of Applicative stuff)
+- [[https://github.com/justinhj/comonad][comonad]] (Image processing example with new Applicative demo)
+- [[https://github.com/fosskers/scala-benchmarks][Scala Benchmarks]] (How to benchmark Scala by Colin Woodbury)
+- [[https://github.com/sammthomson/IdiomEars][Idiom Ears]] (Get those fancy ears in your applicative programming)
+- [[https://github.com/aztek/scala-workflow][Scala Workflow]] (A full on system for Monadic and Applicative programming)
+
+** Acknowledgements
+- Thank you to the welcoming members of the Scala community who generously share
+  their knowledge and libraries
+- Thank you to Hermann Hueck for his suggestions and improvements on this post
+
+\copy 2020 Justin Heyes-Jones. All Rights Reserved.
