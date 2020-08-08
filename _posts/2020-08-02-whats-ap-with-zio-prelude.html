@@ -207,8 +207,7 @@ order to do that with Cats we would use the Monad flatmap operation.
 <p>
 In prelude you would do the same, since nothing overrides flatMap from ZIO or
 the standard library, you can simply call flatMap, but you wouldn&rsquo;t be
-exercising the new prelude types. If you want to see how flatMap can be written
-stay tuned.
+exercising the new algebraic components that make up prelude, stay tuned.
 </p>
 
 <p>
@@ -249,13 +248,14 @@ flatMap, we <code>could</code> define it in terms of <code>Covariant</code> and 
 </div>
 
 <p>
-Monad also traditionally defines pure, a way to lift pure values into an effect
+Monad also traditionally defines <code>pure</code>, a way to lift pure values into an effect
 context. We can do that with Covariant&rsquo;s <code>map</code> and IdentityFlatten&rsquo;s <code>any</code>.
 <code>any</code> summons an effect out of thin air for us, and we can then use map to sneak
 our pure value into that effect. Whilst this seems a little tricky, it gives a
 bit more flexibility. As Adam Fraser puts it, this &ldquo;also allows you to express
 constraints on the types of values that can be injected through implementing
-CovariantSubset instead of Covariant&rdquo;.
+CovariantSubset instead of Covariant&rdquo;. Subsets were not featured in the
+talk so I look forward to hearing more about that feature.
 </p>
 
 <div class="org-src-container">
@@ -346,24 +346,55 @@ pure[<span style="color: #a9a1e1;">List</span>,<span style="color: #a9a1e1;">Str
 </div>
 </div>
 
-<div id="outline-container-orgcf16700" class="outline-2">
-<h2 id="orgcf16700">Sequence</h2>
-<div class="outline-text-2" id="text-orgcf16700">
+<div id="outline-container-org6dbf1c3" class="outline-2">
+<h2 id="org6dbf1c3">Sequence and Traverse</h2>
+<div class="outline-text-2" id="text-org6dbf1c3">
 <p>
 In the seminal paper Applicative programming with Effects, the first motivating
 example for applicative programming is the sequence function. You have a list of
 effects, specifically Haskell IO effects, and you would like to turn them into
 an IO[List[A]]. You might recognise this as having the same shape and purpose as
-Future.sequence from the Scala standard library.
+Future.sequence from the Scala standard library. sequence is built with its more
+powerful friend traverse.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a9a1e1;">Future</span>.sequence is a function <span style="color: #a9a1e1;">IterableOnce</span>[<span style="color: #a9a1e1;">Future</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Future</span>[<span style="color: #a9a1e1;">IterableOnce</span>[<span style="color: #a9a1e1;">A</span>]]
+<span style="color: #a9a1e1;">Future</span>.traverse is a function <span style="color: #a9a1e1;">IterableOnce</span>[<span style="color: #a9a1e1;">A</span>], <span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Future</span>[<span style="color: #a9a1e1;">B</span>] <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Future</span>[<span style="color: #a9a1e1;">IterableOnce</span>[<span style="color: #a9a1e1;">B</span>]]
+</pre>
+</div>
+
+<p>
+In Typelevel Cats, the Traverse typeclass makes this more flexible by allows us
+to traverse over any type that is a functor (you can map over it) and foldable
+(you can fold it with foldLeft, foldRight and fold).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">trait</span> <span style="color: #ECBE7B;">Traverse</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]] <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Functor</span>[<span style="color: #a9a1e1;">F</span>] <span style="color: #51afef;">with</span> <span style="color: #ECBE7B;">Foldable</span>[<span style="color: #a9a1e1;">F</span>] {
+ <span style="color: #51afef;">def</span> <span style="color: #c678dd;">traverse</span>[<span style="color: #a9a1e1;">G</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>, <span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])(f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">G</span>[<span style="color: #a9a1e1;">B</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">G</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">B</span>]]
+}
+</pre>
+</div>
+
+
+<p>
+What&rsquo;s interesting about Traverse is that it relies on a number of type classes
+to build its expressive power. Ultimately our little friend <code>ap</code> is the king pin
+of the whole thing, allowing us to combine the effects together as we fold in a
+way that is &ldquo;idiomatic&rdquo; to the effect type. When we traverse a list of Id for
+example (the identity monad) we get map, and when we traverse a list of Const,
+we get fold. In other words changing the data type is all we need to make
+drastically different programs.
 </p>
 
 <p>
-To demonstrate this sequence running let&rsquo;s write an implementation of a silly
+To demonstrate this in my applicative post, I wrote an implementation of a silly
 algorithm called Sleep Sort. Sleep Sort works by waiting an amount of time based
 on the value of the number. Emitting the numbers in this way sorts them
 (assuming your scheduler is accurate enough). Let&rsquo;s be clear, this is a stupid
-way to sort numbers, but it&rsquo;s handy as a way to illustrate our <code>monadicSequence</code>
-function.
+way to sort numbers, but it does represent some real world needs we have like
+being able to run effects in parallel.
 </p>
 
 <div class="org-src-container">
@@ -376,52 +407,29 @@ function.
     putStrLn(s<span style="color: #98be65;">"</span><span style="color: #dcaeea;">$s</span><span style="color: #98be65;">"</span>).delay(s.seconds) *&gt;
     <span style="color: #a9a1e1;">ZIO</span>.succeed(s)
 }
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">ios</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">NonEmptyList</span>(<span style="color: #da8548; font-weight: bold;">6</span>,<span style="color: #da8548; font-weight: bold;">5</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">8</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">7</span>).map(delayedPrintNumber)
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">ios: NonEmptyList[ZIO[Console with Clock,String,Int]]</span>
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">ios</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">6</span>,<span style="color: #da8548; font-weight: bold;">5</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">8</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">7</span>).map(delayedPrintNumber)
+<span style="color: #5B6268;">// </span><span style="color: #5B6268;">ios: List[ZIO[Console with Clock,String,Int]]</span>
 </pre>
 </div>
 
 <p>
-From my previous post you will know that we eventually get from sequence to a
-more generalised function, traverse, of which sequence is a special case. In
-prelude we also have traverse, and as you might guess, the operation of traverse
-depends on which prelude data types we pass to it.
+Using Cats we can use Traverse.sequence to flip the List[Zio] to ZIO[List] and
+then execute it.
 </p>
 
-<pre class="example">
-val runtime = Runtime.default
-runtime.unsafeRun(NonEmptyTraversable[NonEmptyList].flip1(ios))
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">import</span> cats.__
+<span style="color: #51afef;">import</span> cats.<span style="color: #a9a1e1;">Traverse</span>
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">runtime</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Runtime</span>.default
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">program</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(ios)
+runtime.unsafeRun(program)
 </pre>
+</div>
 
 <p>
-Questions: why is there no IdentityBoth for ZIO so I cannot traverse an empty
-list of ZIO.
-Why is there no way to do commutativeboth with NonEmptyTraversable?
-</p>
-
-<p>
-In Cats you can traverse an empty list of Cats Effect no problem.
-</p>
-
-
-
-
-<p>
-OLD STUFF
-</p>
-
-
-<p>
-The function creates an IO effect, which when run will immediately print a
-message and then wait <code>s</code> seconds before printing the number. We map the
-function across a list of numbers to generate a list of IO effects, which we can
-then run.
-</p>
-
-<p>
-You may be surprised that this does not work. Instead of running all the effects
-at once and printing them out in order it just executes the first IO (wait 6
-seconds), then the second (wait 5 seconds).
+Sadly we find this does not work because wanted all the effects to start at once
+and then complete at their alloted times, making the sort work. Instead we&rsquo;ll
+see each executed in sequence.
 </p>
 
 <pre class="example">
@@ -435,130 +443,19 @@ Preparing to say number in 5 seconds
 </pre>
 
 <p>
-If you were not surprised maybe you&rsquo;re ahead of me, and know that our
-<code>monadicSequence</code> function cannot possibly run all the effects at once by virtue
-of it being monadic in the first place.
+Happily thanks to the joys of Applicative we can fix this by changing the data
+type. If we rewrite using Cats Effect we wrap our IO into a different type
+called Par.IO which has a different implementation of applicative that does NOT
+sequence the IOs together but allows them to run in parallel, we can get the
+sleep sort behaviour. We didn&rsquo;t change the structure of our code, just the data
+type!
 </p>
 
 <p>
-That <code>for</code> comprehension is really hiding that we are calling flatMap on each
-successive IO, and flatMap sequences things together. You must wait for the
-result of the first effect before you can evaluate the second. So whilst the
-first implementation of <code>sequence</code> in the paper will absolutely work, it will
-not let us implement our sleep sort, nor let us parallelize the IO&rsquo;s in general.
-</p>
-
-<p>
-Back to the paper, at this point the authors observe&#x2026;
-</p>
-
-<blockquote>
-<p>
-In the (c : cs) case, we collect the values of some effectful computations, which we
-then use as the arguments to a pure function (:). We could avoid the need for names
-to wire these values through to their point of usage if we had a kind of ‘effectful
-application’.
-</p>
-</blockquote>
-
-<p>
-By effectful application they are talking about the <code>ap</code> function, and they go
-on to say that it lives in the Haskell Monad library. Given that function they
-rewrite the <code>sequence</code> function as follows&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">sequence</span> <span style="color: #dcaeea;">::</span> [<span style="color: #ECBE7B;">IO</span> a ] <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">IO</span> [a ]
-<span style="color: #c678dd;">sequence</span> [ ] <span style="color: #dcaeea;">=</span> return [ ]
-<span style="color: #c678dd;">sequence</span> (c <span style="color: #ECBE7B;">:</span> cs) <span style="color: #dcaeea;">=</span> return (<span style="color: #ECBE7B;">:</span>) &#8216;ap&#8216; c &#8216;ap&#8216; sequence cs
-</pre>
-</div>
-
-<blockquote>
-<p>
-Except for the noise of the returns and aps, this definition is in a fairly standard
-applicative style, even though effects are present.
-</p>
-</blockquote>
-
-<p>
-Note that the <code>ap</code> they are using here is in the Monad library, and implemented
-using flatMap, so it will not yet allow our sleep sort to work. However, I&rsquo;ve
-implemented an Applicative instance for ZIO which does not have that
-limitation&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">zioApplicative</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>] <span style="color: #51afef;">=</span> <span style="color: #51afef;">new</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,?]] {
-    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">pure</span>[<span style="color: #a9a1e1;">A</span>](x<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">ZIO</span>.succeed(x)
-    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">ap</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](ff<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>])(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=</span> {
-      map2(ff, fa){
-        (f,a) <span style="color: #51afef;">=&gt;</span>
-          f(a)
-      }
-    }
-    <span style="color: #c678dd;">override</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">map2</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">C</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">A</span>], fb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">B</span>])(f<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">C</span>) <span style="color: #51afef;">:</span>
-      <span style="color: #a9a1e1;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">C</span>] <span style="color: #51afef;">=</span> {
-        fa.zipPar(fb).map{<span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">a</span>,<span style="color: #dcaeea;">b</span>) <span style="color: #51afef;">=&gt;</span> f(a,b)}
-    }
-  }
-</pre>
-</div>
-
-<p>
-It&rsquo;s not important to understand all the details here, all you need understand
-is we now have an <code>ap</code> that we can apply to ZIO effects that is truly parallel,
-so if you&rsquo;re not interested then skip to the next paragraph.
-</p>
-
-<div class="aside">
-<p>
-The <code>pure</code> function is straightforward, it just wraps a pure value in a
-succeeded ZIO. The <code>ap</code> function is more interesting. Whilst it&rsquo;s not obvious
-how you would implement ap in for ZIO, it is really easy to implement <code>map2</code>.
-<code>map2</code> comes in handy because it lets you take the results of two effects and
-pass them to a pure function. The function has the signature <code>f: (A, B) =&gt; C</code>.
-We use the ZIO function <code>zipPar</code> to execute the two effects <span class="underline">in parallel</span>, and
-if both <code>fa</code> and <code>fb</code> yield values then they are mapped with the pure function
-giving us a ZIO with the final result inside. Happily, you can implement ap in
-terms of map2, so that solves our problem.
-</p>
-
-</div>
-
-<p>
-Here&rsquo;s the conversion of the applicative version of <code>sequence</code> to Scala&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">applicativeSequence</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>,<span style="color: #a9a1e1;">A</span>](ios<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>, <span style="color: #a9a1e1;">E</span>, <span style="color: #a9a1e1;">A</span>]])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>, <span style="color: #a9a1e1;">E</span>, <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=</span> {
-    ios <span style="color: #51afef;">match</span> {
-      <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">Nil</span> <span style="color: #51afef;">=&gt;</span>
-        <span style="color: #a9a1e1;">ZIO</span>.succeed(<span style="color: #a9a1e1;">List</span>.empty[<span style="color: #a9a1e1;">A</span>])
-      <span style="color: #51afef;">case</span> <span style="color: #dcaeea;">c</span> <span style="color: #ECBE7B;">::</span> <span style="color: #dcaeea;">cs</span> <span style="color: #51afef;">=&gt;</span>
-        <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">ff</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">ZIO</span>[<span style="color: #a9a1e1;">Z</span>,<span style="color: #a9a1e1;">E</span>, <span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> (<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>])] <span style="color: #51afef;">=</span>
-          zioApplicative.pure(((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> (listA<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=&gt;</span> a +: listA))
-        <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">p1</span> <span style="color: #51afef;">=</span> ff.ap(c)
-        p1.ap(applicativeSequence(cs))
-    }
-  }
-</pre>
-</div>
-
-<p>
-It&rsquo;s a little bit noisier than the Haskell code, but most of that is having to
-be more verbose about the types to keep the type checker happy. In fact the
-parts of each implementation match up together.
-</p>
-
-<p>
-Now we can run that and you will see that the effects are now parellelised and
-our sleep sort works!
+Now all of the effects started at the same time and ran in parallel.
 </p>
 
 <pre class="example">
-Applicative version
-
 Preparing to say number in 6 seconds
 Preparing to say number in 2 seconds
 Preparing to say number in 1 seconds
@@ -576,1455 +473,17 @@ Preparing to say number in 5 seconds
 7
 8
 </pre>
-
-<p>
-Note that the point the authors were making here was just to show that the
-<code>sequence</code> function is a pattern that came up often, that could be more
-succinctly expressed with <code>ap</code>. Showing that it also enables our effects to run
-in parallel, given the correct implementation, was just to show one of the
-benefits of avoiding Monad when effects are not dependent on each other.
-</p>
-</div>
-
-<div id="outline-container-orgda9ea3a" class="outline-4">
-<h4 id="orgda9ea3a">Matrix Transposition</h4>
-<div class="outline-text-4" id="text-orgda9ea3a">
-<p>
-The second example in the paper is that of Matrix transposition, which takes a
-matrix and flips it along a diagonal. For example&#x2026;
-</p>
-
-<pre class="example">
-Original matrix
- 1  2  3  4  5
- 6  7  8  9 10
-11 12 13 14 15
-
-Transposed matrix
- 1  6 11
- 2  7 12
- 3  8 13
- 4  9 14
- 5 10 15
-</pre>
-
-<p>
-In Haskell, we first see this implememtation of transpose&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">transpose</span> <span style="color: #dcaeea;">::</span> [[a ]] <span style="color: #dcaeea;">&#8594;</span> [[a ]]
-<span style="color: #c678dd;">transpose</span> [ ] <span style="color: #dcaeea;">=</span> repeat [ ]
-<span style="color: #c678dd;">transpose</span> (xs <span style="color: #ECBE7B;">:</span> xss) <span style="color: #dcaeea;">=</span> zipWith (<span style="color: #ECBE7B;">:</span>) xs (transpose xss)
-
-<span style="color: #c678dd;">repeat</span> <span style="color: #dcaeea;">::</span> a <span style="color: #dcaeea;">&#8594;</span> [a ]
-<span style="color: #c678dd;">repeat</span> x <span style="color: #dcaeea;">=</span> x <span style="color: #ECBE7B;">:</span> repeat x
-</pre>
-</div>
-
-<p>
-Let&rsquo;s translate this to Scala. The algorithm works by taking each row in turn
-and <i>zipping</i> it with each subsequent row.
-</p>
-
-<p>
-First, we need to be careful about the function <code>repeat</code> which returns an
-infinite number of whatever x is. This is used in the transpose for the last row
-of the matrix where we want a number of empty lists to finish our recursion but
-we don&rsquo;t know how many, so we want to just keep taking them. Since Haskell is by
-default lazily evaluated this will work fine. In Scala as soon as we evaluate
-repeat we will run into an infinite loop. That&rsquo;s easily fixed by switching to
-<code>LazyList</code> which is part of the standard library. (Before Scala 2.13 it was
-called Stream).
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">repeat</span>[<span style="color: #a9a1e1;">A</span>](a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> a #:: repeat(a)
-</pre>
-</div>
-
-<p>
-The function <code>zipWith</code> has the following type signature&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">zipWith</span> <span style="color: #dcaeea;">::</span> (a <span style="color: #dcaeea;">-&gt;</span> b <span style="color: #dcaeea;">-&gt;</span> c) <span style="color: #dcaeea;">-&gt;</span> [a] <span style="color: #dcaeea;">-&gt;</span> [b] <span style="color: #dcaeea;">-&gt;</span> [c]
-</pre>
-</div>
-
-<p>
-In other words, it takes two lists and a pure function of two arguments, and
-creates a new list by applying the function to each element. It will stop once
-it runs out of elements in one of the lists. Here&rsquo;s the Scala version.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">zipWith</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">C</span>](as<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">A</span>], bs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">B</span>])(
-      f<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">C</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">C</span>] <span style="color: #51afef;">=</span> {
-    as.zip(bs).map { <span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">a</span>, <span style="color: #dcaeea;">b</span>) <span style="color: #51afef;">=&gt;</span> f(a, b) }
-  }
-</pre>
-</div>
-
-<p>
-With the pieces in place I can now implement the transpose as follows&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">transpose</span>[<span style="color: #a9a1e1;">A</span>](matrix<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">LazyList</span>[<span style="color: #a9a1e1;">A</span>]])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">LazyList</span>[<span style="color: #a9a1e1;">LazyList</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=</span> {
-  matrix <span style="color: #51afef;">match</span> {
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">LazyList</span>() <span style="color: #51afef;">=&gt;</span> repeat(<span style="color: #a9a1e1;">LazyList</span>.empty)
-    <span style="color: #51afef;">case</span> <span style="color: #dcaeea;">xs</span> <span style="color: #ECBE7B;">#::</span> <span style="color: #dcaeea;">xss</span> <span style="color: #51afef;">=&gt;</span>
-      zipWith(xs, transpose(xss)) {
-        <span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">a</span>, <span style="color: #dcaeea;">as</span>) <span style="color: #51afef;">=&gt;</span>
-          a +: as
-      }
-  }
-}
-</pre>
-</div>
-
-<p>
-The next step in the paper is to make this look a bit more <i>applicative</i> by
-using a combination of <code>repeat</code> and <code>zapp</code>&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">zapp</span> <span style="color: #dcaeea;">::</span> [a <span style="color: #dcaeea;">&#8594;</span> b ] <span style="color: #dcaeea;">&#8594;</span> [a ] <span style="color: #dcaeea;">&#8594;</span> [b ]
-<span style="color: #c678dd;">zapp</span> (f <span style="color: #ECBE7B;">:</span> fs) (x <span style="color: #ECBE7B;">:</span> xs) <span style="color: #dcaeea;">=</span> f x <span style="color: #ECBE7B;">:</span> zapp fs xs
-<span style="color: #c678dd;">zapp</span> <span style="color: #dcaeea;">=</span> [ ]
-
-<span style="color: #c678dd;">transpose</span> <span style="color: #dcaeea;">::</span> [[a ]] <span style="color: #dcaeea;">&#8594;</span> [[a ]]
-<span style="color: #c678dd;">transpose</span> [ ] <span style="color: #dcaeea;">=</span> repeat [ ]
-<span style="color: #c678dd;">transpose</span> (xs <span style="color: #ECBE7B;">:</span> xss) <span style="color: #dcaeea;">=</span> repeat (<span style="color: #ECBE7B;">:</span>) &#8216;zapp&#8216; xs &#8216;zapp&#8216; transpose xss
-</pre>
-</div>
-
-<blockquote>
-<p>
-Except for the noise of the repeats and zapps, this definition is in a fairly standard
-applicative style, even though we are working with vectors.
-</p>
-</blockquote>
-</div>
-</div>
-
-<div id="outline-container-org653de6c" class="outline-4">
-<h4 id="org653de6c">Evaluating Expressions</h4>
-<div class="outline-text-4" id="text-org653de6c">
-<p>
-The third example of applicative style is an expression evaluator that can add
-numbers, both literals and numbers bound to strings and stored in an environment.
-</p>
-
-<blockquote>
-<p>
-When implementing an evaluator for a language of expressions, it is customary to
-pass around an environment, giving values to the free variables.
-</p>
-</blockquote>
-
-<p>
-The Haskell code looks like this&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #51afef;">data</span> <span style="color: #ECBE7B;">Exp</span> v <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Var</span> v
-  <span style="color: #dcaeea;">|</span> <span style="color: #ECBE7B;">Val</span> <span style="color: #ECBE7B;">Int</span>
-  <span style="color: #dcaeea;">|</span> <span style="color: #ECBE7B;">Add</span> (<span style="color: #ECBE7B;">Exp</span> v) (<span style="color: #ECBE7B;">Exp</span> v)
-
-<span style="color: #c678dd;">eval</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Exp</span> v <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Env</span> v <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Int</span>
-<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Var</span> x ) &#947; <span style="color: #dcaeea;">=</span> fetch x &#947;
-<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Val</span> i) &#947; <span style="color: #dcaeea;">=</span> i
-<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Add</span> p q) &#947; <span style="color: #dcaeea;">=</span> eval p &#947; <span style="color: #dcaeea;">+</span> eval q &#947;
-</pre>
-</div>
-
-<p>
-Converting to Scala is straightforward&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">sealed</span> <span style="color: #51afef;">trait</span> <span style="color: #ECBE7B;">Exp</span>
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Val</span>(value<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Add</span>(left<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, right<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Var</span>(key<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
-
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Env</span>[<span style="color: #a9a1e1;">K</span>](kv<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Map</span>[<span style="color: #a9a1e1;">K</span>,<span style="color: #a9a1e1;">Int</span>])
-
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">fetch</span>(key<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>)(env<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>[<span style="color: #a9a1e1;">String</span>]) <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span> <span style="color: #51afef;">=</span>
-  env.kv.getOrElse(key, <span style="color: #da8548; font-weight: bold;">0</span>)
-
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">eval</span>(exp<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, env<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>[<span style="color: #a9a1e1;">String</span>]) <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span> <span style="color: #51afef;">=</span> {
-  exp <span style="color: #51afef;">match</span> {
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Val</span>(<span style="color: #dcaeea;">value</span>) <span style="color: #51afef;">=&gt;</span> value
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Var</span>(<span style="color: #dcaeea;">key</span>) <span style="color: #51afef;">=&gt;</span> fetch(key)(env)
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Add</span>(<span style="color: #dcaeea;">left</span>, <span style="color: #dcaeea;">right</span>) <span style="color: #51afef;">=&gt;</span>
-      eval(left, env) + eval(right, env)
-  }
-}
-</pre>
-</div>
-
-<p>
-Here I&rsquo;ve made the environment a simple key value store, and, to avoid
-complicating the example with error handling, if a variable is not present in
-the environment I just default to returning zero.
-</p>
-
-<p>
-Following the pattern of the previous two examples, the authors then pull some
-magic to make the applicative pattern more noticeable&#x2026;
-</p>
-
-<blockquote>
-<p>
-We can eliminate the clutter of the explicitly threaded environment with a little
-help from some very old friends, designed for this purpose
-</p>
-</blockquote>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">eval</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Exp</span> v <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Env</span> v <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Int</span>
-<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Var</span> x ) <span style="color: #dcaeea;">=</span> fetch x
-<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Val</span> i) <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">K</span> i
-<span style="color: #c678dd;">eval</span> (<span style="color: #ECBE7B;">Add</span> p q) <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">K</span> (<span style="color: #dcaeea;">+</span>) &#8216;<span style="color: #ECBE7B;">S</span>&#8216; eval p &#8216;<span style="color: #ECBE7B;">S</span>&#8216; eval q
-
-<span style="color: #51afef;">where</span>
-<span style="color: #ECBE7B;">K</span> <span style="color: #dcaeea;">::</span> a <span style="color: #dcaeea;">&#8594;</span> env <span style="color: #dcaeea;">&#8594;</span> a
-<span style="color: #ECBE7B;">K</span> x &#947; <span style="color: #dcaeea;">=</span> x
-
-<span style="color: #ECBE7B;">S</span> <span style="color: #dcaeea;">::</span> (env <span style="color: #dcaeea;">&#8594;</span> a <span style="color: #dcaeea;">&#8594;</span> b) <span style="color: #dcaeea;">&#8594;</span> (env <span style="color: #dcaeea;">&#8594;</span> a) <span style="color: #dcaeea;">&#8594;</span> (env <span style="color: #dcaeea;">&#8594;</span> b)
-<span style="color: #ECBE7B;">S</span> ef es &#947; <span style="color: #dcaeea;">=</span> (ef &#947;) (es &#947;)
-</pre>
-</div>
-
-<p>
-So this all looks a bit cryptic. Who are the old friends? Well, if you look at
-the type signature of <code>K</code> it is actually the <code>pure</code> function, and <code>S</code>
-is the <code>ap</code> function. This is in fact what we&rsquo;d call the <code>Reader</code> Monad in
-Scala.
-</p>
-
-<p>
-By old friends, the authors are referring to the <a href="https://en.wikipedia.org/wiki/SKI_combinator_calculus">SKI Combinator Calculus</a>.
-</p>
-
-<p>
-Let&rsquo;s reimplement in Scala using the <code>Reader</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">fetchR</span>(key<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Reader</span>[<span style="color: #a9a1e1;">Map</span>[<span style="color: #a9a1e1;">String</span>,<span style="color: #a9a1e1;">Int</span>], <span style="color: #a9a1e1;">Int</span>](env <span style="color: #51afef;">=&gt;</span> env.getOrElse(key, <span style="color: #da8548; font-weight: bold;">0</span>))
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">pureR</span>(value<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Reader</span>[<span style="color: #a9a1e1;">Map</span>[<span style="color: #a9a1e1;">String</span>,<span style="color: #a9a1e1;">Int</span>], <span style="color: #a9a1e1;">Int</span>](env <span style="color: #51afef;">=&gt;</span> value)
-
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">evalR</span>(exp<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Reader</span>[<span style="color: #a9a1e1;">Map</span>[<span style="color: #a9a1e1;">String</span>,<span style="color: #a9a1e1;">Int</span>], <span style="color: #a9a1e1;">Int</span>] <span style="color: #51afef;">=</span> {
-  exp <span style="color: #51afef;">match</span> {
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Val</span>(<span style="color: #dcaeea;">value</span>) <span style="color: #51afef;">=&gt;</span> pureR(value)
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Var</span>(<span style="color: #dcaeea;">key</span>) <span style="color: #51afef;">=&gt;</span> fetchR(key)
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Add</span>(<span style="color: #dcaeea;">left</span>, <span style="color: #dcaeea;">right</span>) <span style="color: #51afef;">=&gt;</span>
-      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">f</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Reader</span>((env<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Map</span>[<span style="color: #a9a1e1;">String</span>,<span style="color: #a9a1e1;">Int</span>]) <span style="color: #51afef;">=&gt;</span>
-        (a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> (b<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + b)
-      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">leftEval</span> <span style="color: #51afef;">=</span> evalR(left).ap(f)
-      evalR(right).ap(leftEval)
-  }
-}
-</pre>
-</div>
-
-<p>
-And take it for a test drive&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">env1</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Env</span>(<span style="color: #a9a1e1;">Map</span>(<span style="color: #98be65;">"x"</span> -&gt; <span style="color: #da8548; font-weight: bold;">3</span>, <span style="color: #98be65;">"y"</span> -&gt; <span style="color: #da8548; font-weight: bold;">10</span>))
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">exp1</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Add</span>(<span style="color: #a9a1e1;">Val</span>(<span style="color: #da8548; font-weight: bold;">10</span>), <span style="color: #a9a1e1;">Add</span>(<span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"x"</span>), <span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"y"</span>)))
-
-println(s<span style="color: #98be65;">"Eval : </span><span style="color: #dcaeea;">${eval(exp1, env1)}</span><span style="color: #98be65;">"</span>)
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Eval : 23</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org599fc72" class="outline-3">
-<h3 id="org599fc72">The Applicative Type class</h3>
-<div class="outline-text-3" id="text-org599fc72">
-<p>
-To summarize, we&rsquo;ve seen three different effects used in applicative style; IO
-(or ZIO), List and Reader. Now you can see why it makes sense to be able to
-apply a function that is wrapped in these effects. What we needed, and got with
-<code>ap</code>, is a way to lift a pure function so we can apply it to a chain of effects
-of the same effect type.
-</p>
-
-<p>
-Next in the paper, the authors describe the laws which an instance of the
-Applicative type class must adhere to, which is out of scope for this post but
-is put succinctly in English as follows&#x2026;
-</p>
-
-<blockquote>
-<p>
-The idea is that pure embeds pure computations into the pure fragment of an
-effectful world—the resulting computations may thus be shunted around freely, as
-long as the order of the genuinely effectful computations is preserved.
-</p>
-</blockquote>
-
-<p>
-For more detail on the applicative laws check out chapter 12, section 5 of <a href="https://livebook.manning.com/book/functional-programming-in-scala/chapter-12/80">The Red Book</a>
-</p>
-
-<p>
-<i>Applicatives are all Functors</i> (hence the name Applicative Functors), because
-you can implement the map operation as follows&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #5B6268;">// </span><span style="color: #5B6268;">Declare map in terms of pure and ap</span>
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">map</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>,<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>], f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">B</span>] <span style="color: #51afef;">=</span> {
-  <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">F</span>].pure(f).ap(fa)
-}
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Map a function over a list</span>
-map(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>), (a<span style="color: #51afef;">:</span><span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a + <span style="color: #da8548; font-weight: bold;">1</span>)
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Int] = List(2, 3, 4, 5, 6)</span>
-</pre>
-</div>
-
-<p>
-Note that you don&rsquo;t have to do this with Cats instances because all
-Applicatives have their Functor instance taken care of too.
-</p>
-
-<p>
-The paper then notes that all uses of Applicatives follow this pattern of
-lifting a pure function and applying it to a chain of effects, and suggests a
-new syntax for shifting into the <i>Idiom</i> of the applicative functor. The syntax
-is a special pair of brackets&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">[[ ff f1 f2 f3 <span style="color: #dcaeea;">...</span> fn ]]
-</pre>
-</div>
-
-<p>
-Although this has not been widely adopted in either Haskell or Scala as far as I
-can tell, you can try it yourself using this delightfully named (and
-implemented) Scala library: <a href="https://github.com/sammthomson/IdiomEars">Idiom Ears</a>. This will let you closely match the
-syntax from the paper; for example&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">f</span> <span style="color: #51afef;">=</span> (a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> (b<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> a * b
-&#8847;| (f) (<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>, <span style="color: #da8548; font-weight: bold;">2</span>)) (<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">3</span>, <span style="color: #da8548; font-weight: bold;">4</span>)) |&#8848;
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">List(3, 4, 6, 8)</span>
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Which is equivalent to</span>
-<span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">List</span>].pure(f).ap(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>)).ap(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>))
-</pre>
-</div>
-
-<p>
-If you do fall in love with the idiom brackets of McBride and Patterson then
-knock yourself out, but you may have to invest some time bringing the project
-back to life as it has suffered some bitrot since 2016. There is a demo of
-IdiomEars in the Github repository accompanying this post, but I simply copied
-the code into my project rather than spend time updating it.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org982dab0" class="outline-3">
-<h3 id="org982dab0">Moving right along to Traverse</h3>
-<div class="outline-text-3" id="text-org982dab0">
-<blockquote>
-<p>
-Have you noticed that sequence and transpose now look rather alike? The details
-that distinguish the two programs are inferred by the compiler from their types.
-Both are instances of the applicative distributor for lists.
-</p>
-</blockquote>
-
-<p>
-At this point in the paper we have seen the birth of the Applicative type class
-which encapsulates the <code>ap</code> and <code>pure</code> functions needed to implement the
-patterns above. Next, the authors describe another new type class, <code>Traverse</code>,
-which lets us generalize the pattern further&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">dist</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Applicative</span> f <span style="color: #dcaeea;">&#8658;</span> [f a ] <span style="color: #dcaeea;">&#8594;</span> f [a ]
-<span style="color: #c678dd;">dist</span> [ ] <span style="color: #dcaeea;">=</span> <span style="color: #dcaeea;">&#8847;|</span> [ ] <span style="color: #dcaeea;">|&#8848;</span>
-<span style="color: #c678dd;">dist</span> (v <span style="color: #ECBE7B;">:</span> vs) <span style="color: #dcaeea;">=</span> <span style="color: #dcaeea;">&#8847;|</span> (<span style="color: #ECBE7B;">:</span>) v (dist vs) <span style="color: #dcaeea;">|&#8848;</span>
-</pre>
-</div>
-
-<p>
-Note that I&rsquo;m using the unicode from Idiom Ears to replace the fancy brackets
-from the paper which I cannot reproduce here, but you get the idea. Let&rsquo;s
-rewrite in Scala&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #5B6268;">// </span><span style="color: #5B6268;">applicative distributor for lists</span>
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">dist</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]](fs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">A</span>]])(<span style="color: #c678dd;">implicit</span> app<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">F</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=</span> {
-  fs <span style="color: #51afef;">match</span> {
-    <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">Nil</span> <span style="color: #51afef;">=&gt;</span>
-      app.pure(<span style="color: #a9a1e1;">List</span>.empty[<span style="color: #a9a1e1;">A</span>])
-    <span style="color: #51afef;">case</span> <span style="color: #dcaeea;">c</span> <span style="color: #ECBE7B;">::</span> <span style="color: #dcaeea;">cs</span> <span style="color: #51afef;">=&gt;</span>
-      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w1</span> <span style="color: #51afef;">=</span> app.pure((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> (listA<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=&gt;</span> a +: listA)
-      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w2</span> <span style="color: #51afef;">=</span> w1.ap(c)
-      w2.ap(dist(cs))
-  }
-}
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">dist a list of options</span>
-println(dist(<span style="color: #a9a1e1;">List</span>(<span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">10</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">10</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">3</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">4</span>))))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Some(List(10, 10, 3, 4))</span>
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Note that we have short circuiting</span>
-println(dist(<span style="color: #a9a1e1;">List</span>(<span style="color: #a9a1e1;">None</span>, <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">10</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">3</span>), <span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">4</span>))))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">None</span>
-</pre>
-</div>
-
-<p>
-Note that this short-circuits. We fail as soon as a single <code>None</code> shows up. Why?
-It&rsquo;s because although applicative allows us to avoid the enforced sequencing of
-Monad&rsquo;s flatMap, many types have instances of <code>ap</code> implemented in terms of
-flatMap anyway, because that matches the expectation of users for that type.
-</p>
-
-<p>
-We could override the Cats instance for Option with our own. What we do instead
-is create Applicative versions of type classes. For example, our monadic friend
-Either (which represents an error or a success value) has an applicative
-alter-ego <code>Validated</code>. Rather than short-circuit on failure, Validated allows us
-to accumulate errors so we can provide valuable feeback ot the caller. That is one
-of the super-powers of Applicatives!
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">someValidateds</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">Validated</span>[<span style="color: #a9a1e1;">NonEmptyList</span>[<span style="color: #a9a1e1;">String</span>],<span style="color: #a9a1e1;">Int</span>]] <span style="color: #51afef;">=</span>
-  (<span style="color: #a9a1e1;">List</span>(<span style="color: #98be65;">"Had some error"</span>.invalidNel, <span style="color: #da8548; font-weight: bold;">10</span>.valid, <span style="color: #98be65;">"Another error"</span>.invalidNel, <span style="color: #da8548; font-weight: bold;">4</span>.valid))
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Try the same with Validated that has an Applicative instance</span>
-println(<span style="color: #98be65;">"Validated failure example: "</span> + dist(someValidateds))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Validated failure example: Invalid(NonEmptyList(Had some error, Another error))</span>
-</pre>
-</div>
-
-<p>
-Just by changing data types we have completely changed the behaviour from
-short-circuiting to being able to <i>accumulate the errors</i>. Just imagine that these
-are expensive computations or slow network calls, and you can see how avoiding
-sequencing can really save us in computing costs, and thereby save us money.
-Furthermore, we can improve user experience. We can validate a whole form from
-the user at once and send all the corrections needed rather than necessitate a
-painful back and forth until the whole form is valid. Now get back to <code>dist</code>.
-</p>
-
-<blockquote>
-<p>
-Distribution is often used together with ‘map’.
-</p>
-</blockquote>
-
-<p>
-Fair enough. The <code>dist</code> function we developed above would be enhanced in
-usefulness if it could map a list of pure values into some effect type first.
-Let&rsquo;s take a look at a poor way to implement that&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">flakyMap</span> <span style="color: #dcaeea;">::</span> (a <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Maybe</span> b) <span style="color: #dcaeea;">&#8594;</span> [a ] <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Maybe</span> [b ]
-<span style="color: #c678dd;">flakyMap</span> f ss <span style="color: #dcaeea;">=</span> dist (fmap f ss)
-</pre>
-</div>
-
-<p>
-We can translate pretty much directly to Scala&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">flakyMap</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Option</span>[<span style="color: #a9a1e1;">B</span>], as<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Option</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">B</span>]] <span style="color: #51afef;">=</span> {
-  dist(as.map(f))
-}
-
-println(<span style="color: #98be65;">"Flakymap success: "</span> + flakyMap((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Option</span>(n * <span style="color: #da8548; font-weight: bold;">2</span>), <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>)))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Flakymap success: Some(List(2, 4, 6))</span>
-println(<span style="color: #98be65;">"Flakymap failure: "</span> + flakyMap((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #51afef;">if</span>(n%<span style="color: #da8548; font-weight: bold;">2</span>==<span style="color: #da8548; font-weight: bold;">1</span>) <span style="color: #a9a1e1;">Some</span>(n) <span style="color: #51afef;">else</span> <span style="color: #a9a1e1;">None</span>, <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>)))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Flakymap failure: None</span>
-</pre>
-</div>
-
-<p>
-That&rsquo;s clearly useful, and it works, but it&rsquo;s flaky because we have to process
-the list twice. First we map over the list to transform it, then we do it again
-with the dist function. How about we do both at once? That&rsquo;s <code>Traverse</code>&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">traverse</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Applicative</span> f <span style="color: #dcaeea;">&#8658;</span> (a <span style="color: #dcaeea;">&#8594;</span> f b) <span style="color: #dcaeea;">&#8594;</span> [a ] <span style="color: #dcaeea;">&#8594;</span> f [b ]
-<span style="color: #c678dd;">traverse</span> f [ ] <span style="color: #dcaeea;">=</span> <span style="color: #dcaeea;">&#8847;|</span> [ ] <span style="color: #dcaeea;">|&#8848;</span>
-<span style="color: #c678dd;">traverse</span> f (x <span style="color: #ECBE7B;">:</span> xs) <span style="color: #dcaeea;">=</span> <span style="color: #dcaeea;">&#8847;|</span> (<span style="color: #ECBE7B;">:</span>) (f x ) (traverse f xs) <span style="color: #dcaeea;">|&#8848;</span>
-</pre>
-</div>
-
-<p>
-And a Scala version&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">listTraverse</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">B</span>], fs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>])
-     (<span style="color: #c678dd;">implicit</span> app<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">F</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">B</span>]] <span style="color: #51afef;">=</span> {
-  fs <span style="color: #51afef;">match</span> {
-    <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">Nil</span> <span style="color: #51afef;">=&gt;</span>
-      app.pure(<span style="color: #a9a1e1;">List</span>.empty[<span style="color: #a9a1e1;">B</span>])
-    <span style="color: #51afef;">case</span> <span style="color: #dcaeea;">c</span> <span style="color: #ECBE7B;">::</span> <span style="color: #dcaeea;">cs</span> <span style="color: #51afef;">=&gt;</span>
-      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w1</span> <span style="color: #51afef;">=</span> app.pure((b<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span>) <span style="color: #51afef;">=&gt;</span> (listB<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">B</span>]) <span style="color: #51afef;">=&gt;</span> b +: listB)
-      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w2</span> <span style="color: #51afef;">=</span> w1.ap(f(c))
-      w2.ap(listTraverse(f, cs))
-  }
-}
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Output is the same as flakyMap</span>
-</pre>
-</div>
-
-<p>
-By providing the identity function for <code>f</code> we get the <code>sequence</code> function back
-in terms of traverse&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">sequence</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]](fs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">A</span>]])
-    (<span style="color: #c678dd;">implicit</span> app<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">F</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>]] <span style="color: #51afef;">=</span> {
-  listTraverse((fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=&gt;</span> fa, fs)
-}
-</pre>
-</div>
-
-<p>
-Finally, we get to the Traverse type class, which gives us an interface to write
-traverse for two effect types rather than just List and another effect. We have
-two functions, traverse and dist, which are represented in Scala today as
-traverse and sequence.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Traversable</span> t <span style="color: #51afef;">where</span>
-<span style="color: #c678dd;">traverse</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Applicative</span> f <span style="color: #dcaeea;">&#8658;</span> (a <span style="color: #dcaeea;">&#8594;</span> f b) <span style="color: #dcaeea;">&#8594;</span> t a <span style="color: #dcaeea;">&#8594;</span> f (t b)
-<span style="color: #c678dd;">dist</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Applicative</span> f <span style="color: #dcaeea;">&#8658;</span> t (f a) <span style="color: #dcaeea;">&#8594;</span> f (t a)
-<span style="color: #c678dd;">dist</span> <span style="color: #dcaeea;">=</span> traverse id
-</pre>
-</div>
-
-<p>
-There&rsquo;s no need to show the Scala because we can rely on the implementations in
-the Cats library, but the instance implementations for list are as above. In the
-paper we see that you can also traverse more complex structures such as a
-tree&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">sealed</span> <span style="color: #51afef;">trait</span> <span style="color: #ECBE7B;">Tree</span>[+<span style="color: #a9a1e1;">A</span>]
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">object</span> <span style="color: #a9a1e1;">Leaf</span> <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">Nothing</span>]
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Node</span>[<span style="color: #a9a1e1;">A</span>](left<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>], a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>, right<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>]
-
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">treeTraverse</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">B</span>], fs<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>])
-                (<span style="color: #c678dd;">implicit</span> app<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">F</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">Tree</span>[<span style="color: #a9a1e1;">B</span>]] <span style="color: #51afef;">=</span> {
-  fs <span style="color: #51afef;">match</span> {
-    <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">Leaf</span> <span style="color: #51afef;">=&gt;</span>
-      app.pure(<span style="color: #a9a1e1;">Leaf</span>)
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Node</span>(<span style="color: #dcaeea;">left</span>, <span style="color: #dcaeea;">a</span>, <span style="color: #dcaeea;">right</span>) <span style="color: #51afef;">=&gt;</span>
-      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w1</span> <span style="color: #51afef;">=</span> app.pure((l<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">B</span>]) <span style="color: #51afef;">=&gt;</span>
-        (v<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span>) <span style="color: #51afef;">=&gt;</span>
-        (r<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">B</span>]) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Node</span>(l,v,r))
-      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w2</span> <span style="color: #51afef;">=</span> w1.ap(treeTraverse(f,left))
-      <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">w3</span> <span style="color: #51afef;">=</span> w2.ap(f(a))
-      w3.ap(treeTraverse(f,right))
-  }
-}
-
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">tree1</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Node</span>(<span style="color: #a9a1e1;">Leaf</span>, <span style="color: #da8548; font-weight: bold;">10</span>, <span style="color: #a9a1e1;">Node</span>(<span style="color: #a9a1e1;">Leaf</span>, <span style="color: #da8548; font-weight: bold;">5</span>, <span style="color: #a9a1e1;">Node</span>(<span style="color: #a9a1e1;">Leaf</span>, <span style="color: #da8548; font-weight: bold;">10</span>, <span style="color: #a9a1e1;">Leaf</span>)))
-println(<span style="color: #98be65;">"treeTraverse: "</span> + treeTraverse((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Option</span>(n + <span style="color: #da8548; font-weight: bold;">1</span>), tree1))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">treeTraverse: Some(Node(Leaf,11,Node(Leaf,6,Node(Leaf,11,Leaf))))</span>
-</pre>
-</div>
-
-<p>
-Note that in your own code you would usually lean on the Traverse type class and
-override some methods to provide your own implementations.
-</p>
-
-<p>
-Another thing to highlight the expressive power of traverse is that we can use
-it to do a <code>map</code> just like a <code>~Functor</code> by using the Id (identity) Monad as our
-effect type. The Id monad simply wraps a pure value and has no other effect, so
-we can use it to use traverse as a functor as follows&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">@</span> <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">Int</span>](<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>).traverse((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> (<span style="color: #da8548; font-weight: bold;">1</span> + a)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Id</span>[<span style="color: #a9a1e1;">Int</span>])
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Id[List[Int]] = List(2, 3, 4)</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orgc88a48f" class="outline-3">
-<h3 id="orgc88a48f">Monoids are phantom Applicative functors</h3>
-<div class="outline-text-3" id="text-orgc88a48f">
-<p>
-This section of the paper, part four if you are reading along, has an intriguing
-title. Whilst short, there is a lot of information in a small space on how we
-can use Monoids, Applicatives and Traverse to do some cool things. I will go
-much slower than the paper as some of the concepts take some time to get your
-head around.
-</p>
-
-<p>
-Monoids are a type class that provides an interface to join things together such
-as appending strings or adding numbers. In addition, they give us a way to
-represent a zero value for the data type, which will be useful in a moment. If
-you want to dig into Monoids in more detail I have written a couple of posts on
-the subject&#x2026;
-</p>
-
-<ul class="org-ul">
-<li><a href="http://justinhj.github.io/2019/06/10/monoids-for-production.html">Monoids for Production [2019]​</a></li>
-<li><a href="https://medium.com/yoppworks-reactive-systems/persistent-entities-with-monoids-a44212a157fb">Persistent Entities with Monoids [2020]​</a></li>
-</ul>
-</div>
-
-<div id="outline-container-org6a061d6" class="outline-4">
-<h4 id="org6a061d6">Every Applicative is a Monoid</h4>
-<div class="outline-text-4" id="text-org6a061d6">
-<p>
-It&rsquo;s possible to implement a Monoid instance that works for any Applicative. In
-Scala it looks like this&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">appMonoid</span>[<span style="color: #a9a1e1;">A</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>] <span style="color: #51afef;">=</span> <span style="color: #51afef;">new</span> <span style="color: #ECBE7B;">Monoid</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">A</span>]] {
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">empty</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">F</span>].pure((<span style="color: #a9a1e1;">Monoid</span>[<span style="color: #a9a1e1;">A</span>].empty))
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">combine</span>(x<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>], y<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span>
-    <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">F</span>].map2(x,y)(<span style="color: #a9a1e1;">Monoid</span>[<span style="color: #a9a1e1;">A</span>].combine)
-}
-</pre>
-</div>
-
-<p>
-What does this give us? We can join Applicative Effects togther, and when we do
-so they are joined in the <code>idiom</code> of the effect type. So for example when
-combining a list with its default Monoid instance it will simply append the
-lists like this&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>) |+| <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>,<span style="color: #da8548; font-weight: bold;">6</span>)
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Int] = List(1, 2, 3, 4, 5, 6)</span>
-</pre>
-</div>
-
-<p>
-But if instead we bring into scope a monoid for List we get the applicative
-application instead&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">m</span> <span style="color: #51afef;">=</span> appMonoid[<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">List</span>]
-<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>) |+| <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>,<span style="color: #da8548; font-weight: bold;">6</span>)
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: List[Int] = List(5, 6, 7, 6, 7, 8, 7, 8, 9)</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org1dfb20c" class="outline-4">
-<h4 id="org1dfb20c">Magical Folding with Traverse</h4>
-<div class="outline-text-4" id="text-org1dfb20c">
-<p>
-It does not work the other way around, but some types with Monoid instances can
-use those instances in their Applicative implementation. For example <code>Tuple2</code> in
-the Cats library does just that. The actual implementation is split into two
-because of the way the Cats class hierarchy is organized, so here&rsquo;s a simplified
-version where it is more clear what&rsquo;s going on&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">appTuple2</span>[<span style="color: #a9a1e1;">X</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>] <span style="color: #51afef;">=</span> <span style="color: #51afef;">new</span> <span style="color: #ECBE7B;">Applicative</span>[<span style="color: #a9a1e1;">Tuple2</span>[<span style="color: #a9a1e1;">X</span>,?]] {
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">pure</span>[<span style="color: #a9a1e1;">A</span>](a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">X</span>, <span style="color: #a9a1e1;">A</span>) <span style="color: #51afef;">=</span> (<span style="color: #a9a1e1;">Monoid</span>[<span style="color: #a9a1e1;">X</span>].empty, a)
-
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">ap</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](ff<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">X</span>, <span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>))(fa<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">X</span>, <span style="color: #a9a1e1;">A</span>))<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">X</span>, <span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=</span> {
-    (ff._1.combine(fa._1),
-     ff._2(fa._2))
-  }
-}
-</pre>
-</div>
-
-<p>
-You can see how the fact that Monoids have an empty (or zero) value is useful
-here because when we implement <code>pure</code> we need a value of type X to build the
-response but we only have an A. By using the <code>Monoid.empty</code> function we can
-fulfil the contract.
-</p>
-
-<p>
-The implementation of <code>ap</code> is also interesting. What happens is that the X values
-(which have a Monoid instance), are simply combined. The new value B is created
-by applying the function in ff to the value in fa and now we have our new
-Tuple2.
-</p>
-
-<p>
-Recall the function signature for traverse on a List&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">traverse</span>[<span style="color: #a9a1e1;">G</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>, <span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>])(f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">G</span>[<span style="color: #a9a1e1;">B</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">G</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">B</span>]]
-</pre>
-</div>
-
-<p>
-The <code>G</code> in traverse is used to apply the function f to each element of our
-collection, and so when we traverse and use Tuple2 as our G, it will use that
-Monoid implementation we see above. Take a list and reducing it to a single
-value is called various names including folding, reducing, crushing. In Scala
-we&rsquo;d typically fold a list of elements with a Monadic structure. We can now do
-the same thing with traverse.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">Int</span>](<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>))((n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Tuple2</span>(n,n))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: (Int, List[Int]) = (6, List(1, 2, 3))</span>
-</pre>
-</div>
-
-<p>
-You can see that the resulting tuple consists of two things, the sum of the
-integers in the list (6) and second element is the list of results. That gives
-us the ability to transform a collection into a an aggregated (folded) value,
-and map it to a new collection at the same time!
-</p>
-
-<p>
-Now often you may want to just fold the values and you don&rsquo;t care about the
-other collection. In that case you could just drop it by calling <code>._2</code> on the
-result.
-</p>
-
-<p>
-There&rsquo;s a better way, and we can now move onto finding out about Phantom types
-and how they can help us here.
-</p>
-</div>
-</div>
-<div id="outline-container-org848e6c8" class="outline-4">
-<h4 id="org848e6c8">Phantom types</h4>
-<div class="outline-text-4" id="text-org848e6c8">
-<p>
-Now we can rejoin the paper. We are introduced the <code>Accy</code> type which is called
-<code>Const</code> in Cats.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #51afef;">newtype</span> <span style="color: #ECBE7B;">Accy</span> o a <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Acc</span>{acc <span style="color: #dcaeea;">::</span> o }
-</pre>
-</div>
-
-<p>
-In Scala the Const type can be implemented like this&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">final</span> <span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">MyConst</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>](unConst<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)
-</pre>
-</div>
-
-<p>
-If it helps, this is a type level version of a function that takes two
-parameters; an A and a B, and just drops the B returning the A&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">const</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)(b<span style="color: #51afef;">:</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=</span> a
-</pre>
-</div>
-
-<p>
-Const, or Accy, is a strange-looking data type that takes two type parameters,
-and in fact takes two values, but we only store the first. This is why the
-second parameter is called a <code>phantom</code>. We can create a Const with any crazy
-type we want for the <code>B</code> parameter because it won&rsquo;t be used at all&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">import</span> com.oracle.webservices.internal.api.message.<span style="color: #a9a1e1;">MessageContext</span>
-<span style="color: #a9a1e1;">Const</span>[<span style="color: #a9a1e1;">Int</span>,<span style="color: #a9a1e1;">MessageContext</span>](<span style="color: #da8548; font-weight: bold;">12</span>).getConst
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Int = 12</span>
-</pre>
-</div>
-
-<p>
-So what use is Const? For one, we can create an applicative functor for it just
-like we did with Tuple, but now we can drop the pretense that we cared about the
-second value and just get the folded value, saving us CPU time and memory as the
-computation progresses&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>))(a <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Const</span>[<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">String</span>](a)).getConst
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Int = 15</span>
-</pre>
-</div>
-
-<p>
-Let&rsquo;s convert the examples in the paper of using this technique into Scala&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">accumulate</span> <span style="color: #dcaeea;">::</span> (<span style="color: #ECBE7B;">Traversable</span> t, <span style="color: #ECBE7B;">Monoid</span> o) <span style="color: #dcaeea;">&#8658;</span> (a <span style="color: #dcaeea;">&#8594;</span> o) <span style="color: #dcaeea;">&#8594;</span> t a <span style="color: #dcaeea;">&#8594;</span> o
-<span style="color: #c678dd;">accumulate</span> f <span style="color: #dcaeea;">=</span> acc <span style="color: #dcaeea;">&#183;</span> traverse (<span style="color: #ECBE7B;">Acc</span> <span style="color: #dcaeea;">&#183;</span> f )
-<span style="color: #c678dd;">reduce</span> <span style="color: #dcaeea;">::</span> (<span style="color: #ECBE7B;">Traversable</span> t, <span style="color: #ECBE7B;">Monoid</span> o) <span style="color: #dcaeea;">&#8658;</span> t o <span style="color: #dcaeea;">&#8594;</span> o
-<span style="color: #c678dd;">reduce</span> <span style="color: #dcaeea;">=</span> accumulate id
-</pre>
-</div>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">accumulate</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Traverse</span>, <span style="color: #a9a1e1;">B</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>](f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>)(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span> <span style="color: #51afef;">=</span> {
-  <span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">F</span>].traverse(fa)((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">B</span>](f(a))).getConst
-}
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">reduce</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Traverse</span>, <span style="color: #a9a1e1;">A</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=</span> {
-  <span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">F</span>].traverse(fa)((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">A</span>](a)).getConst
-}
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Accumulate</span>
-println(<span style="color: #98be65;">"accumulate: "</span> + accumulate((s<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">=&gt;</span> s.size)(<span style="color: #a9a1e1;">List</span>(<span style="color: #98be65;">"ten"</span>, <span style="color: #98be65;">"twenty"</span>, <span style="color: #98be65;">"thirty"</span>)))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">15</span>
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Reduce</span>
-println(<span style="color: #98be65;">"reduce: "</span> + reduce(<span style="color: #a9a1e1;">List</span>(<span style="color: #98be65;">"ten"</span>, <span style="color: #98be65;">"twenty"</span>, <span style="color: #98be65;">"thirty"</span>)))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">tentwentythirty</span>
-</pre>
-</div>
-
-<p>
-Note that we could implement reduce with accumulate as follows&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">reduceWithAccumulate</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Traverse</span>, <span style="color: #a9a1e1;">A</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monoid</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=</span> {
-  accumulate[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">F</span>, <span style="color: #a9a1e1;">A</span>](identity)(fa)
-}
-</pre>
-</div>
-
-<p>
-We can also convert the following without much difficulty&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #c678dd;">flatten</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Tree</span> a <span style="color: #dcaeea;">&#8594;</span> [a ]
-<span style="color: #c678dd;">flatten</span> <span style="color: #dcaeea;">=</span> accumulate (<span style="color: #ECBE7B;">:</span>[ ])
-<span style="color: #c678dd;">concat</span> <span style="color: #dcaeea;">::</span> [[a ]] <span style="color: #dcaeea;">&#8594;</span> [a ]
-<span style="color: #c678dd;">concat</span> <span style="color: #dcaeea;">=</span> reduce
-</pre>
-</div>
-
-<p>
-Scala versions&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">treeFlatten</span>[<span style="color: #a9a1e1;">A</span>](tree<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Tree</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> {
-  accumulate((a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">List</span>(a))(tree)
-}
-
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">concatLists</span>[<span style="color: #a9a1e1;">A</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">A</span>]])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> {
-  reduce(fa)
-}
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Tree flattening</span>
-println(<span style="color: #98be65;">"treeFlatten: "</span> + treeFlatten(tree1))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">treeFlatten: List(10, 5, 10)</span>
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">Concat lists (flatten)</span>
-println(<span style="color: #98be65;">"concatLists: "</span> + concatLists(<span style="color: #a9a1e1;">List</span>(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>), <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>,<span style="color: #da8548; font-weight: bold;">6</span>))))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">concatLists: List(1, 2, 3, 4, 5, 6)</span>
-</pre>
-</div>
-
-<p>
-The last thing in this section is an example of how to find if a an element in a
-list (or really anything we can Traverse) matches some predicate&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #51afef;">newtype</span> <span style="color: #ECBE7B;">Mighty</span> <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Might</span>{might <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Bool</span>}
-
-<span style="color: #51afef;">instance</span> <span style="color: #ECBE7B;">Monoid</span> <span style="color: #ECBE7B;">Mighty</span> <span style="color: #51afef;">where</span>
-<span style="color: #dcaeea;">&#8709;</span> <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Might</span> <span style="color: #ECBE7B;">False</span>
-<span style="color: #ECBE7B;">Might</span> x <span style="color: #dcaeea;">&#8853;</span> <span style="color: #ECBE7B;">Might</span> y <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Might</span> (x <span style="color: #dcaeea;">&#8744;</span> y)
-
-<span style="color: #c678dd;">any</span> <span style="color: #dcaeea;">::</span> <span style="color: #ECBE7B;">Traversable</span> t <span style="color: #dcaeea;">&#8658;</span> (a <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Bool</span>) <span style="color: #dcaeea;">&#8594;</span> t a <span style="color: #dcaeea;">&#8594;</span> <span style="color: #ECBE7B;">Bool</span>
-<span style="color: #c678dd;">any</span> p <span style="color: #dcaeea;">=</span> might <span style="color: #dcaeea;">&#183;</span> accumulate (<span style="color: #ECBE7B;">Might</span> <span style="color: #dcaeea;">&#183;</span> p)
-</pre>
-</div>
-
-<p>
-What&rsquo;s going on here is that we get a new type called Mighty which has a Monoid
-instance for it representing disjunction (boolean or). There is no default
-Monoid for boolean in Cats so we have to define one first.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">mightyBoolean</span> <span style="color: #51afef;">=</span> <span style="color: #51afef;">new</span> <span style="color: #ECBE7B;">Monoid</span>[<span style="color: #a9a1e1;">Boolean</span>] {
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">empty</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">false</span>
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">combine</span>(a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Boolean</span>, b<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Boolean</span>) <span style="color: #51afef;">=</span> a || b
-}
-
-<span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>))(a <span style="color: #51afef;">=&gt;</span>
-  <span style="color: #51afef;">if</span>(a &gt; <span style="color: #da8548; font-weight: bold;">2</span>) <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #a9a1e1;">true</span>)
-  <span style="color: #51afef;">else</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #a9a1e1;">false</span>))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Const[Boolean, List[Any]] = Const(true)</span>
-
-<span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>))(a <span style="color: #51afef;">=&gt;</span>
-  <span style="color: #51afef;">if</span>(a &gt; <span style="color: #da8548; font-weight: bold;">5</span>) <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #a9a1e1;">true</span>)
-  <span style="color: #51afef;">else</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #a9a1e1;">false</span>))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Const[Boolean, List[Any]] = Const(false)</span>
-</pre>
-</div>
-
-<p>
-Instead of using boolean we can rely on the Integer addition boolean to count
-how many times a predicate is matched in a traversable structure&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">5</span>))(a <span style="color: #51afef;">=&gt;</span> <span style="color: #51afef;">if</span>(a &gt; <span style="color: #da8548; font-weight: bold;">2</span>) <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #da8548; font-weight: bold;">1</span>) <span style="color: #51afef;">else</span> <span style="color: #a9a1e1;">Const</span>.of[<span style="color: #a9a1e1;">Any</span>](<span style="color: #da8548; font-weight: bold;">0</span>))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Const[Int, List[Any]] = Const(3)</span>
-</pre>
-</div>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org37a2c67" class="outline-3">
-<h3 id="org37a2c67">Comparing Monad with Applicative</h3>
-<div class="outline-text-3" id="text-org37a2c67">
-<p>
-We know that all Monads are Applicatives. Why? Because all Monads implement
-<code>pure</code> and they can also implement <code>ap</code> as follows&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">ap</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](ff<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>])(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=</span> {
-  ff.flatMap(f <span style="color: #51afef;">=&gt;</span>
-    fa.map(f))
-}
-</pre>
-</div>
-
-<p>
-But all Applicatives are not Monads. For example you cannot implement flatMap
-for Const&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">flatMap</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">MyConst</span>[<span style="color: #a9a1e1;">X</span>,<span style="color: #a9a1e1;">A</span>])(f<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">MyConst</span>[<span style="color: #a9a1e1;">X</span>,<span style="color: #a9a1e1;">B</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">MyConst</span>[<span style="color: #a9a1e1;">X</span>,<span style="color: #a9a1e1;">B</span>] <span style="color: #51afef;">=</span> {
-  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">x</span> <span style="color: #51afef;">=</span> fa.unConst
-  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">a</span> <span style="color: #51afef;">=</span> ???
-  <span style="color: #5B6268;">// </span><span style="color: #5B6268;">f(a)</span>
-  ???
-}
-</pre>
-</div>
-
-<p>
-We need an A to apply the function f, but there&rsquo;s no way to get one. Therefore
-Const is no Monad.
-</p>
-
-<blockquote>
-<p>
-So now we know: there are strictly more Applicative functors than Monads. Should
-we just throw the Monad class away and use Applicative instead? Of course not! The
-reason there are fewer monads is just that the Monad structure is more powerful.
-</p>
-</blockquote>
-
-<p>
-Next we contrast how Monad and Applicative differ in terms of a function called
-miffy (for doing a monadic if) and iffy (an applicative if)&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">miffy</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monad</span>](mb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">Boolean</span>], fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>], fb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> {
-  mb.flatMap{
-    b <span style="color: #51afef;">=&gt;</span>
-    <span style="color: #51afef;">if</span>(b) fa
-    <span style="color: #51afef;">else</span> fb
-  }
-}
-
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">iffy</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>](mb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">Boolean</span>], fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>], fb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> {
-  <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">F</span>].map3(mb, fa, fb){
-    <span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">cond</span>, <span style="color: #dcaeea;">a</span>, <span style="color: #dcaeea;">b</span>) <span style="color: #51afef;">=&gt;</span>
-      <span style="color: #51afef;">if</span>(cond) a <span style="color: #51afef;">else</span> b
-  }
-}
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">miffy(Option(true), Option(1), None)</span>
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[Int] = Some(1)</span>
-
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">iffy(Option(true), Option(1), None)</span>
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[Int] = None</span>
-</pre>
-</div>
-
-<p>
-Here you can see that whilst miffy will succeed if the input is true even though
-the else effect failed (it was None). But with the applicative version we have
-to evaluate all the effects first, and if one of them fails they all fail.
-</p>
-
-<blockquote>
-<p>
-The moral is this: if you’ve got an Applicative functor, that’s good; if you’ve also
-got a Monad, that’s even better! And the dual of the moral is this: if you want a
-Monad, that’s good; if you only want an Applicative functor, that’s even better!
-</p>
-</blockquote>
-</div>
-
-<div id="outline-container-orgb4c1702" class="outline-4">
-<h4 id="orgb4c1702">Composing Applicatives</h4>
-<div class="outline-text-4" id="text-orgb4c1702">
-<p>
-Not all Monads compose but all Applicatives do; <i>the Applicative class is closed
-under composition</i>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #51afef;">instance</span> (<span style="color: #ECBE7B;">Applicative</span> f ,<span style="color: #ECBE7B;">Applicative</span> g) <span style="color: #dcaeea;">&#8658;</span> <span style="color: #ECBE7B;">Applicative</span> (f <span style="color: #dcaeea;">&#9702;</span> g) <span style="color: #51afef;">where</span>
-<span style="color: #c678dd;">pure</span> x <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Comp</span> <span style="color: #ECBE7B;">J</span> (pure x ) <span style="color: #ECBE7B;">K</span>
-<span style="color: #ECBE7B;">Comp</span> fs <span style="color: #dcaeea;">~</span> <span style="color: #ECBE7B;">Comp</span> xs <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">Comp</span> <span style="color: #ECBE7B;">J</span> (<span style="color: #dcaeea;">~</span>) fs xs <span style="color: #ECBE7B;">K</span>
-</pre>
-</div>
-
-<p>
-What does it mean to compose an Applicative? It means that we get the effects of
-both. For example we can use the full suite of Applicative functionality on a
-List of Options&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">x</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">Option</span>[<span style="color: #a9a1e1;">Int</span>]] <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">10</span>.some, <span style="color: #da8548; font-weight: bold;">9</span>.some, <span style="color: #da8548; font-weight: bold;">8</span>.some)
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">y</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">List</span>[<span style="color: #a9a1e1;">Option</span>[<span style="color: #a9a1e1;">Int</span>]] <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">7</span>.some, <span style="color: #da8548; font-weight: bold;">6</span>.some, <span style="color: #da8548; font-weight: bold;">5</span>.some)
-
-<span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">List</span>].compose[<span style="color: #a9a1e1;">Option</span>].map2(x, y)(<span style="color: #51afef;">_</span> + <span style="color: #51afef;">_</span>)
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">List[Option[Int]] = List(Some(17), Some(16), Some(15),</span>
-<span style="color: #5B6268;">//   </span><span style="color: #5B6268;">Some(16), Some(15), Some(14),</span>
-<span style="color: #5B6268;">//   </span><span style="color: #5B6268;">Some(15), Some(14), Some(13))</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org335210e" class="outline-4">
-<h4 id="org335210e">Accumulating Exceptions</h4>
-<div class="outline-text-4" id="text-org335210e">
-<p>
-In this section, it&rsquo;s noted that we could accumulate errors from computations
-using a type such as&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #51afef;">data</span> <span style="color: #ECBE7B;">Except</span> err a <span style="color: #dcaeea;">=</span> <span style="color: #ECBE7B;">OK</span> a <span style="color: #dcaeea;">|</span> <span style="color: #ECBE7B;">Failed</span> err
-</pre>
-</div>
-
-<p>
-You may recognize this as Scala&rsquo;s <code>Either</code>, which stores with an error or a
-success in its Left and Right sides.
-</p>
-
-<blockquote>
-<p>
-This could be used to collect errors by using the list monoid (as in unpublished
-work by Duncan Coutts), or to summarise them in some way.
-</p>
-</blockquote>
-
-<p>
-This is in fact exactly what we did when looking at the <code>Validated</code> type above.
-</p>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orgb1d501d" class="outline-3">
-<h3 id="orgb1d501d">Applicative functors and Arrows</h3>
-<div class="outline-text-3" id="text-orgb1d501d">
-<p>
-In this section, the paper discusses <code>arrows</code> which have some similarities with
-the <code>Applicative</code> interface, but it&rsquo;s out of scope for purposes of this blog
-post. I may come back to it in a future post.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org13c2055" class="outline-3">
-<h3 id="org13c2055">Applicative functors, categorically</h3>
-<div class="outline-text-3" id="text-org13c2055">
-<p>
-We now see a different, but equivalent way to define the Applicative class. Take
-a look at this Haskell code&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Functor</span> f <span style="color: #dcaeea;">&#8658;</span> <span style="color: #ECBE7B;">Monoidal</span> f <span style="color: #51afef;">where</span>
-<span style="color: #c678dd;">unit</span> <span style="color: #dcaeea;">::</span> f <span style="color: #ECBE7B;">()</span>
-(<span style="color: #c678dd;">*</span>) <span style="color: #dcaeea;">::</span> f a <span style="color: #dcaeea;">&#8594;</span> f b <span style="color: #dcaeea;">&#8594;</span> f (a, b)
-</pre>
-</div>
-
-<p>
-This means given a type f with a Functor instance, we can define the class
-<code>Monoidal</code>. <code>unit</code> is the same as pure, whilst the * function takes two effects
-and returns a new effect with the result tupled. This is implemented in Cats for
-Applicative&rsquo;s and known as <code>product</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">Option</span>].product(<span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">22</span>),<span style="color: #a9a1e1;">Option</span>(<span style="color: #da8548; font-weight: bold;">20</span>))
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">res: Option[(Int, Int)] = Some((22, 20))</span>
-</pre>
-</div>
-
-<p>
-Let&rsquo;s show that we can implement Applicative if we have the product function
-(assuming product is not implemented in terms of ap)&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">override</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">ap</span>[<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>], <span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](ff<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>])(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>]) <span style="color: #51afef;">=</span> {
-  product(ff,fa).map {
-    <span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">f</span>, <span style="color: #dcaeea;">a</span>) <span style="color: #51afef;">=&gt;</span>
-      f(a)
-  }
-}
-</pre>
-</div>
-
-<p>
-Applicative can be implemented with ap and pure, or pure and product. We&rsquo;ll see
-another choice later. Next in this section is some category theory which I&rsquo;ll
-also skip for now, leaving only this quote for your interest&#x2026;
-</p>
-
-<blockquote>
-<p>
-Fans of category theory will recognise the above laws as the properties of a lax
-monoidal functor for the monoidal structure given by products.
-</p>
-</blockquote>
-</div>
-
-<div id="outline-container-org5bf78db" class="outline-4">
-<h4 id="org5bf78db">We applied ourselves!</h4>
-<div class="outline-text-4" id="text-org5bf78db">
-<p>
-That&rsquo;s the end of McBride and Patterson&rsquo;s paper; here are some conclusions they
-made&#x2026;
-</p>
-
-<ul class="org-ul">
-<li>Applicative Functors have been identified</li>
-<li>They lie between Functor and Monad in power</li>
-<li>Unlike Monads, Applicatives are closed under composition</li>
-<li>Traverable Functors thread Applicative Applications and form a useful toolkit</li>
-</ul>
-
-<p>
-The paper ends with a great quote that is both positive about borrowing ideas
-from category theory&#x2026;
-</p>
-
-<blockquote>
-<p>
-The explosion of categorical structure in functional programming: monads,
-comonads, arrows and now applicative functors should not, we suggest, be a cause
-for alarm. Why should we not profit from whatever structure we can sniff out,
-abstract and re-use? The challenge is to avoid a chaotic proliferation of
-peculiar and incompatible notations.
-</p>
-</blockquote>
-
-<p>
-Plug for idiom brackets was snipped.
-</p>
-</div>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orgd602048" class="outline-2">
-<h2 id="orgd602048">Back to Ap</h2>
-<div class="outline-text-2" id="text-orgd602048">
-<p>
-So far in this post, we&rsquo;ve seen lots of code that uses ap in various ways. We&rsquo;ll
-wrap it up with some implementation notes on the useful function <code>map2</code>, and how
-we can arrive at needing the <code>ap</code> function to do so. Then we&rsquo;ll look at a
-practical example of using Applicative in image processing.
-</p>
-
-<p>
-Let&rsquo;s start with a problem. We have two functions that return IO&rsquo;s as
-output. We want to call a pure function that takes two values as input. In short
-we need map2&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">User</span>(email<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>, name<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>, blocked<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Boolean</span>)
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Account</span>(email<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>, balance<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Long</span>)
-
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">getUser</span>(email<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">=</span>
-  <span style="color: #a9a1e1;">IO</span>.sleep(<span style="color: #da8548; font-weight: bold;">10</span> seconds) *&gt; <span style="color: #a9a1e1;">IO</span>(<span style="color: #a9a1e1;">User</span>(<span style="color: #98be65;">"bob@gmail.com"</span>, <span style="color: #98be65;">"Bob Jones"</span>, <span style="color: #a9a1e1;">false</span>))
-
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">getAccount</span>(email<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">=</span>
-  <span style="color: #a9a1e1;">IO</span>.sleep(<span style="color: #da8548; font-weight: bold;">10</span> seconds) *&gt; <span style="color: #a9a1e1;">IO</span>(<span style="color: #a9a1e1;">Account</span>(<span style="color: #98be65;">"bob@gmail.com"</span>, <span style="color: #da8548; font-weight: bold;">100</span>))
-
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">goodStanding</span>(user<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">User</span>, account<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Account</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Boolean</span> <span style="color: #51afef;">=</span> {
-  user.blocked == <span style="color: #a9a1e1;">false</span> &amp;&amp;
-  account.balance &gt;= <span style="color: #da8548; font-weight: bold;">0</span>
-}
-
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">email</span> <span style="color: #51afef;">=</span> <span style="color: #98be65;">"bob@gmail.com"</span>
-
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">checkBob</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">IO</span>.<span style="color: #a9a1e1;">Par</span>].map2(
-  <span style="color: #a9a1e1;">Par</span>(getUser(email)),
-  <span style="color: #a9a1e1;">Par</span>(getAccount(email)))(goodStanding)
-
-println(<span style="color: #98be65;">"run bank check: "</span> + <span style="color: #a9a1e1;">Par</span>.unwrap(checkBob).unsafeRunSync)
-<span style="color: #5B6268;">// </span><span style="color: #5B6268;">run bank check: true</span>
-</pre>
-</div>
-
-<p>
-So this motivating example works, it runs the (simulated) slow network calls in
-parallel and passes them to our function. (Note that this example is using Cats
-Effect and in order to select Applicative rather than Monadic operation we need
-to wrap the IO in the Par wrapper and then unwrap it at the end).
-</p>
-
-<p>
-Given that map2 is a useful function how would we implement it? Just like we saw
-at the start of the paper, we can use flatMap and map to implement it quite
-easily&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">map2</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>,<span style="color: #a9a1e1;">C</span>,<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Monad</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>], fb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">B</span>])(f<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">C</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">C</span>] <span style="color: #51afef;">=</span>
-  fa.flatMap { a <span style="color: #51afef;">=&gt;</span>
-    fb.map(b <span style="color: #51afef;">=&gt;</span> f(a,b))
-  }
-</pre>
-</div>
-
-<p>
-That works fine, but sadly it requires that we complete fa before starting
-and we want to allow independent effects. So we can&rsquo;t use Monad&rsquo;s flatMap. Let&rsquo;s
-build the function without it&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">applicativeMap2</span>[<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>,<span style="color: #a9a1e1;">C</span>,<span style="color: #a9a1e1;">F</span>[<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Applicative</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>], fb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">B</span>])(f<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">A</span>,<span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">C</span>)
-    <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">C</span>] <span style="color: #51afef;">=</span> {
-  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">ffb</span> <span style="color: #51afef;">=</span> fa.map {
-    a <span style="color: #51afef;">=&gt;</span> (b<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span>) <span style="color: #51afef;">=&gt;</span> f(a,b)
-  }
-  <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">F</span>].ap(ffb)(fb)
-}
-</pre>
-</div>
-
-<p>
-Obviously, there&rsquo;s no need to implement map2 because the Applicative instances
-already have it, but it helps understand further the motivation for ap. The
-value <code>ffb</code> is actually the result of currying the function <code>f</code>. What we get
-back is of the form <code>F[B =&gt; C]</code>. We can then call that function using
-Applicative&rsquo;s <code>ap</code> giving the correct response <code>F[C]</code>.
-</p>
-
-<p>
-By successively currying we can use the same trick to write map3, map4 and so on.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org9f14654" class="outline-2">
-<h2 id="org9f14654">Map2&#x2026; does it blend?</h2>
-<div class="outline-text-2" id="text-org9f14654">
-<p>
-So far we&rsquo;ve seen some interesting uses of Applicative; accumulating errors
-from network calls, managing multiple concurrent effects, transposing matrices,
-evaluating expressions. In 2019 I wrote a blog post about Comonads that used the
-coflatMap operation to do image processing. One of the takeaways from that post
-is that one of the great advantages of functional programming is composability.
-One thing I&rsquo;d like to be able to do is to do operations on two images then blend
-them together. In my original code images are stored represented as a
-<code>FocusedGrid</code> which is just an array of pixels and a focus point, which works
-nicely for the coflatMap. The blend operation just needs a function to average
-out the pixels and a map2&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">blend</span>(a<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>), b<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>))<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">Int</span>) <span style="color: #51afef;">=</span>
-  ((a._1 + b._1) / <span style="color: #da8548; font-weight: bold;">2</span>, (a._2 + b._2) / <span style="color: #da8548; font-weight: bold;">2</span>, (a._3 + b._3) / <span style="color: #da8548; font-weight: bold;">2</span>)
-
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">leftImage</span> <span style="color: #51afef;">=</span> originalImage2
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">rightImage</span> <span style="color: #51afef;">=</span> originalImage2.coflatMap(mirrorHorizontal)
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">upImage</span> <span style="color: #51afef;">=</span> originalImage2.coflatMap(mirrorVertical)
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">downImage</span> <span style="color: #51afef;">=</span> rightImage.coflatMap(mirrorVertical)
-
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">leftAndRight</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">FocusedGrid</span>].map2(leftImage, rightImage)(blend <span style="color: #51afef;">_</span>)
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">upAndDown</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Applicative</span>[<span style="color: #a9a1e1;">FocusedGrid</span>].map2(upImage, downImage)(
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">finalImage</span> <span style="color: #51afef;">=</span> leftAndRight.map2(upAndDown)(blend <span style="color: #51afef;">_</span>))
-</pre>
-</div>
-
-<p>
-These few lines are all that is needed in user code to create the cows image at
-the top of this post. If you want to know what the coflatMap is all about please
-checkout my earlier post Comonads for Life or the related talk at Scale by the
-Bay 2020 <a href="https://youtu.be/kVnJtiN1dbk">A gentle introduction to comonads</a>.
-</p>
-
-<p>
-But in the background we also need to implement an Applicative instance for the
-FocusedGrid datatype. Let&rsquo;s start with pure&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">pure</span>[<span style="color: #a9a1e1;">A</span>](a<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">A</span>] <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">FocusedGrid</span>((<span style="color: #da8548; font-weight: bold;">0</span>,<span style="color: #da8548; font-weight: bold;">0</span>), <span style="color: #a9a1e1;">Vector</span>(<span style="color: #a9a1e1;">Vector</span>(a)))
-</pre>
-</div>
-
-<p>
-Just like with the pure function for a List Applicative (or Monad), all we do is
-lift a pure value into a FocusedGrid with a singe row and column.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">ap</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](ff<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">B</span>])(fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">A</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">B</span>] <span style="color: #51afef;">=</span> {
-  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">newGrid</span> <span style="color: #51afef;">=</span> ff.grid.mapWithIndex {
-    (row, i) <span style="color: #51afef;">=&gt;</span>
-    row.zip(fa.grid(i)).map {
-      <span style="color: #51afef;">case</span> (<span style="color: #dcaeea;">f</span>, <span style="color: #dcaeea;">a</span>) <span style="color: #51afef;">=&gt;</span>
-        f(a)
-    }
-  }
-  <span style="color: #a9a1e1;">FocusedGrid</span>(ff.focus, newGrid)
-}
-</pre>
-</div>
-
-<p>
-Remember that with List we implemented an Applicative instance that took all the
-functions in the input list and applied them in turn to each element in the list
-of parameters. Ap for FocusedGrid iterates over a <i>grid of functions</i> and
-applies them to the target row and column in the input parameter.
-</p>
-
-<p>
-Our work is done; with pure and ap implemented we now have a fully working
-Applicative instance and that means map2 will work.
-</p>
-</div>
-</div>
-
-<div id="outline-container-orgacbd20c" class="outline-2">
-<h2 id="orgacbd20c">Post-mature optimisation</h2>
-<div class="outline-text-2" id="text-orgacbd20c">
-<p>
-Most of the time, solving day to day business problems, we don&rsquo;t have to worry to
-much about performance, but when it comes to things like image processing when
-we are dealing with large numbers of pixels it can be more important to know
-what is going on under the hood, and when to step in and improve it. Profiling
-should be your guide, but if you look at the default implementation of map2 in
-Cats you can see that it is doing a lot of work that is not needed &#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala">map(product(fa, fb))(f.tupled)
-</pre>
-</div>
-
-<p>
-And product is &#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala">ap(map(fa)(a <span style="color: #51afef;">=&gt;</span> (b<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">B</span>) <span style="color: #51afef;">=&gt;</span> (a, b)))(fb)
-</pre>
 </div>
-
-<p>
-So with a square image of size 2000 pixels (4 million total), to perform a map2
-we are going to map of the image twice; once to create an image of curried
-functions and a second time to apply them. In addition, we&rsquo;re going to create a
-lot temporary data that we don&rsquo;t need.
-</p>
-
-<p>
-Fortunately there&rsquo;s nothing to stop you from instead of using the default
-implementation of map2 we can implement our own&#x2026;
-</p>
-
-<div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">override</span> <span style="color: #51afef;">def</span> <span style="color: #c678dd;">map2</span>[<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>, <span style="color: #a9a1e1;">Z</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">A</span>], fb<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">B</span>])(f<span style="color: #51afef;">:</span> (<span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>) <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">Z</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">FocusedGrid</span>[<span style="color: #a9a1e1;">Z</span>] <span style="color: #51afef;">=</span> {
-  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">faRowIter</span> <span style="color: #51afef;">=</span> fa.grid.iterator
-  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">fbRowIter</span> <span style="color: #51afef;">=</span> fb.grid.iterator
-  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">rowBuilder</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Vector</span>.newBuilder[<span style="color: #a9a1e1;">Vector</span>[<span style="color: #a9a1e1;">Z</span>]]
-
-  <span style="color: #51afef;">while</span>(faRowIter.hasNext &amp;&amp; fbRowIter.hasNext) {
-    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">faColIter</span> <span style="color: #51afef;">=</span> faRowIter.next.iterator
-    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">fbColIter</span> <span style="color: #51afef;">=</span> fbRowIter.next.iterator
-    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">colBuilder</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Vector</span>.newBuilder[<span style="color: #a9a1e1;">Z</span>]
-
-    <span style="color: #51afef;">while</span>(faColIter.hasNext &amp;&amp; fbColIter.hasNext) {
-      colBuilder.addOne(f(faColIter.next, fbColIter.next))
-    }
-    rowBuilder.addOne(colBuilder.result)
-  }
-  <span style="color: #a9a1e1;">FocusedGrid</span>(fa.focus, rowBuilder.result)
-}
-</pre>
 </div>
-
-<p>
-Here we make a much more efficient implementation that instead of creating
-temporary data structures will use an iterator on each input grid and a Vector
-builder to efficiently build the output. This is maybe not <i>the</i> fastest
-implementation but it&rsquo;s certainly doing a lot less work. Of course optimizing
-without profiling is a waste of time. I had heard that Array is much faster than
-Vector for this kind of use case, so the sample code also includes an Array
-implementation. The code is somewhat ugly due to some technical constraints
-around Array, and turned out not to be any faster!
-</p>
-
-<p>
-In any case, should you want to explore this further, the instructions are all
-in the accompanying code to do you run your own benchmarks using <code>jmh</code>.
-</p>
 
+<div id="outline-container-orgc3c3611" class="outline-2">
+<h2 id="orgc3c3611">ZIO Effects and Prelude</h2>
+<div class="outline-text-2" id="text-orgc3c3611">
 <p>
-Here&rsquo;s the results from my own benchmarking&#x2026;
+Let&rsquo;s visit the same problem using our ZIO effects above. One thing I like about
+prelude is how combinations of its algebras are mapped to ZIO effects. In this
+table we have two ZIO effects <code>fa : ZIO[R, E, A]</code> and <code>fb : ZIO[R, E, B]</code> that
+are combined in different ways just by changing the algebra.
 </p>
 
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
@@ -2035,98 +494,119 @@ Here&rsquo;s the results from my own benchmarking&#x2026;
 
 <col  class="org-left" />
 
-<col  class="org-right" />
-
-<col  class="org-right" />
-
-<col  class="org-left" />
-
-<col  class="org-right" />
-
 <col  class="org-left" />
 </colgroup>
 <thead>
 <tr>
-<th scope="col" class="org-left">Benchmark</th>
-<th scope="col" class="org-left">Mode</th>
-<th scope="col" class="org-right">Cnt</th>
-<th scope="col" class="org-right">Score</th>
-<th scope="col" class="org-left">Error</th>
-<th scope="col" class="org-right">Units</th>
-<th scope="col" class="org-left">&#xa0;</th>
+<th scope="col" class="org-left">Algebra</th>
+<th scope="col" class="org-left">ZIO instance implementation</th>
+<th scope="col" class="org-left">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="org-left">FocusedGridArrayBench.withMap2Large</td>
-<td class="org-left">avgt</td>
-<td class="org-right">5</td>
-<td class="org-right">171099.587</td>
-<td class="org-left">±</td>
-<td class="org-right">65471.687</td>
-<td class="org-left">us/op</td>
+<td class="org-left">AssociativeBoth</td>
+<td class="org-left">fa zip fb</td>
+<td class="org-left">fa first then fb iff fa succeeds, returning ZIO[R,E,(A,B)]</td>
 </tr>
 
 <tr>
-<td class="org-left">FocusedGridArrayBench.withMap2Small</td>
-<td class="org-left">avgt</td>
-<td class="org-right">5</td>
-<td class="org-right">54.418</td>
-<td class="org-left">±</td>
-<td class="org-right">25.669</td>
-<td class="org-left">us/op</td>
+<td class="org-left">AssociativeEither</td>
+<td class="org-left">fa.orElseEither(fb)</td>
+<td class="org-left">fa first then if it fails fb, returning ZIO[R,E,Either[A,B]]</td>
 </tr>
 
 <tr>
-<td class="org-left">FocusedGridBench.withMap2Large</td>
-<td class="org-left">avgt</td>
-<td class="org-right">5</td>
-<td class="org-right">152831.655</td>
-<td class="org-left">±</td>
-<td class="org-right">40709.521</td>
-<td class="org-left">us/op</td>
-</tr>
-
-<tr>
-<td class="org-left">FocusedGridBench.withMap2Small</td>
-<td class="org-left">avgt</td>
-<td class="org-right">5</td>
-<td class="org-right">59.168</td>
-<td class="org-left">±</td>
-<td class="org-right">15.346</td>
-<td class="org-left">us/op</td>
-</tr>
-
-<tr>
-<td class="org-left">FocusedGridBench.withSlowApLarge</td>
-<td class="org-left">avgt</td>
-<td class="org-right">5</td>
-<td class="org-right">649442.291</td>
-<td class="org-left">±</td>
-<td class="org-right">215248.298</td>
-<td class="org-left">us/op</td>
-</tr>
-
-<tr>
-<td class="org-left">FocusedGridBench.withSlowApSmall</td>
-<td class="org-left">avgt</td>
-<td class="org-right">5</td>
-<td class="org-right">141.025</td>
-<td class="org-left">±</td>
-<td class="org-right">78.928</td>
-<td class="org-left">us/op</td>
+<td class="org-left">CommutativeBoth</td>
+<td class="org-left">fa zipPar fb</td>
+<td class="org-left">fa and fb at the same time, returning ZIO[R,E,(A,B)]</td>
 </tr>
 </tbody>
 </table>
 
+<p>
+This is really nice and similar in spirit to what we did with Cats Traverse.
+</p>
 
 <p>
-What is notable that optimized map2 is 4x faster on the large image than slowAp
-and the array version is actually slower than the vector version. Just goes to
-show, if performance matters then always benchmark your original code and your
-solution to make sure your assumptions are correct. There&rsquo;s also a balance
-between opimised code keeping your code easy to read and reason about.
+ZIO&rsquo;s implementation of Traverse has eschewed conventional names for some
+functions in favour or more common words, so for example sequence is just flip,
+which describes the flipping of the F[G[A]] to a G[F[A]]. We should be able to
+just flip our list of ZIOs and execute them using traverse.
 </p>
+
+<p>
+However, when we come back to Traverable prelude&rsquo;s (version of Traverse) there
+are two difficulties.
+</p>
+</div>
+
+<div id="outline-container-org0ff1788" class="outline-3">
+<h3 id="org0ff1788">Problem 1. Traversable doesn&rsquo;t handle empty structures</h3>
+<div class="outline-text-3" id="text-org0ff1788">
+<p>
+Perhaps by design, you cannot just take a list of ZIO effects and Traverse them,
+because the flip function requires the G parameter to have the IdentityBoth
+algebra. That algebra lets us combine two effects to a tuple, and there is an
+identity element. ZIO effects do not have an instance of the IdentityBoth
+algebra and as such cannot be used with Traverable.
+</p>
+
+<p>
+We can get around this by using the NonEmptyTraversable which implements the
+Traversable type class for non empty structures. Its functions are postfixed
+with a 1 to indicate they require at least one element to work with, and use
+AssociativeBoth algebra which ZIO has as you can see above.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org856a85f" class="outline-3">
+<h3 id="org856a85f">Problem 2. We don&rsquo;t have a way to change from sequenced to parallel execution</h3>
+<div class="outline-text-3" id="text-org856a85f">
+<p>
+When we were dealing with Applicatives we can change the data type to select a
+different applicative and get a different combining method. This is a crucial
+part of Traverse IMHO. This functionality is missing because the algebra is
+hardcoded. We can&rsquo;t used the Algebra of choice from the table above (we would
+need to use CommutativeBoth to get the parallel execution the sleep sort needs).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org913850c" class="outline-3">
+<h3 id="org913850c">Running the code</h3>
+<div class="outline-text-3" id="text-org913850c">
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">runtime</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Runtime</span>.default
+runtime.unsafeRun(<span style="color: #a9a1e1;">NonEmptyTraversable</span>[<span style="color: #a9a1e1;">NonEmptyList</span>].flip1(ios))
+</pre>
+</div>
+
+<p>
+Sadly the best we can do at the moment is to use flip1 but we are limited to
+sequential execution.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgafe8880" class="outline-3">
+<h3 id="orgafe8880">Solutions</h3>
+<div class="outline-text-3" id="text-orgafe8880">
+<p>
+I talked to Adam Fraser about this and the probably solution will be a
+forthcoming newtype called Parallel which can wrap your effects with. This would
+work but feels a bit strange because we already had algebras that change
+behaviours but we can&rsquo;t freely use them in this context, and having additional
+newtypes seems like it violates the don&rsquo;t repeat yourself (DRY) prinicple.
+</p>
+
+<p>
+Another possible solution would be to have additional Traverse types with
+different algebras. Neither solution seems as clean as the Applicative one at
+this point.
+</p>
+</div>
 </div>
 </div>
 
@@ -2161,7 +641,8 @@ future:
 <h3 id="org3eb0866">Videos</h3>
 <div class="outline-text-3" id="text-org3eb0866">
 <ul class="org-ul">
-<li><a href="https://youtu.be/yEYPf44rS2U">Oh, All the things you&rsquo;ll traverse by Luka Jacobowitz</a></li>
+<li></li>
+
 <li><a href="https://youtu.be/sHV4qhbZHgo">When Everything Fits: The Beauty of Composition - Markus Hauck</a></li>
 <li><a href="https://youtu.be/kVnJtiN1dbk">Scale By The Bay 2019: Justin Heyes-Jones, A Gentle Introduction to Comonads</a></li>
 </ul>

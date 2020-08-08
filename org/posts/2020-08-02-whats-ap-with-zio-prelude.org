@@ -149,8 +149,7 @@ val accountStatus = getUser("bob@google.com")
 
 In prelude you would do the same, since nothing overrides flatMap from ZIO or
 the standard library, you can simply call flatMap, but you wouldn't be
-exercising the new prelude types. If you want to see how flatMap can be written
-stay tuned.
+exercising the new algebraic components that make up prelude, stay tuned.
 
 Remember above that Monad is defined as the composition of IdentityFlatten and
 Covariant. We already saw that Covariant is Functor and provides map (remember
@@ -181,13 +180,14 @@ def flatMap[F[+_]: Covariant : IdentityFlatten, A, B](fa: F[A])(fab: A => F[B]):
 }
 #+END_SRC
 
-Monad also traditionally defines pure, a way to lift pure values into an effect
+Monad also traditionally defines ~pure~, a way to lift pure values into an effect
 context. We can do that with Covariant's ~map~ and IdentityFlatten's ~any~.
 ~any~ summons an effect out of thin air for us, and we can then use map to sneak
 our pure value into that effect. Whilst this seems a little tricky, it gives a
 bit more flexibility. As Adam Fraser puts it, this "also allows you to express
 constraints on the types of values that can be injected through implementing
-CovariantSubset instead of Covariant".
+CovariantSubset instead of Covariant". Subsets were not featured in the
+talk so I look forward to hearing more about that feature.
 
 #+BEGIN_SRC scala
 def pure[F[+_] : Covariant : IdentityFlatten, A](a: A)(implicit i : IdentityFlatten[F]): F[A] = {
@@ -251,19 +251,44 @@ pure[List,String]("Hello")
 // res2: List[String] = List(Hello)
 #+END_SRC
 
-** Sequence
+** Sequence and Traverse
 In the seminal paper Applicative programming with Effects, the first motivating
 example for applicative programming is the sequence function. You have a list of
 effects, specifically Haskell IO effects, and you would like to turn them into
 an IO[List[A]]. You might recognise this as having the same shape and purpose as
-Future.sequence from the Scala standard library.
+Future.sequence from the Scala standard library. sequence is built with its more
+powerful friend traverse.
 
-To demonstrate this sequence running let's write an implementation of a silly
+#+BEGIN_SRC scala
+Future.sequence is a function IterableOnce[Future[A]] => Future[IterableOnce[A]]
+Future.traverse is a function IterableOnce[A], A => Future[B] => Future[IterableOnce[B]]
+#+END_SRC
+
+In Typelevel Cats, the Traverse typeclass makes this more flexible by allows us
+to traverse over any type that is a functor (you can map over it) and foldable
+(you can fold it with foldLeft, foldRight and fold).
+
+#+BEGIN_SRC scala
+trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
+ def traverse[G[_]: Applicative, A, B](fa: F[A])(f: A => G[B]): G[F[B]]
+}
+#+END_SRC
+
+
+What's interesting about Traverse is that it relies on a number of type classes
+to build its expressive power. Ultimately our little friend ~ap~ is the king pin
+of the whole thing, allowing us to combine the effects together as we fold in a
+way that is "idiomatic" to the effect type. When we traverse a list of Id for
+example (the identity monad) we get map, and when we traverse a list of Const,
+we get fold. In other words changing the data type is all we need to make
+drastically different programs.
+
+To demonstrate this in my applicative post, I wrote an implementation of a silly
 algorithm called Sleep Sort. Sleep Sort works by waiting an amount of time based
 on the value of the number. Emitting the numbers in this way sorts them
 (assuming your scheduler is accurate enough). Let's be clear, this is a stupid
-way to sort numbers, but it's handy as a way to illustrate our ~monadicSequence~
-function.
+way to sort numbers, but it does represent some real world needs we have like
+being able to run effects in parallel.
 
 #+BEGIN_SRC scala
 import zio._
@@ -275,25 +300,125 @@ def delayedPrintNumber(s: Int): ZIO[Console with Clock,String,Int] = {
     putStrLn(s"$s").delay(s.seconds) *>
     ZIO.succeed(s)
 }
-val ios = NonEmptyList(6,5,2,1,3,8,4,7).map(delayedPrintNumber)
-// ios: NonEmptyList[ZIO[Console with Clock,String,Int]]
+val ios = List(6,5,2,1,3,8,4,7).map(delayedPrintNumber)
+// ios: List[ZIO[Console with Clock,String,Int]]
 #+END_SRC
 
-From my previous post you will know that we eventually get from sequence to a
-more generalised function, traverse, of which sequence is a special case. In
-prelude we also have traverse, and as you might guess, the operation of traverse
-depends on which prelude data types we pass to it.
+Using Cats we can use Traverse.sequence to flip the List[Zio] to ZIO[List] and
+then execute it.
+
+#+BEGIN_SRC scala
+import cats.__
+import cats.Traverse
+val runtime = Runtime.default
+val program = Traverse[List].traverse(ios)
+runtime.unsafeRun(program)
+#+END_SRC
+
+Sadly we find this does not work because wanted all the effects to start at once
+and then complete at their alloted times, making the sort work. Instead we'll
+see each executed in sequence.
 
 #+BEGIN_SRC
+Monadic version
+
+Preparing to say number in 6 seconds
+6
+Preparing to say number in 5 seconds
+5
+// ... and so on for a while
+#+END_SRC
+
+Happily thanks to the joys of Applicative we can fix this by changing the data
+type. If we rewrite using Cats Effect we wrap our IO into a different type
+called Par.IO which has a different implementation of applicative that does NOT
+sequence the IOs together but allows them to run in parallel, we can get the
+sleep sort behaviour. We didn't change the structure of our code, just the data
+type!
+
+Now all of the effects started at the same time and ran in parallel.
+
+#+BEGIN_SRC
+Preparing to say number in 6 seconds
+Preparing to say number in 2 seconds
+Preparing to say number in 1 seconds
+Preparing to say number in 3 seconds
+Preparing to say number in 8 seconds
+Preparing to say number in 4 seconds
+Preparing to say number in 7 seconds
+Preparing to say number in 5 seconds
+1
+2
+3
+4
+5
+6
+7
+8
+#+END_SRC
+
+** ZIO Effects and Prelude
+Let's visit the same problem using our ZIO effects above. One thing I like about
+prelude is how combinations of its algebras are mapped to ZIO effects. In this
+table we have two ZIO effects ~fa : ZIO[R, E, A]~ and ~fb : ZIO[R, E, B]~ that
+are combined in different ways just by changing the algebra.
+
+| Algebra           | ZIO instance implementation | Description                                                  |
+|-------------------+-----------------------------+--------------------------------------------------------------|
+| AssociativeBoth   | fa zip fb                   | fa first then fb iff fa succeeds, returning ZIO[R,E,(A,B)]   |
+| AssociativeEither | fa.orElseEither(fb)         | fa first then if it fails fb, returning ZIO[R,E,Either[A,B]] |
+| CommutativeBoth   | fa zipPar fb                | fa and fb at the same time, returning ZIO[R,E,(A,B)]         |
+
+This is really nice and similar in spirit to what we did with Cats Traverse.
+
+ZIO's implementation of Traverse has eschewed conventional names for some
+functions in favour or more common words, so for example sequence is just flip,
+which describes the flipping of the F[G[A]] to a G[F[A]]. We should be able to
+just flip our list of ZIOs and execute them using traverse.
+
+However, when we come back to Traverable prelude's (version of Traverse) there
+are two difficulties.
+
+*** Problem 1. Traversable doesn't handle empty structures
+Perhaps by design, you cannot just take a list of ZIO effects and Traverse them,
+because the flip function requires the G parameter to have the IdentityBoth
+algebra. That algebra lets us combine two effects to a tuple, and there is an
+identity element. ZIO effects do not have an instance of the IdentityBoth
+algebra and as such cannot be used with Traverable.
+
+We can get around this by using the NonEmptyTraversable which implements the
+Traversable type class for non empty structures. Its functions are postfixed
+with a 1 to indicate they require at least one element to work with, and use
+AssociativeBoth algebra which ZIO has as you can see above.
+
+*** Problem 2. We don't have a way to change from sequenced to parallel execution
+When we were dealing with Applicatives we can change the data type to select a
+different applicative and get a different combining method. This is a crucial
+part of Traverse IMHO. This functionality is missing because the algebra is
+hardcoded. We can't used the Algebra of choice from the table above (we would
+need to use CommutativeBoth to get the parallel execution the sleep sort needs).
+
+*** Running the code
+#+BEGIN_SRC scala
 val runtime = Runtime.default
 runtime.unsafeRun(NonEmptyTraversable[NonEmptyList].flip1(ios))
 #+END_SRC
 
-Questions: why is there no IdentityBoth for ZIO so I cannot traverse an empty
-list of ZIO.
-Why is there no way to do commutativeboth with NonEmptyTraversable?
+Sadly the best we can do at the moment is to use flip1 but we are limited to
+sequential execution.
 
-In Cats you can traverse an empty list of Cats Effect no problem.
+*** Solutions
+I talked to Adam Fraser about this and the probably solution will be a
+forthcoming newtype called Parallel which can wrap your effects with. This would
+work but feels a bit strange because we already had algebras that change
+behaviours but we can't freely use them in this context, and having additional
+newtypes seems like it violates the don't repeat yourself (DRY) prinicple.
+
+Another possible solution would be to have additional Traverse types with
+different algebras. Neither solution seems as clean as the Applicative one at
+this point.
+
+
 
 
 
