@@ -32,6 +32,15 @@ operates in a way that many Scala programmers will not be familiar with.
 <blockquote class="twitter-tweet"><p lang="en" dir="ltr">For a decade, &#39;ap&#39; from Applicative has infected Scala code:<br><br>def ap[A, B](f: F[A =&gt; B], fa: F[A]): F[B]<br><br>Cryptic &amp; confusing, did you know the raison d&#39;être of &#39;ap&#39; is Haskell&#39;s curried functions, not category theory?<br><br>Learn how we can do better! 👇<a href="https://t.co/IL2FnBbPOy">https://t.co/IL2FnBbPOy</a></p>&mdash; John A De Goes (@jdegoes) <a href="https://twitter.com/jdegoes/status/1288134300349718530?ref_src=twsrc%5Etfw">July 28, 2020</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 <p>
+Currying, although not used as often in Scala as Haskell, as an important part
+of the language, and Scala programmers should probably become familiar with it.
+</p>
+
+<p>
+<a href="https://docs.scala-lang.org/tour/multiple-parameter-lists.html">https://docs.scala-lang.org/tour/multiple-parameter-lists.html</a>
+</p>
+
+<p>
 Is this criticism fair? In this post we&rsquo;ll check out the new type class encoding
 that you will find in the new functional programming library <code>Zio-Prelude</code>, and
 compare it with the established encoding and hierarchy that you will find in
@@ -614,22 +623,26 @@ this point.
 <h2 id="org070c4f2">Conclusion</h2>
 <div class="outline-text-2" id="text-org070c4f2">
 <p>
-You made it to the end! Congratulations, and I hope it made sense. Please feel
-free to contact me if you have any notes, corrections, improvements or
-suggestions!
+I&rsquo;ve been looking forward to prelude for a couple of months since I heard of its
+existent on the grapevine. Overall there are some very nice aspects to the
+library; the coherent and simple newtypes, the new ZPure (a swiss army knife of
+useful monads in a box?) and the idea of composing your type classes from
+small do one thing well algebras.
 </p>
 
 <p>
-This post was going to be a five-minute thing but blew up into a monster and
-there are still things that I didn&rsquo;t get to. Some things I may visit in the
-future:
+As zio-prelude evolves I expect it will at first grow, then shed some features
+into modules or libraries, before shrinking to a smaller but coherent core.
 </p>
-<ul class="org-ul">
-<li>Composition - examples of composing Functors and Applicatives</li>
-<li>Arrows</li>
-<li>Laws of Applicatives (although they are covered nicely elsewhere)</li>
-<li>Category theory (esp. of lax monoidal functors in more depth)</li>
-</ul>
+
+<p>
+I also predict it will create further bifurcation in the Scala FP community. As
+it becomes more tightly integrated with ZIO it will surely attract some ZIO
+programmers to give prelude their attention. For beginners there is now another
+choice for developing FP skills; learn the Haskell-motivated original type class
+encoding, or start with the prelude way. There&rsquo;s not a lot of overlap between
+the two.
+</p>
 </div>
 </div>
 
@@ -641,25 +654,8 @@ future:
 <h3 id="org3eb0866">Videos</h3>
 <div class="outline-text-3" id="text-org3eb0866">
 <ul class="org-ul">
-<li></li>
-
-<li><a href="https://youtu.be/sHV4qhbZHgo">When Everything Fits: The Beauty of Composition - Markus Hauck</a></li>
-<li><a href="https://youtu.be/kVnJtiN1dbk">Scale By The Bay 2019: Justin Heyes-Jones, A Gentle Introduction to Comonads</a></li>
-</ul>
-</div>
-</div>
-<div id="outline-container-org7e0d0db" class="outline-3">
-<h3 id="org7e0d0db">Written word</h3>
-<div class="outline-text-3" id="text-org7e0d0db">
-<ul class="org-ul">
-<li><a href="https://www.staff.city.ac.uk/~ross/papers/Applicative.pdf">Applicative Programming with Effects</a> McBride, Patterson 2008</li>
-<li><a href="https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf">The Essence of the Iterator Pattern</a> Gibbons, Bruno</li>
-<li><a href="https://pdfs.semanticscholar.org/7e66/7dd0515e4f674e42c0b0860644fee3dd5846.pdf">Do We Need Dependent Types?</a> Fridlender</li>
-<li><a href="https://www.jhmcstanton.com/posts/blog/2019-09-23-read-a-paper-applicative-programming-with-effects.html">Read a Paper: Applicative Programming with Effects</a></li>
-<li><a href="https://typelevel.org/cats/typeclasses/applicative.html">Cats Applicative documentation</a></li>
-<li><a href="https://typelevel.org/cats/datatypes/const.html">Cats Const documentation</a></li>
-<li><a href="https://www.manning.com/books/functional-programming-in-scala">Functional Programming in Scala</a> aka The Red Book</li>
-<li><a href="https://leanpub.com/fpmortals">Functional Programmers for Mortals</a> aka The Blue Book</li>
+<li><a href="https://youtu.be/OwmHgL9F_9Q">SF Scala: Reimagining Functional Type Classes</a></li>
+<li><a href="https://youtu.be/_LDk9BU_Rmc">What&rsquo;s ap?</a></li>
 </ul>
 </div>
 </div>
@@ -668,26 +664,12 @@ future:
 <div class="outline-text-3" id="text-orgd19ec33">
 <ul class="org-ul">
 <li><a href="https://github.com/justinhj/applicatives">applicatives</a> (Scala conversion from the paper and lots of Applicative stuff)</li>
-<li><a href="https://github.com/justinhj/comonad">comonad</a> (Image processing example with new Applicative demo)</li>
-<li><a href="https://github.com/fosskers/scala-benchmarks">Scala Benchmarks</a> (How to benchmark Scala by Colin Woodbury)</li>
-<li><a href="https://github.com/sammthomson/IdiomEars">Idiom Ears</a> (Get those fancy ears in your applicative programming)</li>
-<li><a href="https://github.com/aztek/scala-workflow">Scala Workflow</a> (A full on system for Monadic and Applicative programming)</li>
-</ul>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orgc056ad1" class="outline-2">
-<h2 id="orgc056ad1">Acknowledgements</h2>
-<div class="outline-text-2" id="text-orgc056ad1">
-<ul class="org-ul">
-<li>Thank you to the welcoming members of the Scala community who generously share
-their knowledge and libraries</li>
-<li>Thank you to Hermann Hueck for his suggestions and improvements on this post</li>
+<li><a href="https://github.com/zio/zio-prelude">zio-prelude</a> (A full on system for Monadic and Applicative programming)</li>
 </ul>
 
 <p>
 &copy; 2020 Justin Heyes-Jones. All Rights Reserved.
 </p>
+</div>
 </div>
 </div>
