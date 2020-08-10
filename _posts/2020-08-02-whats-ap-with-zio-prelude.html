@@ -4,77 +4,104 @@ title: What's Ap with zio-prelude?
 date: '2020-08-02T00:00:00.000-08:00'
 tags: [pure-functional-programming, cats, scala, applicative, monads, functors, zio]
 ---
-
-<div id="outline-container-orgd701510" class="outline-2">
-<h2 id="orgd701510">Introduction</h2>
-<div class="outline-text-2" id="text-orgd701510">
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+<div id="outline-container-orgb72f139" class="outline-2">
+<h2 id="orgb72f139">What&rsquo;s ZIO Prelude</h2>
+<div class="outline-text-2" id="text-orgb72f139">
 <p>
-Back in April I did a deep dive into <code>Applicative Functors</code> and produced a
-lengthy blog post that explains the practical use of Applicatives in Scala, how
-they are implemented and where these ideas came from. If you are not familiar
-with functional programming in Scala using Cats, and the Applicative type class
-in particular, I&rsquo;d recommend at least scanning the post below or checking out
-one of the related talks in the links above.
+Recently ZIO originator, John De Goes, and key contributor Adam Fraser,
+presented their latest functional programming library to the world. ZIO Prelude,
+hereafter referred to as Prelude, is promised as a radical shift in the way
+functional programming is taught, implemented and used. The event was the online
+edition of the SF Scala meetup, and the talk is now available on YouTube <a href="https://youtu.be/OwmHgL9F_9Q">SF
+Scala: Reimagining Functional Type Classes</a>. You can also visit the source code
+on Github <a href="https://github.com/zio/zio-prelude">zio-prelude</a>.
+</p>
+
+<p>
+For those that don&rsquo;t know, Prelude was initially developed, I&rsquo;m told, as part of
+John De Goes&rsquo;s &ldquo;Spartan&rdquo; training program, so I wasn&rsquo;t able to follow it since
+its inception. I&rsquo;ve been looking forward to the release since I heard about it,
+especially since John has alluded to a new type class encoding for a few years,
+for example in this talk at flatMap Oslo 2018
+<a href="https://www.youtube.com/watch?v=sFGnFKMSmL0&amp;t=1462s">https://www.youtube.com/watch?v=sFGnFKMSmL0&amp;t=1462s</a>
+</p>
+
+<p>
+In this post I will give my first impressions, having watched the talk and spent
+a few hours playing around with the library. At this stage, the nascent library
+is still undergoing rapid changes, so some of what I write here will likely be
+outdated fairly soon. I&rsquo;m also new to the library, so if I make any mistakes
+feel free to contact me and I will correct them.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf5cdd23" class="outline-2">
+<h2 id="orgf5cdd23">What&rsquo;s ap with ZIO Prelude?</h2>
+<div class="outline-text-2" id="text-orgf5cdd23">
+<p>
+Prior to the talk John tweeted:
+</p>
+
+<blockquote>
+<p>
+For a decade, &rsquo;ap&rsquo; from Applicative has infected Scala code:
+</p>
+
+<p>
+def ap[A, B](f: F[A =&gt; B], fa: F[A]): F[B]
+</p>
+
+<p>
+Cryptic &amp; confusing, did you know the raison d&rsquo;être of &rsquo;ap&rsquo; is Haskell&rsquo;s curried functions, not category theory?
+</p>
+
+<p>
+Learn how we can do better! - John De Goes
+</p>
+</blockquote>
+
+<p>
+This also piqued my curiosity as I have talked about Applicative publicly quite
+a bit this year including at online meetups and the Scala Love conference. I
+also wrote a lengthy blog post on Applicative Programming with Effects.
 </p>
 
 <a href="/2020/04/04/whats-ap.html">What's Ap?</a>
 
 <p>
-It can be challenging to explain the implementation of Applicative in Scala, and
-especially the <code>ap</code> operation itself, which as the following tweet points out,
-relies on currying to do its work. You can see this in some of the example code
-in my post where I translated Haskell from the original 2008 paper &ldquo;Applicative
-Programming with Effects&rdquo; into Scala. The lack of implied currying in Scala makes
-working with applicatives involve a bit more typing than in Haskell, and
-operates in a way that many Scala programmers will not be familiar with.
+John has pointed out <a href="https://www.reddit.com/r/scala/comments/afor0h/scalaz_8_timeline/eeac71m/">before</a> that Ap is not a great ergonomic fit for Scala
+(currying is much more natural in Haskell). Ap is hard to teach because of this;
+a lot of Scala developers find currying tricky. It is, however, an important
+part of the language, and a useful tool for every Scala programmers toolbox.
 </p>
 
-<blockquote class="twitter-tweet"><p lang="en" dir="ltr">For a decade, &#39;ap&#39; from Applicative has infected Scala code:<br><br>def ap[A, B](f: F[A =&gt; B], fa: F[A]): F[B]<br><br>Cryptic &amp; confusing, did you know the raison d&#39;être of &#39;ap&#39; is Haskell&#39;s curried functions, not category theory?<br><br>Learn how we can do better! 👇<a href="https://t.co/IL2FnBbPOy">https://t.co/IL2FnBbPOy</a></p>&mdash; John A De Goes (@jdegoes) <a href="https://twitter.com/jdegoes/status/1288134300349718530?ref_src=twsrc%5Etfw">July 28, 2020</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<ul class="org-ul">
+<li><a href="https://docs.scala-lang.org/tour/multiple-parameter-lists.html">https://docs.scala-lang.org/tour/multiple-parameter-lists.html</a></li>
+<li><a href="https://alvinalexander.com/scala/fp-book/partially-applied-functions-currying-in-scala/">https://alvinalexander.com/scala/fp-book/partially-applied-functions-currying-in-scala/</a></li>
+</ul>
 
 <p>
-Currying, although not used as often in Scala as Haskell, as an important part
-of the language, and Scala programmers should probably become familiar with it.
-</p>
-
-<p>
-<a href="https://docs.scala-lang.org/tour/multiple-parameter-lists.html">https://docs.scala-lang.org/tour/multiple-parameter-lists.html</a>
+Later in the post, I will try to reimplement some of my sample code from the
+What&rsquo;s Ap post, and see how well Prelude replaces Applicative, both from the
+developer perspective and in terms of how easy each would be to teach.
 </p>
 
 <p>
-Is this criticism fair? In this post we&rsquo;ll check out the new type class encoding
-that you will find in the new functional programming library <code>Zio-Prelude</code>, and
-compare it with the established encoding and hierarchy that you will find in
-Cats, and that was closely modelled on Haskell.
-</p>
-
-<p>
-<a href="https://github.com/zio/zio-prelude">https://github.com/zio/zio-prelude</a>
+From this point of view I will be approaching Prelude in a way that it is not
+designed for; mapping the Haskell style class hierarchy to Prelude. We shouldn&rsquo;t
+judge it on that basis, but since John threw down the gauntlet I will accept the
+challenge to defend my friend the Applicative.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org035b1a0" class="outline-2">
-<h2 id="org035b1a0">zio-prelude in a nutshell</h2>
-<div class="outline-text-2" id="text-org035b1a0">
+<div id="outline-container-org8c72c7a" class="outline-2">
+<h2 id="org8c72c7a">Goals of Prelude</h2>
+<div class="outline-text-2" id="text-org8c72c7a">
 <p>
-I&rsquo;ve only been aware of prelude for a couple of days, so I&rsquo;m not an expert by
-any means. What I have learned so far is based on a recent talk at SF Scala for
-which you can find the slides here:
-</p>
-
-<p>
-<a href="https://www.slideshare.net/jdegoes/refactoring-functional-type-classes">https://www.slideshare.net/jdegoes/refactoring-functional-type-classes</a>
-</p>
-
-<p>
-Unlike Scalaz and Cats, prelude was not initially a public project, and was
-developed as part of John De Goes&rsquo; ongoing functional programming classes.
-However it is now fully open sourced and the Scala community as a whole can take
-part in the project.
-</p>
-
-<p>
-As you&rsquo;ll see in the slide deck, the goals of prelude are the following:
+As you&rsquo;ll see in the <a href="https://www.slideshare.net/jdegoes/refactoring-functional-type-classes">slide deck</a>, the goals of prelude are to be the following:
 </p>
 
 <ul class="org-ul">
@@ -89,22 +116,22 @@ As you&rsquo;ll see in the slide deck, the goals of prelude are the following:
 </ul>
 
 <p>
-The goals I find most compelling here are accessible and orthogonal. As an fp
-advocate and educator, I am very interested in any steps towards greater
-accessibility. The orthogonal part is also big, as I believe that composability is
-one of the biggest wins of pure functional programs.
+The goals I find most compelling here are accessible and orthogonal. As a
+functional programming advocate and educator, I am very interested in any steps
+towards greater accessibility. The orthogonal part is also key, as I believe
+that composability is one of the biggest wins of pure functional programs.
 </p>
 </div>
 </div>
 
-<div id="outline-container-orga5204d5" class="outline-2">
-<h2 id="orga5204d5">Algebra not Category Theory</h2>
-<div class="outline-text-2" id="text-orga5204d5">
+<div id="outline-container-org5793803" class="outline-2">
+<h2 id="org5793803">Algebras, not Category Theory</h2>
+<div class="outline-text-2" id="text-org5793803">
 <p>
 With Cats, almost all of the concepts come from category theory. We have Monads,
 Functors, Monoids, Monoidal Functors and so on. The idea with prelude is that
-algebra is more familiar to us, as non-mathematician programmers, than category
-theory. Algebra&rsquo;s are also more composable, so the idea is to start with a small
+algebra is more familiar to us, as non-mathematician programmers than category
+theory. Algebras are also more composable, so the idea is to start with a small
 number of primitive things(?) and combining them into more powerful objects.
 </p>
 
@@ -121,15 +148,17 @@ overall to the problems and applications that Cats et al already address?
 <h2 id="orgbed8325">Functor and Monad</h2>
 <div class="outline-text-2" id="text-orgbed8325">
 </div>
-<div id="outline-container-orgac97a24" class="outline-3">
-<h3 id="orgac97a24">Functors</h3>
-<div class="outline-text-3" id="text-orgac97a24">
+<div id="outline-container-org196b128" class="outline-3">
+<h3 id="org196b128">Functors (Covariant)</h3>
+<div class="outline-text-3" id="text-org196b128">
 <p>
-In my original post I introduce Functor and Monad as the gateway to Applicative.
-Functor is a simple and beautiful thing, in that it allows us to combine pure
-functions with &ldquo;effectful&rdquo; computations, mapping an F[A] to an F[B]. In prelude
-Functor and Monad do not exist as first class entities, although we can see them
-defined as type aliases as follows&#x2026;
+In my original post, I introduce Functor and Monad as the gateway to
+Applicative. Functor is a simple and beautiful thing, in that it allows us to
+combine pure functions with &ldquo;effectful&rdquo; computations, mapping an F[A] to an
+F[B]. In prelude Functor and Monad do not exist as first-class entities,
+although we can see them defined as type aliases. This seems to be more
+documentation than practical as the type aliases are not used anywhere in the
+code.
 </p>
 
 <div class="org-src-container">
@@ -139,9 +168,9 @@ defined as type aliases as follows&#x2026;
 </div>
 
 <p>
-In Cats the Functor type class is actually short for Covariant Functor. What
-does that mean? First of all one of the best discussions of covariance in Scala
-I know can be found here on the scala-lang.org site:
+In Cats the Functor type class is short for Covariant Functor. What does that
+mean? First of all one of the best discussions of covariance in Scala I know can
+be found here on the scala-lang.org site:
 </p>
 
 <p>
@@ -149,25 +178,25 @@ I know can be found here on the scala-lang.org site:
 </p>
 
 <p>
-But in essence a covariant type parameter for some type A (denoted +A), means
-that you can pass the type or super types of the type as that parameter.
+In essence, a covariant type parameter, for example with List[+A], means that you
+if B is a subtype of A, then List[B] is a subtype of List[A].
 </p>
 
 <p>
 The Cats Functor is also covariant in that if you have a function that can map
-an A to a B, you can map a higher kinded type F[A] to F[B] too using the
+an A to a B, you can map a higher-kinded type F[A] to F[B] too using the
 Covariant Functor.
 </p>
 
 <p>
-In Cats a Functor is defined as a higher kinded type with a map function. In
+In Cats a Functor is defined as a higher-kinded type with a map function. In
 Prelude a Functor is just something that implements the Covariant type and
 follows its laws.
 </p>
 
 <p>
-In other words although Functor has essentially changed names in Prelude, it is
-very much the same as the Cats Functor&#x2026;
+Functor has essentially changed names in Prelude, it is on the surface the same as
+the Cats Functor.
 </p>
 
 <div class="org-src-container">
@@ -185,6 +214,39 @@ There is an excellent post about variance and functors on the Typelevel site:
 <p>
 <a href="https://typelevel.org/blog/2016/02/04/variance-and-functors.html">https://typelevel.org/blog/2016/02/04/variance-and-functors.html</a>
 </p>
+
+<p>
+You can take a look at the implementation of Covariant here:
+</p>
+
+<p>
+<a href="https://github.com/zio/zio-prelude/blob/master/src/main/scala/zio/prelude/Covariant.scala">https://github.com/zio/zio-prelude/blob/master/src/main/scala/zio/prelude/Covariant.scala</a>
+</p>
+
+<p>
+It&rsquo;s nice that each abstraction, or algebra, has it&rsquo;s own file, and in that file
+you&rsquo;ll find the following.
+</p>
+
+<ol class="org-ol">
+<li>A trait defining the interface to the algebra. For example, Covariant defines
+map and a couple of other functions. In this respect it is similar to Cats.</li>
+<li>Laws. The companion object contains the laws to test the algebra directly.
+Each object has a <code>laws</code> member that can be checked with the package objects
+<code>checkAllLaws</code> method.</li>
+<li>Instances. Rather than have instances in a separate file or package, they are
+also embedded in the companion. It&rsquo;s nice to have them all easily listed in
+the same place. Most algebras have instances for some appropriate standard
+library types, as well as some &ldquo;ZIO&rdquo; types like <code>ZIO</code> itself and <code>Chunk</code> and
+new Prelude types like <code>ZPure</code> which we will get into in a later post.
+Another thing I like is the code documentation is laid out like this
+<code>`Covariant` instance for `Chunk`</code> so that if you want to find, say, all the
+instances for ZIO you can do do a global text search for <code>instance for `ZIO`</code>
+and you&rsquo;ll find them. This kind of thoughtful ergonomics is much appreciated.</li>
+<li>Finally, at the end of the object implememtation you will find some syntax.
+If you ever struggled with imports in Scalaz and Cats, you may appreciate
+this one file per algebra layout.</li>
+</ol>
 </div>
 </div>
 
@@ -195,7 +257,7 @@ There is an excellent post about variance and functors on the Typelevel site:
 In Cats we extend Functor with Applicative and add the <code>flatMap</code> operation to get
 Monad. Applicative brings us both <code>ap</code> and <code>pure</code>. Leaving ap aside for the
 moment, pure is the important ability to lift a pure value into the context of
-some effect, represented as a higher kinded type.
+some effect, represented as a higher-kinded type.
 </p>
 
 <p>
@@ -228,9 +290,9 @@ that all Monad&rsquo;s are functors).
 <p>
 IdentityFlatten is the composition of prelude types Associative, Identity and
 Flatten. Flatten is easy it just gives us the ability to flatten an effect from
-an F[F[A]] to an F[A]. For example the somewhat contrived code below executes a
-ZIO that is nested inside another, resulting in a ZIO[ZIO[A]]. We can use the
-ZIO Flatten instance to flatten and run the effects&#x2026;
+an <code>F[F[A]]</code> to an <code>F[A]</code>. For example, the somewhat contrived code below
+executes a ZIO that is nested inside another, resulting in a <code>ZIO[ZIO[A]]</code>. We
+can use the ZIO Flatten instance to flatten and run the effects.
 </p>
 
 <div class="org-src-container">
@@ -248,7 +310,6 @@ Whilst most types, including ZIO effects, Future, Option and List all have
 flatMap, we <code>could</code> define it in terms of <code>Covariant</code> and <code>IdentityFlatten</code> as follows.
 </p>
 
-
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">flatMap</span>[<span style="color: #a9a1e1;">F</span>[+<span style="color: #51afef;">_</span>]<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Covariant</span> <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">IdentityFlatten</span>, <span style="color: #a9a1e1;">A</span>, <span style="color: #a9a1e1;">B</span>](fa<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">A</span>])(fab<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">A</span> <span style="color: #51afef;">=&gt;</span> <span style="color: #a9a1e1;">F</span>[<span style="color: #a9a1e1;">B</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">F</span>[<span style="color: #a9a1e1;">B</span>] <span style="color: #51afef;">=</span> {
   fa.map(a <span style="color: #51afef;">=&gt;</span> fab(a)).flatten
@@ -264,7 +325,8 @@ our pure value into that effect. Whilst this seems a little tricky, it gives a
 bit more flexibility. As Adam Fraser puts it, this &ldquo;also allows you to express
 constraints on the types of values that can be injected through implementing
 CovariantSubset instead of Covariant&rdquo;. Subsets were not featured in the
-talk so I look forward to hearing more about that feature.
+talk and I&rsquo;ll talk about those more in a future post once my understanding is
+more solidified.
 </p>
 
 <div class="org-src-container">
@@ -284,11 +346,6 @@ pure[<span style="color: #a9a1e1;">List</span>,<span style="color: #a9a1e1;">Str
 <div id="outline-container-orgfd417ef" class="outline-2">
 <h2 id="orgfd417ef">Applicatives in Prelude</h2>
 <div class="outline-text-2" id="text-orgfd417ef">
-<p>
-You can skip back to &lt;a href=&ldquo;/2020/04/04/whats-ap.html&rdquo;&gt;What&rsquo;s Ap?&lt;/a&gt; if you
-need to and read about Applicative again, but lets see how life is without it.
-</p>
-
 <p>
 In my original post we used the ap function to apply a function to an option
 using the ap function. Whilst the purpose of this was to go to explain currying
@@ -337,9 +394,9 @@ containing a tuple, in other words product.
 </div>
 
 <p>
-Traditional Applicative requires map, ap and pure. We have map from
-Covariant, the equivalent of ap using both from AssociativeBoth and pure uses
-Identity just like with our Monad example&#x2026;
+Applicative requires map, ap and pure. We have map from Covariant, the
+equivalent of ap using both from AssociativeBoth and pure uses Identity just
+like with our Monad example.
 </p>
 
 <div class="org-src-container">
@@ -362,9 +419,9 @@ pure[<span style="color: #a9a1e1;">List</span>,<span style="color: #a9a1e1;">Str
 In the seminal paper Applicative programming with Effects, the first motivating
 example for applicative programming is the sequence function. You have a list of
 effects, specifically Haskell IO effects, and you would like to turn them into
-an IO[List[A]]. You might recognise this as having the same shape and purpose as
-Future.sequence from the Scala standard library. sequence is built with its more
-powerful friend traverse.
+an <code>IO[List[A]]</code>. You might recognise this as having the same shape and purpose
+as Future.sequence from the Scala standard library. sequence is built with its
+more powerful friend traverse.
 </p>
 
 <div class="org-src-container">
@@ -386,7 +443,6 @@ to traverse over any type that is a functor (you can map over it) and foldable
 </pre>
 </div>
 
-
 <p>
 What&rsquo;s interesting about Traverse is that it relies on a number of type classes
 to build its expressive power. Ultimately our little friend <code>ap</code> is the king pin
@@ -399,10 +455,10 @@ drastically different programs.
 
 <p>
 To demonstrate this in my applicative post, I wrote an implementation of a silly
-algorithm called Sleep Sort. Sleep Sort works by waiting an amount of time based
+algorithm called Sleep Sort. Sleep Sort works by waiting an amount of time-based
 on the value of the number. Emitting the numbers in this way sorts them
 (assuming your scheduler is accurate enough). Let&rsquo;s be clear, this is a stupid
-way to sort numbers, but it does represent some real world needs we have like
+way to sort numbers, but it does represent some real-world needs we have like
 being able to run effects in parallel.
 </p>
 
@@ -489,10 +545,10 @@ Preparing to say number in 5 seconds
 <h2 id="orgc3c3611">ZIO Effects and Prelude</h2>
 <div class="outline-text-2" id="text-orgc3c3611">
 <p>
-Let&rsquo;s visit the same problem using our ZIO effects above. One thing I like about
-prelude is how combinations of its algebras are mapped to ZIO effects. In this
-table we have two ZIO effects <code>fa : ZIO[R, E, A]</code> and <code>fb : ZIO[R, E, B]</code> that
-are combined in different ways just by changing the algebra.
+Let&rsquo;s visit the same problem using our ZIO effects above. One thing I really
+like about prelude is how combinations of its algebras are mapped to ZIO
+effects. In this table we have two ZIO effects <code>fa : ZIO[R, E, A]</code> and <code>fb :
+ZIO[R, E, B]</code> that are combined in different ways just by changing the algebra.
 </p>
 
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
@@ -540,8 +596,8 @@ This is really nice and similar in spirit to what we did with Cats Traverse.
 <p>
 ZIO&rsquo;s implementation of Traverse has eschewed conventional names for some
 functions in favour or more common words, so for example sequence is just flip,
-which describes the flipping of the F[G[A]] to a G[F[A]]. We should be able to
-just flip our list of ZIOs and execute them using traverse.
+which describes the flipping of the <code>F[G[A]]</code> to a <code>G[F[A]]</code>. We should be able
+to just flip our list of ZIOs and execute them using traverse.
 </p>
 
 <p>
@@ -563,7 +619,7 @@ algebra and as such cannot be used with Traverable.
 
 <p>
 We can get around this by using the NonEmptyTraversable which implements the
-Traversable type class for non empty structures. Its functions are postfixed
+Traversable type class for non-empty structures. Its functions are postfixed
 with a 1 to indicate they require at least one element to work with, and use
 AssociativeBoth algebra which ZIO has as you can see above.
 </p>
@@ -599,15 +655,15 @@ sequential execution.
 </div>
 </div>
 
-<div id="outline-container-orgafe8880" class="outline-3">
-<h3 id="orgafe8880">Solutions</h3>
-<div class="outline-text-3" id="text-orgafe8880">
+<div id="outline-container-org75113e3" class="outline-3">
+<h3 id="org75113e3">Possible Solutions</h3>
+<div class="outline-text-3" id="text-org75113e3">
 <p>
-I talked to Adam Fraser about this and the probably solution will be a
+I talked to Adam Fraser about this and the probable solution will be a
 forthcoming newtype called Parallel which can wrap your effects with. This would
 work but feels a bit strange because we already had algebras that change
 behaviours but we can&rsquo;t freely use them in this context, and having additional
-newtypes seems like it violates the don&rsquo;t repeat yourself (DRY) prinicple.
+newtypes seems like it violates the don&rsquo;t repeat yourself (DRY) principle.
 </p>
 
 <p>
@@ -615,61 +671,130 @@ Another possible solution would be to have additional Traverse types with
 different algebras. Neither solution seems as clean as the Applicative one at
 this point.
 </p>
-</div>
-</div>
-</div>
 
-<div id="outline-container-org070c4f2" class="outline-2">
-<h2 id="org070c4f2">Conclusion</h2>
-<div class="outline-text-2" id="text-org070c4f2">
 <p>
-I&rsquo;ve been looking forward to prelude for a couple of months since I heard of its
-existent on the grapevine. Overall there are some very nice aspects to the
-library; the coherent and simple newtypes, the new ZPure (a swiss army knife of
-useful monads in a box?) and the idea of composing your type classes from
-small do one thing well algebras.
+One advantage of Applicatives is that you can compose any two with each other.
+As an advanced example from one of my talks I compose Const, IO and Parallel
+together, and take advantage of Monoidal composition, to execute a list of IO
+operations and gather statistics on the results as well as collecting the
+values. 
 </p>
 
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">program</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Traverse</span>[<span style="color: #a9a1e1;">List</span>].traverse(<span style="color: #a9a1e1;">List</span>(<span style="color: #da8548; font-weight: bold;">1</span>,<span style="color: #da8548; font-weight: bold;">2</span>,<span style="color: #da8548; font-weight: bold;">3</span>,<span style="color: #da8548; font-weight: bold;">4</span>,<span style="color: #da8548; font-weight: bold;">8</span>)) {
+  n <span style="color: #51afef;">=&gt;</span>
+  <span style="color: #a9a1e1;">Nested</span>[<span style="color: #a9a1e1;">IO</span>.<span style="color: #a9a1e1;">Par</span>,<span style="color: #a9a1e1;">Const</span>[(<span style="color: #a9a1e1;">Long</span>, <span style="color: #a9a1e1;">Int</span>, <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">String</span>], <span style="color: #a9a1e1;">List</span>[<span style="color: #a9a1e1;">Long</span>]),?], <span style="color: #a9a1e1;">String</span>](
+    <span style="color: #a9a1e1;">Par</span>(time(exampleIO(n)).map{
+      <span style="color: #51afef;">case</span> <span style="color: #51afef;">_</span> <span style="color: #51afef;">=&gt;</span>  (time, a) <span style="color: #51afef;">=&gt;</span>
+         <span style="color: #a9a1e1;">Const</span>((time, <span style="color: #da8548; font-weight: bold;">1</span>, <span style="color: #a9a1e1;">List</span>(a), <span style="color: #a9a1e1;">List</span>(time)))
+        })
+  )
+}
+</pre>
+</div>
+
+<p>
+<a href="https://youtu.be/T_0IE8PF1sY">https://youtu.be/T_0IE8PF1sY</a>
+<a href="https://docs.google.com/presentation/d/1MvPBfmUIOuvM-vjjYz6lrhQNQ7hPLzKkTR9I73uoTak/edit?usp=sharing">https://docs.google.com/presentation/d/1MvPBfmUIOuvM-vjjYz6lrhQNQ7hPLzKkTR9I73uoTak/edit?usp=sharing</a>
+</p>
+
+<p>
+In theory Prelude should be able to bring the same level of composition; maybe
+even surpass it.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgcfc3e9e" class="outline-2">
+<h2 id="orgcfc3e9e">Some final defense for ap</h2>
+<div class="outline-text-2" id="text-orgcfc3e9e">
+<p>
+Whilst ap is certainly not a perfect for Scala, what it does have going for it
+from a pedagogical point of view is that you can teach Functor, Monad and
+Applicative as being three ways to map a <code>F[A] =&gt; F[B]</code>. The only difference
+between them is the &ldquo;shape&rdquo; of the function you use to do the mapping. With
+functor the pure function <code>A =&gt; B</code> defines the Functor as letting us run a pure
+function on an effect. With flatMap the function <code>A =&gt; F[B]</code> lets us compose two
+effects together, with the result of one passed to the second. And finally, with
+Applicative, the <code>F[A =&gt; B]</code> function is the building block for running two
+independent effects together.
+</p>
+
+<p>
+With that out of the way, and with the student sufficiently guided through the
+process of currying and the implementation of map2, map3 etc, we can move on
+from ap and maybe never look at it again. Applicative is still applicative
+whether you formulate it with <code>pure</code> and <code>ap</code>, with <code>product</code>, or with <code>map2</code>.
+You can enjoy the benefits of Applicative without adopting the red-headed
+stepchild we call <code>ap</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd13d262" class="outline-2">
+<h2 id="orgd13d262">Things I missed</h2>
+<div class="outline-text-2" id="text-orgd13d262">
+<p>
+I intend to write more on Prelude soon, but until I do here the bits I didn&rsquo;t
+mention that are nevertheless very interesting features.
+</p>
+
+<p>
+Variance. If you tend to ignore variance in your Scala that will likely change
+in Prelude. I tend to stick to invariant types a lot of the time, but Prelude&rsquo;s
+design encourages call site variance, and we should start to see interesting
+examples of what that empowers us to do more of. In the talk John&rsquo;s example was
+that he wanted to map an A to B but have more control over what the B is;
+perhaps it is a Spark serializable type&#x2026;
+</p>
+
+<p>
+ZPure. When ZIO came along it brought the idea of getting rid of stacks of Monad
+transformers by putting all that functionality (error channels, read-only
+environments) into an effect. With ZPure we get to do a similar thing for none
+IO effects. ZPure gives you a State monad, a read only environment. I expect
+ZPure will be an important building block for ZIO and Prelude code, and I&rsquo;m
+looking forward to playing with it some more.
+</p>
+
+<p>
+Newtypes. Prelude comes With a nice newtype implementation. I haven&rsquo;t looked
+into it much, but it seems to work quite well with minimal effort.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb93622b" class="outline-2">
+<h2 id="orgb93622b">Wrapping things up</h2>
+<div class="outline-text-2" id="text-orgb93622b">
 <p>
 As zio-prelude evolves I expect it will at first grow, then shed some features
 into modules or libraries, before shrinking to a smaller but coherent core.
 </p>
 
 <p>
-I also predict it will create further bifurcation in the Scala FP community. As
-it becomes more tightly integrated with ZIO it will surely attract some ZIO
-programmers to give prelude their attention. For beginners there is now another
-choice for developing FP skills; learn the Haskell-motivated original type class
-encoding, or start with the prelude way. There&rsquo;s not a lot of overlap between
-the two.
+At this point I believe Prelude is a very interesting new addition to the Scala
+functional programming library ecosystem. Those experienced with the
+Haskell-like way of doing things will probably find its way of doing things
+pretty strange at first, and I don&rsquo;t know how long that feeling will last.
 </p>
-</div>
-</div>
 
-<div id="outline-container-orgeb59f74" class="outline-2">
-<h2 id="orgeb59f74">References</h2>
-<div class="outline-text-2" id="text-orgeb59f74">
-</div>
-<div id="outline-container-org3eb0866" class="outline-3">
-<h3 id="org3eb0866">Videos</h3>
-<div class="outline-text-3" id="text-org3eb0866">
-<ul class="org-ul">
-<li><a href="https://youtu.be/OwmHgL9F_9Q">SF Scala: Reimagining Functional Type Classes</a></li>
-<li><a href="https://youtu.be/_LDk9BU_Rmc">What&rsquo;s ap?</a></li>
-</ul>
-</div>
-</div>
-<div id="outline-container-orgd19ec33" class="outline-3">
-<h3 id="orgd19ec33">Code</h3>
-<div class="outline-text-3" id="text-orgd19ec33">
-<ul class="org-ul">
-<li><a href="https://github.com/justinhj/applicatives">applicatives</a> (Scala conversion from the paper and lots of Applicative stuff)</li>
-<li><a href="https://github.com/zio/zio-prelude">zio-prelude</a> (A full on system for Monadic and Applicative programming)</li>
-</ul>
+<p>
+Another question is whether functional programming in Scala will further
+bifurcate. As Prelude and ZIO become more closely intertwined (they already
+depend on each other), I expect that some people will be put off by the novelty
+of Prelude and stick with the Cats ecosystem, while others will avoid things
+built on Cats in order to stay in the ZIO and Prelude world.
+</p>
+
+<p>
+Ultimately time will tell whether Prelude&rsquo;s approach will make a big impact on
+Scala functional programming. In any event the best ideas will live on.
+</p>
 
 <p>
 &copy; 2020 Justin Heyes-Jones. All Rights Reserved.
 </p>
-</div>
 </div>
 </div>

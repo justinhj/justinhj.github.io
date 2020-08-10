@@ -18,4 +18,11 @@
      :html-extension "html"
      :body-only t
      )
+    ("css"
+     :base-directory ,(concat project-root "org/css")
+     :base-extension "css"
+     :publishing-directory ,(concat project-root "_orgcss")
+     :publishing-function org-publish-attachment
+     :recursive nil)
+    ("all" :components ("org-justinhj" "css"))
     ))

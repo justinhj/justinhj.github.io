@@ -21,7 +21,7 @@ gitter_username: justinhj
 markdown: kramdown
 
 exclude: ["README.md", "org", "run.sh", ".git", "Gemfile", ".gitignore", ".DS_Store", "tags.txt"]
-include: ["images","css"]
+include: ["images","css","_orgcss"]
 
 plugins_dir:
   - jekyll-mentions
