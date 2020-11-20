@@ -1,0 +1,94 @@
+---
+layout: post
+title: Scala 3 Context Functions
+date: '2020-08-02T00:00:00.000-08:00'
+tags: [scala, scala-3, dotty]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+<div id="outline-container-org8d11cc4" class="outline-2">
+<h2 id="org8d11cc4">What&rsquo;s new in Scala 3</h2>
+<div class="outline-text-2" id="text-org8d11cc4">
+<p>
+This is the companion blog for my new first programming video which you can find on <code>Functional Justin</code> (when it is edited), wherein I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an otherwise Scala 2 compatibile program.
+</p>
+
+<p>
+The program itself builds a simple Algebraic Data Type (ADT) to represent a simple arithmetic expressions. We can then build expressions in this <code>algebra</code> and evaluate it using an eval function using pattern matching&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #c678dd;">sealed</span> <span style="color: #51afef;">trait</span> <span style="color: #ECBE7B;">Exp</span>
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Val</span>(value<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Add</span>(left<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, right<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Mul</span>(left<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, right<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
+<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Var</span>(identifier<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
+</pre>
+</div>
+
+<p>
+Now given an expression like <code>Mul(Var("z"), Add(Val(30), Mul(Var("x"), Var("y"))))</code> I&rsquo;d like to be able to recursively traverse it and calculate a final Int value at the end.
+</p>
+
+<p>
+<code>Val</code> represents an Int value, whilst <code>Add</code> and <code>Mul</code> take care of addition and multiplication. You could go ahead and add more functions. <code>Var</code> is interesting because it takes an a string identifier (i.e., a variable name) and will look it up in an environment. The environment is represented a Scala map of String to Int.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">type</span> <span style="color: #a9a1e1;">Env</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Map</span>[<span style="color: #a9a1e1;">String</span>, <span style="color: #a9a1e1;">Int</span>]
+</pre>
+</div>
+
+<p>
+For the eval function we just use a pattern match to dispatch to functions that handle each particular operation. These handler functions and eval are <code>mutally recursive</code>, and note that every function has to have the <code>Env</code> passed to it as an implicit parameter, yet only <code>Var</code> needs it. This will be important later.
+</p>
+
+<p>
+Here&rsquo;s the eval function and handlers.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">eval</span>(exp<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)(<span style="color: #c678dd;">implicit</span> env <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span> <span style="color: #51afef;">=</span> {
+  exp <span style="color: #51afef;">match</span> {
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Var</span>(<span style="color: #dcaeea;">id</span>) <span style="color: #51afef;">=&gt;</span> handleVar(id)
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Val</span>(<span style="color: #dcaeea;">value</span>) <span style="color: #51afef;">=&gt;</span> value
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Add</span>(<span style="color: #dcaeea;">l</span>,<span style="color: #dcaeea;">r</span>) <span style="color: #51afef;">=&gt;</span> handleAdd(l,r)
+    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Mul</span>(<span style="color: #dcaeea;">l</span>,<span style="color: #dcaeea;">r</span>) <span style="color: #51afef;">=&gt;</span> handleMul(l,r)
+  }
+}
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">handleAdd</span>(l<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, r<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)(<span style="color: #c678dd;">implicit</span> env <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>) <span style="color: #51afef;">=</span> eval(l) + eval(r)
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">handleMul</span>(l<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, r<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)(<span style="color: #c678dd;">implicit</span> env <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>) <span style="color: #51afef;">=</span> eval(l) * eval(r)
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">handleVar</span>(s<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>)(<span style="color: #c678dd;">implicit</span> env<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>) <span style="color: #51afef;">=</span> env.getOrElse(s, <span style="color: #da8548; font-weight: bold;">0</span>)
+</pre>
+</div>
+
+<p>
+Note that we could have inlined these functions in eval, but it a larger example it&rsquo;s important to break things out to keep things managable.
+</p>
+
+<p>
+That is all the implementation we need, and all that remains is to create an expression, create an environment (declared implicit so Scala knows to include it as an implicit when eval is called) and print the result of evaluating the expression.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">exp1</span> <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Mul</span>(<span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"z"</span>), <span style="color: #a9a1e1;">Add</span>(<span style="color: #a9a1e1;">Val</span>(<span style="color: #da8548; font-weight: bold;">30</span>), <span style="color: #a9a1e1;">Mul</span>(<span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"x"</span>), <span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"y"</span>))))
+
+<span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">env</span> <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Map</span>(<span style="color: #98be65;">"x"</span> -&gt; <span style="color: #da8548; font-weight: bold;">17</span>, <span style="color: #98be65;">"y"</span> -&gt; <span style="color: #da8548; font-weight: bold;">10</span>, <span style="color: #98be65;">"z"</span> -&gt; <span style="color: #da8548; font-weight: bold;">2</span>)
+<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">eval1</span> <span style="color: #51afef;">=</span> eval(exp1)
+
+println(s<span style="color: #98be65;">"Eval exp gives </span><span style="color: #dcaeea;">$eval1</span><span style="color: #98be65;">"</span>)
+</pre>
+</div>
+
+<p>
+You can compile and run the code to see this working. The code is here <a href="https://github.com/justinhj/evalexample/blob/master/src/main/scala/Scala2Eval.scala">https://github.com/justinhj/evalexample/blob/master/src/main/scala/Scala2Eval.scala</a>
+</p>
+
+
+
+
+<p>
+&copy; 2020 Justin Heyes-Jones. All Rights Reserved.
+</p>
+</div>
+</div>

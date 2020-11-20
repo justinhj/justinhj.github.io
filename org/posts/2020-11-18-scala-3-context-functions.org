@@ -1,0 +1,128 @@
+#+AUTHOR: Justin Heyes-Jones
+#+TITLE: #+TITLE: Some Scala 3 Things
+#+DATE: 2020
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+HTML_HTML5_FANCY:
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: Scala 3 Context Functions
+date: '2020-08-02T00:00:00.000-08:00'
+tags: [scala, scala-3, dotty]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+#+END_EXPORT
+** What's new in Scala 3
+This is the companion blog for my new first programming video which you can find on =Functional Justin= (when it is edited), wherein I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an otherwise Scala 2 compatibile program.
+
+The program itself builds a simple Algebraic Data Type (ADT) to represent a simple arithmetic expressions. We can then build expressions in this =algebra= and evaluate it using an eval function using pattern matching...
+
+#+BEGIN_SRC scala
+sealed trait Exp
+case class Val(value: Int) extends Exp
+case class Add(left: Exp, right: Exp) extends Exp
+case class Mul(left: Exp, right: Exp) extends Exp
+case class Var(identifier: String) extends Exp
+#+END_SRC
+
+Now given an expression like =Mul(Var("z"), Add(Val(30), Mul(Var("x"), Var("y"))))= I'd like to be able to recursively traverse it and calculate a final Int value at the end.
+
+=Val= represents an Int value, whilst =Add= and =Mul= take care of addition and multiplication. You could go ahead and add more functions. =Var= is interesting because it takes an a string identifier (i.e., a variable name) and will look it up in an environment. The environment is represented a Scala map of String to Int.
+
+#+BEGIN_SRC scala
+type Env = Map[String, Int]
+#+END_SRC
+
+For the eval function we just use a pattern match to dispatch to functions that handle each particular operation. These handler functions and eval are =mutally recursive=, and note that every function has to have the =Env= passed to it as an implicit parameter, yet only =Var= needs it. This will be important later.
+
+Here's the eval function and handlers.
+
+#+BEGIN_SRC scala
+def eval(exp: Exp)(implicit env : Env): Int = {
+  exp match {
+    case Var(id) => handleVar(id)
+    case Val(value) => value
+    case Add(l,r) => handleAdd(l,r)
+    case Mul(l,r) => handleMul(l,r)
+  }
+}
+
+def handleAdd(l: Exp, r: Exp)(implicit env : Env) = eval(l) + eval(r)
+def handleMul(l: Exp, r: Exp)(implicit env : Env) = eval(l) * eval(r)
+def handleVar(s: String)(implicit env: Env) = env.getOrElse(s, 0)
+#+END_SRC
+
+Note that we could have inlined these functions in eval, but it a larger example it's important to break things out to keep things managable.
+
+That is all the implementation we need, and all that remains is to create an expression, create an environment (declared implicit so Scala knows to include it as an implicit when eval is called) and print the result of evaluating the expression.
+
+#+BEGIN_SRC scala
+val exp1 : Exp = Mul(Var("z"), Add(Val(30), Mul(Var("x"), Var("y"))))
+
+implicit val env : Env = Map("x" -> 17, "y" -> 10, "z" -> 2)
+val eval1 = eval(exp1)
+
+println(s"Eval exp gives $eval1")
+#+END_SRC
+
+You can compile and run the code to see this working. The code is here. https://github.com/justinhj/evalexample/blob/master/src/main/scala/Scala2Eval.scala
+
+** Fun with Enum
+Scala enums have been improved greatly. For one they are very simple to create and use just as in other languages.
+
+#+BEGIN_SRC scala
+ enum StatusCode:
+    case OK, TimedOut, Error
+#+END_SRC
+
+Here we've defined three enums that have ordinal values 0 to 2. You can access the ordinal value with the ~.ordinal~ method, convert ordinal values to Enums using ~.fromOrdinal~ and convert Strings to enums (assuming they match) with ~.valueOf~.
+
+#+BEGIN_SRC scala
+  println(s"Ordinal value of StatusCode.Error is ${StatusCode.Error.ordinal}")
+  println(s"StatusCode from ordinal 1 is ${StatusCode.fromOrdinal(1)}")
+  println(s"StatusCode from string OK is ${StatusCode.valueOf("OK")}")
+
+  // Ordinal value of StatusCode.Error is 2
+  // StatusCode from ordinal 1 is TimedOut
+  // StatusCode from string OK is OK
+#+END_SRC
+
+You can also add your own parameters and definitions to enums. The underlying ordinal values are still there. For example you could encode Http Status codes as follows.
+
+#+BEGIN_SRC scala
+enum HttpStatusCode(code: Int) {
+  case OK extends HttpStatusCode(200)
+  case NotModified extends HttpStatusCode(304)
+  case Forbidden extends HttpStatusCode(404)
+
+  def isSuccess = code >= 200 && code < 300
+}
+#+END_SRC
+
+Scala 3 team also took the opportunity to make Enums ~a more concise notation for ADTs and GADTs~. For our purposes that means we can simply the definition of ~Exp~ as follows.
+
+#+BEGIN_SRC scala
+enum Exp {
+  case Val(value: Int) extends Exp
+  case Add(left: Exp, right: Exp) extends Exp
+  case Var(identifier: String) extends Exp
+}
+#+END_SRC
+
+In fact you can further simplify to the following (optional braces removed).
+
+#+BEGIN_SRC scala
+enum Exp:
+  case Val(value: Int)
+  case Add(left: Exp, right: Exp)
+  case Var(identifier: String)
+#+END_SRC
+
+
+
+
+
+
+\copy 2020 Justin Heyes-Jones. All Rights Reserved.
