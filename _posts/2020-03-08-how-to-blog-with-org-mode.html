@@ -4,9 +4,9 @@ title: How to blog with Org-mode
 date: '2020-03-09T00:00:00.000-08:00'
 tags: [emacs, org-mode, blogging, github-pages, jekyll]
 ---
-<div id="outline-container-orgd9035db" class="outline-2">
-<h2 id="orgd9035db">Why blog with Org mode?</h2>
-<div class="outline-text-2" id="text-orgd9035db">
+<div id="outline-container-orgd600eca" class="outline-2">
+<h2 id="orgd600eca">Why blog with Org mode?</h2>
+<div class="outline-text-2" id="text-orgd600eca">
 <blockquote>
 <p>
 Org is a mode for keeping notes, maintaining TODO lists, and project
@@ -25,7 +25,7 @@ it a go.
 </p>
 
 <p>
-Another thing that motivated the change was Sam Halliday&rsquo;s book <a href="https://leanpub.com/fpmortals">Functional Programming for Mortals</a> which is written entirely in Org mode. As well as
+Another thing that motivated the change was Sam Halliday's book <a href="https://leanpub.com/fpmortals">Functional Programming for Mortals</a> which is written entirely in Org mode. As well as
 as having no problem with code, images and text, the book even embeds <a href="https://en.wikipedia.org/wiki/DOT_(graph_description_language)">DOT (graph description language)</a> to
 define and render diagrams inline in the org manuscript.
 </p>
@@ -33,7 +33,7 @@ define and render diagrams inline in the org manuscript.
 <p>
 Just a heads up, I host the blog (at the time of writing) on Github Pages which
 uses <a href="https://jekyllrb.com">Jekyll</a>, a static site generator ideal for blogs and other content creation.
-Some of the information here is not relevant if you don&rsquo;t use Jekyll, but you
+Some of the information here is not relevant if you don't use Jekyll, but you
 can still use these steps to generate HTML and upload that to your site.
 </p>
 
@@ -44,9 +44,9 @@ modifications to get everything working.
 </div>
 </div>
 
-<div id="outline-container-orgb2e21e1" class="outline-2">
-<h2 id="orgb2e21e1">How to author content with Org mode</h2>
-<div class="outline-text-2" id="text-orgb2e21e1">
+<div id="outline-container-org9c84486" class="outline-2">
+<h2 id="org9c84486">How to author content with Org mode</h2>
+<div class="outline-text-2" id="text-org9c84486">
 <p>
 In my blog repository I made a new folder <code>org/posts</code>. In the <code>org</code> folder I
 added an Emacs Lisp file <code>publish.el</code> which contains some code to set up the
@@ -85,7 +85,7 @@ Would be rendered as:
 
 <blockquote>
 <p>
-&ldquo;You can format quotes using the quote directive.&rdquo;
+"You can format quotes using the quote directive."
   ― Emacs User
 </p>
 </blockquote>
@@ -143,11 +143,11 @@ Which renders the image inline:
 </div>
 </div>
 
-<div id="outline-container-org12f0617" class="outline-2">
-<h2 id="org12f0617">Source code</h2>
-<div class="outline-text-2" id="text-org12f0617">
+<div id="outline-container-orgf8a7d08" class="outline-2">
+<h2 id="orgf8a7d08">Source code</h2>
+<div class="outline-text-2" id="text-orgf8a7d08">
 <p>
-Since you&rsquo;re reading my technical blog you may be the sort of person that likes
+Since you're reading my technical blog you may be the sort of person that likes
 to share code. Org mode supports source code (you can even run it and pass the
 variables around to other parts of the document). Just wrap your code in a
 <code>#+BEGIN_SRC</code> and <code>#+END_SRC</code> block. The code will be highlighted using whatever
@@ -156,20 +156,20 @@ numbers using the <code>-n</code> option:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #51afef;">(</span><span style="color: #a9a1e1;">require</span> <span style="color: #51afef;">'</span><span style="color: #a9a1e1;">company</span><span style="color: #51afef;">)</span>
+<pre class="src src-emacs-lisp">(<span style="color: #a020f0;">require</span> '<span style="color: #008b8b;">company</span>)
 
-<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">custom-dictionary-company-backend</span> <span style="color: #c678dd;">(</span>command <span style="color: #ECBE7B;">&amp;optional</span> arg <span style="color: #ECBE7B;">&amp;rest</span> ignored<span style="color: #c678dd;">)</span>
-  <span style="color: #83898d;">"Company mode backend for a custom dictionary stored as a radix tree."</span>
-  <span style="color: #c678dd;">(</span><span style="color: #51afef;">case</span> command
-    <span style="color: #98be65;">(</span><span style="color: #51afef;">'</span><span style="color: #ECBE7B;">init</span>    
-     <span style="color: #51afef;">(</span><span style="color: #51afef;">unless</span> <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">boundp</span> <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">custom-dictionary-company--words-tree</span><span style="color: #c678dd;">)</span>
-         <span style="color: #c678dd;">(</span><span style="color: #51afef;">setq</span> custom-dictionary-company--words-tree <span style="color: #98be65;">(</span>tree-from-file <span style="color: #98be65;">"dictionary.el"</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #98be65;">)</span>
-    <span style="color: #98be65;">(</span><span style="color: #51afef;">'</span><span style="color: #ECBE7B;">prefix</span>
-     <span style="color: #51afef;">(</span><span style="color: #c678dd;">company-grab-word</span><span style="color: #51afef;">)</span><span style="color: #98be65;">)</span>
-    <span style="color: #98be65;">(</span><span style="color: #51afef;">'</span><span style="color: #ECBE7B;">candidates</span>
-     <span style="color: #51afef;">(</span>radix-tree-keys custom-dictionary-company--words-tree <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">downcase</span> arg<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #98be65;">)</span>
-    <span style="color: #98be65;">(</span><span style="color: #51afef;">'</span><span style="color: #ECBE7B;">ignore-case</span>
-     <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">keep-prefix</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+(<span style="color: #a020f0;">defun</span> <span style="color: #0000ff;">custom-dictionary-company-backend</span> (command <span style="color: #228b22;">&amp;optional</span> arg <span style="color: #228b22;">&amp;rest</span> ignored)
+  <span style="color: #8b2252;">"Company mode backend for a custom dictionary stored as a radix tree."</span>
+  (<span style="color: #a020f0;">case</span> command
+    ('init    
+     (<span style="color: #a020f0;">unless</span> (boundp 'custom-dictionary-company--words-tree)
+         (<span style="color: #a020f0;">setq</span> custom-dictionary-company--words-tree (tree-from-file <span style="color: #8b2252;">"dictionary.el"</span>))))
+    ('prefix
+     (company-grab-word))
+    ('candidates
+     (radix-tree-keys custom-dictionary-company--words-tree (downcase arg)))
+    ('ignore-case
+     'keep-prefix)))
 </pre>
 </div>
 
@@ -178,28 +178,28 @@ And some Scala code with line numbers
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span class="linenr"> 1: </span>  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">main</span>(args<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Array</span>[<span style="color: #a9a1e1;">String</span>])<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Unit</span> <span style="color: #51afef;">=</span> {
+<pre class="src src-scala"><span class="linenr"> 1: </span><span style="color: #a020f0;">def</span> <span style="color: #0000ff;">main</span>(args<span style="color: #a020f0;">:</span> <span style="color: #228b22;">Array</span>[<span style="color: #008b8b;">String</span>])<span style="color: #a020f0;">:</span> <span style="color: #228b22;">Unit</span> <span style="color: #a020f0;">=</span> {
 <span class="linenr"> 2: </span>
-<span class="linenr"> 3: </span>    <span style="color: #5B6268;">// </span><span style="color: #5B6268;">ISO 8601</span>
-<span class="linenr"> 4: </span>    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">lastNotifications</span> <span style="color: #51afef;">=</span> <span style="color: #98be65;">"Fri, 06 Mar 2020 22:13:45 GMT"</span>
+<span class="linenr"> 3: </span>  <span style="color: #b22222;">// </span><span style="color: #b22222;">ISO 8601</span>
+<span class="linenr"> 4: </span>  <span style="color: #a020f0;">val</span> <span style="color: #a0522d;">lastNotifications</span> <span style="color: #a020f0;">=</span> <span style="color: #8b2252;">"Fri, 06 Mar 2020 22:13:45 GMT"</span>
 <span class="linenr"> 5: </span>
-<span class="linenr"> 6: </span>    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">program</span> <span style="color: #51afef;">=</span> (<span style="color: #51afef;">for</span>(
-<span class="linenr"> 7: </span>        implicit0(backend<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">SttpBackend</span>[<span style="color: #a9a1e1;">Task</span>,<span style="color: #a9a1e1;">Nothing</span>,<span style="color: #a9a1e1;">WebSocketHandler</span>])
-<span class="linenr"> 8: </span>          <span style="color: #51afef;">&lt;-</span> <span style="color: #a9a1e1;">AsyncHttpClientZioBackend</span>();
-<span class="linenr"> 9: </span>        response <span style="color: #51afef;">&lt;-</span> getGists().send();
-<span class="linenr">10: </span>        <span style="color: #51afef;">_</span> <span style="color: #51afef;">&lt;-</span> putStrLn(s<span style="color: #98be65;">"We got the notifications"</span>);
-<span class="linenr">11: </span>        <span style="color: #51afef;">_</span> <span style="color: #51afef;">&lt;-</span> putStrLn(s<span style="color: #98be65;">"Response: </span><span style="color: #dcaeea;">$response</span><span style="color: #98be65;">"</span>)
-<span class="linenr">12: </span>        ) <span style="color: #51afef;">yield</span> ())
+<span class="linenr"> 6: </span>  <span style="color: #a020f0;">val</span> <span style="color: #a0522d;">program</span> <span style="color: #a020f0;">=</span> (<span style="color: #a020f0;">for</span>(
+<span class="linenr"> 7: </span>      implicit0(backend<span style="color: #a020f0;">:</span> <span style="color: #228b22;">SttpBackend</span>[<span style="color: #008b8b;">Task</span>,<span style="color: #008b8b;">Nothing</span>,<span style="color: #008b8b;">WebSocketHandler</span>])
+<span class="linenr"> 8: </span>        <span style="color: #a020f0;">&lt;-</span> <span style="color: #008b8b;">AsyncHttpClientZioBackend</span>();
+<span class="linenr"> 9: </span>      response <span style="color: #a020f0;">&lt;-</span> getGists().send();
+<span class="linenr">10: </span>      <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">&lt;-</span> putStrLn(s<span style="color: #8b2252;">"We got the notifications"</span>);
+<span class="linenr">11: </span>      <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">&lt;-</span> putStrLn(s<span style="color: #8b2252;">"Response: </span><span style="color: #a0522d;">$response</span><span style="color: #8b2252;">"</span>)
+<span class="linenr">12: </span>      ) <span style="color: #a020f0;">yield</span> ())
 <span class="linenr">13: </span>
-<span class="linenr">14: </span>    runtime.unsafeRun(program)
-<span class="linenr">15: </span>  }
+<span class="linenr">14: </span>  runtime.unsafeRun(program)
+<span class="linenr">15: </span>}
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-org59b759d" class="outline-2">
-<h2 id="org59b759d">Implementation notes</h2>
-<div class="outline-text-2" id="text-org59b759d">
+<div id="outline-container-org6754801" class="outline-2">
+<h2 id="org6754801">Implementation notes</h2>
+<div class="outline-text-2" id="text-org6754801">
 <p>
 I diverged from the guide I was following. Firstly I made a file <code>publish.el</code>
 which contains the code required to configure the publishing of the blog, and
@@ -234,19 +234,19 @@ in a session and run <code>org-publish-all</code> to publish all your Org projec
 </pre>
 
 <p>
-Publishing will create HTML versions of the posts in Jekyll&rsquo;s <code>_posts</code> folder
+Publishing will create HTML versions of the posts in Jekyll's <code>_posts</code> folder
 and then you can build your site and view it locally before pushing to Github
 Pages.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org83fa7ca" class="outline-2">
-<h2 id="org83fa7ca">Summary</h2>
-<div class="outline-text-2" id="text-org83fa7ca">
+<div id="outline-container-org03bc1fd" class="outline-2">
+<h2 id="org03bc1fd">Summary</h2>
+<div class="outline-text-2" id="text-org03bc1fd">
 <p>
-One thing I&rsquo;m not sure about is if I like using Emacs&rsquo;s code blocks instead of
-embedded Github gists. It&rsquo;s certainly possible to use either. Anyway I plan to
+One thing I'm not sure about is if I like using Emacs's code blocks instead of
+embedded Github gists. It's certainly possible to use either. Anyway I plan to
 do a few future blogs using this method and see how it works out.
 </p>
 

@@ -9,13 +9,13 @@
 ---
 layout: post
 title: Scala 3 Context Functions
-date: '2020-08-02T00:00:00.000-08:00'
+date: '2020-11-18T00:00:00.000-08:00'
 tags: [scala, scala-3, dotty]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT
 ** What's new in Scala 3
-This is the companion blog for my new first programming video which you can find on =Functional Justin= (when it is edited), wherein I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an otherwise Scala 2 compatibile program.
+This is the companion blog for my new first Functional Justin video which you can find here https://youtu.be/J01u_Dmrx5U. I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an Scala 2 program.
 
 The program itself builds a simple Algebraic Data Type (ADT) to represent a simple arithmetic expressions. We can then build expressions in this =algebra= and evaluate it using an eval function using pattern matching...
 
@@ -91,7 +91,7 @@ Here we've defined three enums that have ordinal values 0 to 2. You can access t
 
 You can also add your own parameters and definitions to enums. The underlying ordinal values are still there. For example you could encode Http Status codes as follows.
 
-#+BEGIN_SRC scala
+#+BEGIN_SRC 
 enum HttpStatusCode(code: Int) {
   case OK extends HttpStatusCode(200)
   case NotModified extends HttpStatusCode(304)
@@ -111,18 +111,137 @@ enum Exp {
 }
 #+END_SRC
 
-In fact you can further simplify to the following (optional braces removed).
+In fact you can further simplify to the following (you could also remove the braces).
 
 #+BEGIN_SRC scala
-enum Exp:
+enum Exp {
   case Val(value: Int)
   case Add(left: Exp, right: Exp)
   case Var(identifier: String)
+}
 #+END_SRC
 
+** Explicit implicits
+A focus of the Scala 3 team is to help beginners access the language and in particular simplifying implicits. There are many subtle changes here but two obvious ones are that you now have different keywords for implicit parameters and creating implicit instances. In our code this means that when we supply the implicit symbol table to eval we now use the new ~given~ syntax instead of ~implicit~.
 
+#+BEGIN_SRC scala
+implicit val env : Env = Map("x" -> 17, "y" -> 10, "z" -> 2)
+#+END_SRC
 
+becomes...
 
+#+BEGIN_SRC scala
+given envMap as Env = Map("x" -> 7, "y" -> 6, "z" -> 22)
+#+END_SRC
 
+Similarly, the method parameters now no longer use the implicit keyword and instead you prefix the parameter name with ~using~.
+
+#+BEGIN_SRC
+def eval(exp: Exp)(implicit env : Env): Int
+#+END_SRC
+
+becomes...
+
+#+BEGIN_SRC scala
+def eval(exp: Exp)(using env : Env): Int
+#+END_SRC
+
+You don't have to change your Scala 2 code at this point, it is still compatible, but for new code and in the long term you should gradually eliminate implicit.
+
+** Context Functions
+Last and not at all least are context functions. This gives us one more opportunity to remove boiler plate from the eval code. When you create a regular function value it has a type like ~Function1[A,B]~. In other words it is a function that takes a value A and returns vale of type B. Context Functions are a new function value type (this is synthesized by the compiler so you won't see it your code), with an input and an output type. The difference is that the input is understood to be provided implicitly.
+
+Let's make this more concrete. Assume you have a function that needs an ~ExecutionContext~. We can make a Context Function type that will take an implicit execution context and return some paramaterized type T.
+
+#+BEGIN_SRC scala
+type Executable[T] = ExecutionContext ?=> T
+#+END_SRC
+
+How would that be used in a real program? Let's say you have some deeply nested function (f4 in the code below) and it is only down at that level you need the implicit execution context. Without implicit parameters you'd add the ExecutionContext parameter to every single function call all the way down and then have to take care to pass it along. With Scala 2 implicits you still have to declare the parameter but you can make it implicit and avoid the burden of manually passing it along.
+
+With Scala 3 you can define the function to be of type ~Executable[T]~ and then we don't need to even name the implicit parameter, we just know that it will be included automatically all the way down. Here is a complete example.
+
+#+BEGIN_SRC scala
+import scala.concurrent.{Future, ExecutionContext, Await}
+import scala.concurrent.duration._
+import scala.language.postfixOps
+
+object Executable extends App {
+
+  type Executable[T] = ExecutionContext ?=> T
+
+  def f1(n: Int): Executable[Future[Int]] = f2(n + 1)
+  def f2(n: Int): Executable[Future[Int]] = f3(n + 1)
+  def f3(n: Int): Executable[Future[Int]] = f4(n + 1)
+  def f4(n: Int): Executable[Future[Int]] = {
+    val ex = summon[ExecutionContext]
+    Future {
+      println(s"Hi from the future! n is $n")
+      n
+    }
+  }
+
+  {
+    given ec as ExecutionContext = scala.concurrent.ExecutionContext.global
+    Await.result(f1(10), 1 second)
+    // Hi from the future! n is 13
+  }
+
+}
+#+END_SRC
+
+Context functions reduce boilerplate when dealing with implicit parameters in deeply nested code. We can apply this technique to our eval function so that the symbol table itself is the implicit piece of context.
+
+#+BEGIN_SRC scala
+type WithEnv = Env ?=> Int
+
+def eval(exp: Exp): WithEnv =
+  exp match {
+    case Var(id) => handleVar(id)
+    case Val(value) => value
+    case Add(l,r) => handleAdd(l,r)
+  }
+
+def handleAdd(l: Exp, r: Exp): WithEnv = eval(l) + eval(r)
+
+def handleVar(s: String): WithEnv =
+  val env = summon[Env]
+  env.getOrElse(s, 0)
+#+END_SRC
+
+You can take a look at the final Scala 3 version of the code here.
+
+https://github.com/justinhj/evalexample/blob/master/src/main/scala/Scala3Eval.scala
+
+** Final notes
+Of all the new features in Scala 3, I found Context Functions of most interest because of Martin Odersky's blog from 2016 https://www.scala-lang.org/blog/2016/12/07/implicit-function-types.html where this intriguing quote appears near the end. (Context functions were initially known as implicit functions).
+
+#+BEGIN_QUOTE
+There are many interesting connections with category theory to explore here. On the one hand, implicit functions are used for tasks that are sometimes covered with monads such as the reader monad. There’s an argument to be made that implicits have better composability than monads and why that is.
+
+On the other hand, it turns out that implicit functions can also be given a co-monadic interpretation, and the interplay between monads and comonads is very interesting in its own right.
+
+But these discussions will have to wait for another time, as this blog post is already too long.
+#+END_QUOTE
+
+Somewhat of a Fermat's last theorem moment there, and I am also interested in how we can represent concepts, that are currently implemented in libraries which model category theory, using vanilla Scala 3 or alternative representations.
+
+** References
+
+https://en.wikiquote.org/wiki/Pierre_de_Fermat
+
+https://dotty.epfl.ch/docs/reference/enums/enums.html
+https://dotty.epfl.ch/docs/reference/enums/adts.html
+
+http://dotty.epfl.ch/docs/reference/other-new-features/indentation.html
+
+https://dotty.epfl.ch/docs/reference/contextual/givens.html https://dotty.epfl.ch/docs/reference/contextual/using-clauses.html
+
+https://dotty.epfl.ch/docs/reference/contextual/context-functions.html
+
+Foundations and Applications of Implicit Function Types
+https://infoscience.epfl.ch/record/229878/files/simplicitly_1.pdf
+
+http://recurse.se/2019/09/implicit-functions-in-scala-3/
 
 \copy 2020 Justin Heyes-Jones. All Rights Reserved.
