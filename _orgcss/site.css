@@ -14,5 +14,6 @@
 pre.src.src-scala {
     background-color: #000;
     color: #fff;
-    font-size: 16px
+    font-size: 16px;
+    font-family: monaco, Consolas, "Lucida Console", monospace;
 }
