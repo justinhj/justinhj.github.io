@@ -5,17 +5,17 @@ date: '2020-08-02T00:00:00.000-08:00'
 tags: [pure-functional-programming, cats, scala, applicative, monads, functors, zio]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
-<div id="outline-container-org7690cda" class="outline-2">
-<h2 id="org7690cda">What's ZIO Prelude</h2>
-<div class="outline-text-2" id="text-org7690cda">
+<div id="outline-container-orgf144ed3" class="outline-2">
+<h2 id="orgf144ed3">What's ZIO Prelude</h2>
+<div class="outline-text-2" id="text-orgf144ed3">
 <p>
-Recently ZIO originator, John De Goes, and key contributor Adam Fraser,
-presented their latest functional programming library to the world. ZIO Prelude,
-hereafter referred to as Prelude, is promised as a radical shift in the way
-functional programming is taught, implemented and used. The event was the online
-edition of the SF Scala meetup, and the talk is now available on YouTube <a href="https://youtu.be/OwmHgL9F_9Q">SF
-Scala: Reimagining Functional Type Classes</a>. You can also visit the source code
-on Github <a href="https://github.com/zio/zio-prelude">zio-prelude</a>.
+Recently, ZIO creators, John De Goes and Adam Fraser, presented their
+latest functional programming library to the world. ZIO Prelude,
+hereafter referred to as Prelude, is promised as a radical shift in
+the way functional programming is taught, implemented and used. The
+event was the online edition of the SF Scala meetup, and the talk is
+now available on YouTube <a href="https://youtu.be/OwmHgL9F_9Q">SF Scala: Reimagining Functional Type
+Classes</a>. You can also visit the source code on Github <a href="https://github.com/zio/zio-prelude">zio-prelude</a>.
 </p>
 
 <p>
@@ -37,9 +37,9 @@ feel free to contact me and I will correct them.
 </div>
 </div>
 
-<div id="outline-container-orgc11223f" class="outline-2">
-<h2 id="orgc11223f">What's ap with ZIO Prelude?</h2>
-<div class="outline-text-2" id="text-orgc11223f">
+<div id="outline-container-orgc619591" class="outline-2">
+<h2 id="orgc619591">What's ap with ZIO Prelude?</h2>
+<div class="outline-text-2" id="text-orgc619591">
 <p>
 Prior to the talk John tweeted:
 </p>
@@ -97,9 +97,9 @@ challenge to defend my friend the Applicative.
 </div>
 </div>
 
-<div id="outline-container-org9b4b42f" class="outline-2">
-<h2 id="org9b4b42f">Goals of Prelude</h2>
-<div class="outline-text-2" id="text-org9b4b42f">
+<div id="outline-container-org79349f4" class="outline-2">
+<h2 id="org79349f4">Goals of Prelude</h2>
+<div class="outline-text-2" id="text-org79349f4">
 <p>
 As you'll see in the <a href="https://www.slideshare.net/jdegoes/refactoring-functional-type-classes">slide deck</a>, the goals of prelude are to be the following:
 </p>
@@ -124,9 +124,9 @@ that composability is one of the biggest wins of pure functional programs.
 </div>
 </div>
 
-<div id="outline-container-orgc8cf45b" class="outline-2">
-<h2 id="orgc8cf45b">Algebras, not Category Theory</h2>
-<div class="outline-text-2" id="text-orgc8cf45b">
+<div id="outline-container-org74858f0" class="outline-2">
+<h2 id="org74858f0">Algebras, not Category Theory</h2>
+<div class="outline-text-2" id="text-org74858f0">
 <p>
 With Cats, almost all of the concepts come from category theory. We have Monads,
 Functors, Monoids, Monoidal Functors and so on. The idea with prelude is that
@@ -144,13 +144,13 @@ overall to the problems and applications that Cats et al already address?
 </div>
 </div>
 
-<div id="outline-container-org49d37f9" class="outline-2">
-<h2 id="org49d37f9">Functor and Monad</h2>
-<div class="outline-text-2" id="text-org49d37f9">
+<div id="outline-container-org4e53c9c" class="outline-2">
+<h2 id="org4e53c9c">Functor and Monad</h2>
+<div class="outline-text-2" id="text-org4e53c9c">
 </div>
-<div id="outline-container-org91c92a4" class="outline-3">
-<h3 id="org91c92a4">Functors (Covariant)</h3>
-<div class="outline-text-3" id="text-org91c92a4">
+<div id="outline-container-org3a84684" class="outline-3">
+<h3 id="org3a84684">Functors (Covariant)</h3>
+<div class="outline-text-3" id="text-org3a84684">
 <p>
 In my original post, I introduce Functor and Monad as the gateway to
 Applicative. Functor is a simple and beautiful thing, in that it allows us to
@@ -162,8 +162,8 @@ code.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">type</span> <span style="color: #008b8b;">Functor</span>[<span style="color: #008b8b;">F</span>[+<span style="color: #a020f0;">_</span>]] <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">Covariant</span>[<span style="color: #008b8b;">F</span>]
-<span style="color: #a020f0;">type</span> <span style="color: #008b8b;">Monad</span>[<span style="color: #008b8b;">F</span>[+<span style="color: #a020f0;">_</span>]] <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">Covariant</span>[<span style="color: #008b8b;">F</span>] <span style="color: #a020f0;">with</span> <span style="color: #228b22;">IdentityFlatten</span>[<span style="color: #008b8b;">F</span>]
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Functor</span>[<span style="color: #00bcff;">F</span>[+<span style="color: #b6a0ff;">_</span>]] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Covariant</span>[<span style="color: #00bcff;">F</span>]
+<span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Monad</span>[<span style="color: #00bcff;">F</span>[+<span style="color: #b6a0ff;">_</span>]] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Covariant</span>[<span style="color: #00bcff;">F</span>] <span style="color: #b6a0ff;">with</span> <span style="color: #f78fe7;">IdentityFlatten</span>[<span style="color: #00bcff;">F</span>]
 </pre>
 </div>
 
@@ -200,10 +200,10 @@ the Cats Functor.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #008b8b;">List</span>(<span style="color: #008b8b;">1</span>,<span style="color: #008b8b;">2</span>,<span style="color: #008b8b;">3</span>).map(a <span style="color: #a020f0;">=&gt;</span> a + <span style="color: #008b8b;">1</span>)
-<span style="color: #b22222;">// </span><span style="color: #b22222;">List[Int] = List(2, 3, 4)</span>
-<span style="color: #008b8b;">Option</span>(<span style="color: #008b8b;">1</span>).map(a <span style="color: #a020f0;">=&gt;</span> a + <span style="color: #008b8b;">1</span>)
-<span style="color: #b22222;">// </span><span style="color: #b22222;">Option[Int] = Some(2)</span>
+<pre class="src src-scala"><span style="color: #00bcff;">List</span>(<span style="color: #00bcff;">1</span>,<span style="color: #00bcff;">2</span>,<span style="color: #00bcff;">3</span>).map(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">List[Int] = List(2, 3, 4)</span>
+<span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">1</span>).map(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Option[Int] = Some(2)</span>
 </pre>
 </div>
 
@@ -250,9 +250,9 @@ this one file per algebra layout.</li>
 </div>
 </div>
 
-<div id="outline-container-org1d7a0ed" class="outline-3">
-<h3 id="org1d7a0ed">Monads</h3>
-<div class="outline-text-3" id="text-org1d7a0ed">
+<div id="outline-container-orgd0148dc" class="outline-3">
+<h3 id="orgd0148dc">Monads</h3>
+<div class="outline-text-3" id="text-orgd0148dc">
 <p>
 In Cats we extend Functor with Applicative and add the <code>flatMap</code> operation to get
 Monad. Applicative brings us both <code>ap</code> and <code>pure</code>. Leaving ap aside for the
@@ -266,12 +266,12 @@ order to do that with Cats we would use the Monad flatmap operation.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">def</span> <span style="color: #0000ff;">getUser</span>(email<span style="color: #a020f0;">:</span> <span style="color: #228b22;">String</span>)<span style="color: #a020f0;">:</span> <span style="color: #228b22;">Future</span>[<span style="color: #008b8b;">User</span>] <span style="color: #a020f0;">=</span> ???
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">getUser</span>(email<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Future</span>[<span style="color: #00bcff;">User</span>] <span style="color: #b6a0ff;">=</span> ???
 
-<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">getAccountStatus</span>(id<span style="color: #a020f0;">:</span> <span style="color: #228b22;">String</span>)<span style="color: #a020f0;">:</span> <span style="color: #228b22;">Future</span>[<span style="color: #008b8b;">AccountStatus</span>] <span style="color: #a020f0;">=</span> ???
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">getAccountStatus</span>(id<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Future</span>[<span style="color: #00bcff;">AccountStatus</span>] <span style="color: #b6a0ff;">=</span> ???
 
-<span style="color: #a020f0;">val</span> <span style="color: #a0522d;">accountStatus</span> <span style="color: #a020f0;">=</span> getUser(<span style="color: #8b2252;">"bob@google.com"</span>)
-  .flatMap(user <span style="color: #a020f0;">=&gt;</span> getAccountStatus(user.accountId))
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">accountStatus</span> <span style="color: #b6a0ff;">=</span> getUser(<span style="color: #79a8ff;">"bob@google.com"</span>)
+  .flatMap(user <span style="color: #b6a0ff;">=&gt;</span> getAccountStatus(user.accountId))
 </pre>
 </div>
 
@@ -296,12 +296,12 @@ can use the ZIO Flatten instance to flatten and run the effects.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">import</span> zio.<span style="color: #a020f0;">_</span>
-<span style="color: #a020f0;">val</span> <span style="color: #a0522d;">runtime</span> <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">Runtime</span>.default
-<span style="color: #a020f0;">val</span> <span style="color: #a0522d;">effect</span> <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">ZIO</span>{putStrLn(<span style="color: #8b2252;">"Hello!"</span>); <span style="color: #008b8b;">ZIO</span>.succeed(<span style="color: #008b8b;">10</span>)}
+<pre class="src src-scala"><span style="color: #b6a0ff;">import</span> zio.<span style="color: #b6a0ff;">_</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">runtime</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Runtime</span>.default
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">effect</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">ZIO</span>{putStrLn(<span style="color: #79a8ff;">"Hello!"</span>); <span style="color: #00bcff;">ZIO</span>.succeed(<span style="color: #00bcff;">10</span>)}
 runtime.unsafeRun(effect.flatten)
-<span style="color: #b22222;">// </span><span style="color: #b22222;">Hello!</span>
-<span style="color: #b22222;">// </span><span style="color: #b22222;">Int = 10</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Hello!</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Int = 10</span>
 </pre>
 </div>
 
@@ -311,8 +311,8 @@ flatMap, we <code>could</code> define it in terms of <code>Covariant</code> and 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">def</span> <span style="color: #0000ff;">flatMap</span>[<span style="color: #008b8b;">F</span>[+<span style="color: #a020f0;">_</span>]<span style="color: #a020f0;">:</span> <span style="color: #228b22;">Covariant</span> <span style="color: #a020f0;">:</span> <span style="color: #228b22;">IdentityFlatten</span>, <span style="color: #008b8b;">A</span>, <span style="color: #008b8b;">B</span>](fa<span style="color: #a020f0;">:</span> <span style="color: #228b22;">F</span>[<span style="color: #008b8b;">A</span>])(fab<span style="color: #a020f0;">:</span> <span style="color: #228b22;">A</span> <span style="color: #a020f0;">=&gt;</span> <span style="color: #008b8b;">F</span>[<span style="color: #008b8b;">B</span>])<span style="color: #a020f0;">:</span> <span style="color: #228b22;">F</span>[<span style="color: #008b8b;">B</span>] <span style="color: #a020f0;">=</span> {
-  fa.map(a <span style="color: #a020f0;">=&gt;</span> fab(a)).flatten
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">flatMap</span>[<span style="color: #00bcff;">F</span>[+<span style="color: #b6a0ff;">_</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Covariant</span> <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">IdentityFlatten</span>, <span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>])(fab<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
+  fa.map(a <span style="color: #b6a0ff;">=&gt;</span> fab(a)).flatten
 }
 </pre>
 </div>
@@ -330,22 +330,22 @@ more solidified.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">def</span> <span style="color: #0000ff;">pure</span>[<span style="color: #008b8b;">F</span>[+<span style="color: #a020f0;">_</span>] <span style="color: #a020f0;">:</span> <span style="color: #228b22;">Covariant</span> <span style="color: #a020f0;">:</span> <span style="color: #228b22;">IdentityFlatten</span>, <span style="color: #008b8b;">A</span>](a<span style="color: #a020f0;">:</span> <span style="color: #228b22;">A</span>)(<span style="color: #483d8b;">implicit</span> i <span style="color: #a020f0;">:</span> <span style="color: #228b22;">IdentityFlatten</span>[<span style="color: #008b8b;">F</span>])<span style="color: #a020f0;">:</span> <span style="color: #228b22;">F</span>[<span style="color: #008b8b;">A</span>] <span style="color: #a020f0;">=</span> {
-  i.any.map(<span style="color: #a020f0;">_</span> <span style="color: #a020f0;">=&gt;</span> a)
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">pure</span>[<span style="color: #00bcff;">F</span>[+<span style="color: #b6a0ff;">_</span>] <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Covariant</span> <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">IdentityFlatten</span>, <span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span>)(<span style="color: #f78fe7;">implicit</span> i <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">IdentityFlatten</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+  i.any.map(<span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">=&gt;</span> a)
 }
-pure[<span style="color: #008b8b;">Option</span>,<span style="color: #008b8b;">Int</span>](<span style="color: #008b8b;">12</span>)
-<span style="color: #b22222;">// </span><span style="color: #b22222;">Option[Int] = Some(12)</span>
-pure[<span style="color: #008b8b;">List</span>,<span style="color: #008b8b;">String</span>](<span style="color: #8b2252;">"Hello"</span>)
-<span style="color: #b22222;">// </span><span style="color: #b22222;">List[String] = List(Hello)</span>
+pure[<span style="color: #00bcff;">Option</span>,<span style="color: #00bcff;">Int</span>](<span style="color: #00bcff;">12</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Option[Int] = Some(12)</span>
+pure[<span style="color: #00bcff;">List</span>,<span style="color: #00bcff;">String</span>](<span style="color: #79a8ff;">"Hello"</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">List[String] = List(Hello)</span>
 </pre>
 </div>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org6a70a27" class="outline-2">
-<h2 id="org6a70a27">Applicatives in Prelude</h2>
-<div class="outline-text-2" id="text-org6a70a27">
+<div id="outline-container-orgdab85d9" class="outline-2">
+<h2 id="orgdab85d9">Applicatives in Prelude</h2>
+<div class="outline-text-2" id="text-orgdab85d9">
 <p>
 In my original post we used the ap function to apply a function to an option
 using the ap function. Whilst the purpose of this was to go to explain currying
@@ -358,7 +358,7 @@ In prelude the equivalent to Applicative is defined as follows.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">type</span> <span style="color: #008b8b;">Applicative</span>[<span style="color: #008b8b;">F</span>[+<span style="color: #a020f0;">_</span>]] <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">Covariant</span>[<span style="color: #008b8b;">F</span>] <span style="color: #a020f0;">with</span> <span style="color: #228b22;">IdentityBoth</span>[<span style="color: #008b8b;">F</span>]
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Applicative</span>[<span style="color: #00bcff;">F</span>[+<span style="color: #b6a0ff;">_</span>]] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Covariant</span>[<span style="color: #00bcff;">F</span>] <span style="color: #b6a0ff;">with</span> <span style="color: #f78fe7;">IdentityBoth</span>[<span style="color: #00bcff;">F</span>]
 </pre>
 </div>
 
@@ -373,11 +373,11 @@ function from Applicative)
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #483d8b;">override</span> <span style="color: #a020f0;">def</span> <span style="color: #0000ff;">product</span>[<span style="color: #008b8b;">A</span>, <span style="color: #008b8b;">B</span>](fa<span style="color: #a020f0;">:</span> <span style="color: #228b22;">F</span>[<span style="color: #008b8b;">A</span>], fb<span style="color: #a020f0;">:</span> <span style="color: #228b22;">F</span>[<span style="color: #008b8b;">B</span>])<span style="color: #a020f0;">:</span> <span style="color: #228b22;">F</span>[(<span style="color: #008b8b;">A</span>, <span style="color: #008b8b;">B</span>)] <span style="color: #a020f0;">=</span>
-  ap(map(fa)(a <span style="color: #a020f0;">=&gt;</span> (b<span style="color: #a020f0;">:</span> <span style="color: #228b22;">B</span>) <span style="color: #a020f0;">=&gt;</span> (a, b)))(fb)
+<pre class="src src-scala"><span style="color: #f78fe7;">override</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">product</span>[<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>], fb<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">B</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[(<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>)] <span style="color: #b6a0ff;">=</span>
+  ap(map(fa)(a <span style="color: #b6a0ff;">=&gt;</span> (b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">B</span>) <span style="color: #b6a0ff;">=&gt;</span> (a, b)))(fb)
 
-<span style="color: #008b8b;">Applicative</span>[<span style="color: #008b8b;">Option</span>].product(<span style="color: #008b8b;">Option</span>(<span style="color: #008b8b;">10</span>), <span style="color: #008b8b;">Option</span>(<span style="color: #008b8b;">12</span>)).map{<span style="color: #a020f0;">case</span> (<span style="color: #a0522d;">a</span>,<span style="color: #a0522d;">b</span>) <span style="color: #a020f0;">=&gt;</span> a + b}
-<span style="color: #b22222;">// </span><span style="color: #b22222;">Option[Int] = Some(22)</span>
+<span style="color: #00bcff;">Applicative</span>[<span style="color: #00bcff;">Option</span>].product(<span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">10</span>), <span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">12</span>)).map{<span style="color: #b6a0ff;">case</span> (<span style="color: #00d3d0;">a</span>,<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> a + b}
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Option[Int] = Some(22)</span>
 </pre>
 </div>
 
@@ -388,8 +388,8 @@ containing a tuple, in other words product.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #008b8b;">AssociativeBoth</span>[<span style="color: #008b8b;">Option</span>].both(<span style="color: #008b8b;">Option</span>(<span style="color: #008b8b;">10</span>), <span style="color: #008b8b;">Option</span>(<span style="color: #008b8b;">12</span>)).map{<span style="color: #a020f0;">case</span> (<span style="color: #a0522d;">a</span>,<span style="color: #a0522d;">b</span>) <span style="color: #a020f0;">=&gt;</span> a + b}
-<span style="color: #b22222;">// </span><span style="color: #b22222;">Option[Int] = Some(22)</span>
+<pre class="src src-scala"><span style="color: #00bcff;">AssociativeBoth</span>[<span style="color: #00bcff;">Option</span>].both(<span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">10</span>), <span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">12</span>)).map{<span style="color: #b6a0ff;">case</span> (<span style="color: #00d3d0;">a</span>,<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> a + b}
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Option[Int] = Some(22)</span>
 </pre>
 </div>
 
@@ -400,21 +400,21 @@ like with our Monad example.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">def</span> <span style="color: #0000ff;">pure</span>[<span style="color: #008b8b;">F</span>[+<span style="color: #a020f0;">_</span>] <span style="color: #a020f0;">:</span> <span style="color: #228b22;">Covariant</span> <span style="color: #a020f0;">:</span> <span style="color: #228b22;">IdentityBoth</span>, <span style="color: #008b8b;">A</span>](a<span style="color: #a020f0;">:</span> <span style="color: #228b22;">A</span>)(<span style="color: #483d8b;">implicit</span> i <span style="color: #a020f0;">:</span> <span style="color: #228b22;">IdentityBoth</span>[<span style="color: #008b8b;">F</span>])<span style="color: #a020f0;">:</span> <span style="color: #228b22;">F</span>[<span style="color: #008b8b;">A</span>] <span style="color: #a020f0;">=</span> {
-  i.any.map(<span style="color: #a020f0;">_</span> <span style="color: #a020f0;">=&gt;</span> a)
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">pure</span>[<span style="color: #00bcff;">F</span>[+<span style="color: #b6a0ff;">_</span>] <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Covariant</span> <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">IdentityBoth</span>, <span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span>)(<span style="color: #f78fe7;">implicit</span> i <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">IdentityBoth</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+  i.any.map(<span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">=&gt;</span> a)
 }
-pure[<span style="color: #008b8b;">Option</span>,<span style="color: #008b8b;">Int</span>](<span style="color: #008b8b;">12</span>)
-<span style="color: #b22222;">// </span><span style="color: #b22222;">res1: Option[Int] = Some(12)</span>
-pure[<span style="color: #008b8b;">List</span>,<span style="color: #008b8b;">String</span>](<span style="color: #8b2252;">"Hello"</span>)
-<span style="color: #b22222;">// </span><span style="color: #b22222;">res2: List[String] = List(Hello)</span>
+pure[<span style="color: #00bcff;">Option</span>,<span style="color: #00bcff;">Int</span>](<span style="color: #00bcff;">12</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">res1: Option[Int] = Some(12)</span>
+pure[<span style="color: #00bcff;">List</span>,<span style="color: #00bcff;">String</span>](<span style="color: #79a8ff;">"Hello"</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">res2: List[String] = List(Hello)</span>
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org5e53f22" class="outline-2">
-<h2 id="org5e53f22">Sequence and Traverse</h2>
-<div class="outline-text-2" id="text-org5e53f22">
+<div id="outline-container-org6a57c05" class="outline-2">
+<h2 id="org6a57c05">Sequence and Traverse</h2>
+<div class="outline-text-2" id="text-org6a57c05">
 <p>
 In the seminal paper Applicative programming with Effects, the first motivating
 example for applicative programming is the sequence function. You have a list of
@@ -425,8 +425,8 @@ more powerful friend traverse.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #008b8b;">Future</span>.sequence is a function <span style="color: #008b8b;">IterableOnce</span>[<span style="color: #008b8b;">Future</span>[<span style="color: #008b8b;">A</span>]] <span style="color: #a020f0;">=&gt;</span> <span style="color: #008b8b;">Future</span>[<span style="color: #008b8b;">IterableOnce</span>[<span style="color: #008b8b;">A</span>]]
-<span style="color: #008b8b;">Future</span>.traverse is a function <span style="color: #008b8b;">IterableOnce</span>[<span style="color: #008b8b;">A</span>], <span style="color: #008b8b;">A</span> <span style="color: #a020f0;">=&gt;</span> <span style="color: #008b8b;">Future</span>[<span style="color: #008b8b;">B</span>] <span style="color: #a020f0;">=&gt;</span> <span style="color: #008b8b;">Future</span>[<span style="color: #008b8b;">IterableOnce</span>[<span style="color: #008b8b;">B</span>]]
+<pre class="src src-scala"><span style="color: #00bcff;">Future</span>.sequence is a function <span style="color: #00bcff;">IterableOnce</span>[<span style="color: #00bcff;">Future</span>[<span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Future</span>[<span style="color: #00bcff;">IterableOnce</span>[<span style="color: #00bcff;">A</span>]]
+<span style="color: #00bcff;">Future</span>.traverse is a function <span style="color: #00bcff;">IterableOnce</span>[<span style="color: #00bcff;">A</span>], <span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Future</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Future</span>[<span style="color: #00bcff;">IterableOnce</span>[<span style="color: #00bcff;">B</span>]]
 </pre>
 </div>
 
@@ -437,8 +437,8 @@ to traverse over any type that is a functor (you can map over it) and foldable
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">trait</span> <span style="color: #228b22;">Traverse</span>[<span style="color: #008b8b;">F</span>[<span style="color: #a020f0;">_</span>]] <span style="color: #a020f0;">extends</span> <span style="color: #228b22;">Functor</span>[<span style="color: #008b8b;">F</span>] <span style="color: #a020f0;">with</span> <span style="color: #228b22;">Foldable</span>[<span style="color: #008b8b;">F</span>] {
- <span style="color: #a020f0;">def</span> <span style="color: #0000ff;">traverse</span>[<span style="color: #008b8b;">G</span>[<span style="color: #a020f0;">_</span>]<span style="color: #a020f0;">:</span> <span style="color: #228b22;">Applicative</span>, <span style="color: #008b8b;">A</span>, <span style="color: #008b8b;">B</span>](fa<span style="color: #a020f0;">:</span> <span style="color: #228b22;">F</span>[<span style="color: #008b8b;">A</span>])(f<span style="color: #a020f0;">:</span> <span style="color: #228b22;">A</span> <span style="color: #a020f0;">=&gt;</span> <span style="color: #008b8b;">G</span>[<span style="color: #008b8b;">B</span>])<span style="color: #a020f0;">:</span> <span style="color: #228b22;">G</span>[<span style="color: #008b8b;">F</span>[<span style="color: #008b8b;">B</span>]]
+<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #f78fe7;">Traverse</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]] <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">Functor</span>[<span style="color: #00bcff;">F</span>] <span style="color: #b6a0ff;">with</span> <span style="color: #f78fe7;">Foldable</span>[<span style="color: #00bcff;">F</span>] {
+ <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">traverse</span>[<span style="color: #00bcff;">G</span>[<span style="color: #b6a0ff;">_</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Applicative</span>, <span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>])(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">G</span>[<span style="color: #00bcff;">B</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">G</span>[<span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>]]
 }
 </pre>
 </div>
@@ -463,17 +463,17 @@ being able to run effects in parallel.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">import</span> zio.<span style="color: #a020f0;">_</span>
-<span style="color: #a020f0;">import</span> zio.prelude.<span style="color: #a020f0;">_</span>
-<span style="color: #a020f0;">import</span> zio.console.<span style="color: #a020f0;">_</span>
-<span style="color: #a020f0;">import</span> zio.clock.<span style="color: #a020f0;">_</span>
-<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">delayedPrintNumber</span>(s<span style="color: #a020f0;">:</span> <span style="color: #228b22;">Int</span>)<span style="color: #a020f0;">:</span> <span style="color: #228b22;">ZIO</span>[<span style="color: #008b8b;">Console</span> <span style="color: #a020f0;">with</span> <span style="color: #228b22;">Clock</span>,<span style="color: #008b8b;">String</span>,<span style="color: #008b8b;">Int</span>] <span style="color: #a020f0;">=</span> {
-    putStrLn(s<span style="color: #8b2252;">"Preparing to say number in </span><span style="color: #a0522d;">$s</span><span style="color: #8b2252;"> seconds"</span>) *&gt;
-    putStrLn(s<span style="color: #8b2252;">"</span><span style="color: #a0522d;">$s</span><span style="color: #8b2252;">"</span>).delay(s.seconds) *&gt;
-    <span style="color: #008b8b;">ZIO</span>.succeed(s)
+<pre class="src src-scala"><span style="color: #b6a0ff;">import</span> zio.<span style="color: #b6a0ff;">_</span>
+<span style="color: #b6a0ff;">import</span> zio.prelude.<span style="color: #b6a0ff;">_</span>
+<span style="color: #b6a0ff;">import</span> zio.console.<span style="color: #b6a0ff;">_</span>
+<span style="color: #b6a0ff;">import</span> zio.clock.<span style="color: #b6a0ff;">_</span>
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">delayedPrintNumber</span>(s<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">ZIO</span>[<span style="color: #00bcff;">Console</span> <span style="color: #b6a0ff;">with</span> <span style="color: #f78fe7;">Clock</span>,<span style="color: #00bcff;">String</span>,<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> {
+    putStrLn(s<span style="color: #79a8ff;">"Preparing to say number in </span><span style="color: #00d3d0;">$s</span><span style="color: #79a8ff;"> seconds"</span>) *&gt;
+    putStrLn(s<span style="color: #79a8ff;">"</span><span style="color: #00d3d0;">$s</span><span style="color: #79a8ff;">"</span>).delay(s.seconds) *&gt;
+    <span style="color: #00bcff;">ZIO</span>.succeed(s)
 }
-<span style="color: #a020f0;">val</span> <span style="color: #a0522d;">ios</span> <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">List</span>(<span style="color: #008b8b;">6</span>,<span style="color: #008b8b;">5</span>,<span style="color: #008b8b;">2</span>,<span style="color: #008b8b;">1</span>,<span style="color: #008b8b;">3</span>,<span style="color: #008b8b;">8</span>,<span style="color: #008b8b;">4</span>,<span style="color: #008b8b;">7</span>).map(delayedPrintNumber)
-<span style="color: #b22222;">// </span><span style="color: #b22222;">ios: List[ZIO[Console with Clock,String,Int]]</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">ios</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">List</span>(<span style="color: #00bcff;">6</span>,<span style="color: #00bcff;">5</span>,<span style="color: #00bcff;">2</span>,<span style="color: #00bcff;">1</span>,<span style="color: #00bcff;">3</span>,<span style="color: #00bcff;">8</span>,<span style="color: #00bcff;">4</span>,<span style="color: #00bcff;">7</span>).map(delayedPrintNumber)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">ios: List[ZIO[Console with Clock,String,Int]]</span>
 </pre>
 </div>
 
@@ -483,10 +483,10 @@ then execute it.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">import</span> cats.__
-<span style="color: #a020f0;">import</span> cats.<span style="color: #008b8b;">Traverse</span>
-<span style="color: #a020f0;">val</span> <span style="color: #a0522d;">runtime</span> <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">Runtime</span>.default
-<span style="color: #a020f0;">val</span> <span style="color: #a0522d;">program</span> <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">Traverse</span>[<span style="color: #008b8b;">List</span>].traverse(ios)
+<pre class="src src-scala"><span style="color: #b6a0ff;">import</span> cats.__
+<span style="color: #b6a0ff;">import</span> cats.<span style="color: #00bcff;">Traverse</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">runtime</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Runtime</span>.default
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">program</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Traverse</span>[<span style="color: #00bcff;">List</span>].traverse(ios)
 runtime.unsafeRun(program)
 </pre>
 </div>
@@ -541,9 +541,9 @@ Preparing to say number in 5 seconds
 </div>
 </div>
 
-<div id="outline-container-org357c47c" class="outline-2">
-<h2 id="org357c47c">ZIO Effects and Prelude</h2>
-<div class="outline-text-2" id="text-org357c47c">
+<div id="outline-container-org6e6d580" class="outline-2">
+<h2 id="org6e6d580">ZIO Effects and Prelude</h2>
+<div class="outline-text-2" id="text-org6e6d580">
 <p>
 Let's visit the same problem using our ZIO effects above. One thing I really
 like about prelude is how combinations of its algebras are mapped to ZIO
@@ -606,9 +606,9 @@ are two difficulties.
 </p>
 </div>
 
-<div id="outline-container-org5beba67" class="outline-3">
-<h3 id="org5beba67">Problem 1. Traversable doesn't handle empty structures</h3>
-<div class="outline-text-3" id="text-org5beba67">
+<div id="outline-container-org6301fee" class="outline-3">
+<h3 id="org6301fee">Problem 1. Traversable doesn't handle empty structures</h3>
+<div class="outline-text-3" id="text-org6301fee">
 <p>
 Perhaps by design, you cannot just take a list of ZIO effects and Traverse them,
 because the flip function requires the G parameter to have the IdentityBoth
@@ -626,9 +626,9 @@ AssociativeBoth algebra which ZIO has as you can see above.
 </div>
 </div>
 
-<div id="outline-container-orge0144a9" class="outline-3">
-<h3 id="orge0144a9">Problem 2. We don't have a way to change from sequenced to parallel execution</h3>
-<div class="outline-text-3" id="text-orge0144a9">
+<div id="outline-container-orga15f6c8" class="outline-3">
+<h3 id="orga15f6c8">Problem 2. We don't have a way to change from sequenced to parallel execution</h3>
+<div class="outline-text-3" id="text-orga15f6c8">
 <p>
 When we were dealing with Applicatives we can change the data type to select a
 different applicative and get a different combining method. This is a crucial
@@ -639,12 +639,12 @@ need to use CommutativeBoth to get the parallel execution the sleep sort needs).
 </div>
 </div>
 
-<div id="outline-container-orgd5b28f0" class="outline-3">
-<h3 id="orgd5b28f0">Running the code</h3>
-<div class="outline-text-3" id="text-orgd5b28f0">
+<div id="outline-container-org63408c3" class="outline-3">
+<h3 id="org63408c3">Running the code</h3>
+<div class="outline-text-3" id="text-org63408c3">
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">val</span> <span style="color: #a0522d;">runtime</span> <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">Runtime</span>.default
-runtime.unsafeRun(<span style="color: #008b8b;">NonEmptyTraversable</span>[<span style="color: #008b8b;">NonEmptyList</span>].flip1(ios))
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">runtime</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Runtime</span>.default
+runtime.unsafeRun(<span style="color: #00bcff;">NonEmptyTraversable</span>[<span style="color: #00bcff;">NonEmptyList</span>].flip1(ios))
 </pre>
 </div>
 
@@ -655,9 +655,9 @@ sequential execution.
 </div>
 </div>
 
-<div id="outline-container-org01433ef" class="outline-3">
-<h3 id="org01433ef">Possible Solutions</h3>
-<div class="outline-text-3" id="text-org01433ef">
+<div id="outline-container-org37a6a72" class="outline-3">
+<h3 id="org37a6a72">Possible Solutions</h3>
+<div class="outline-text-3" id="text-org37a6a72">
 <p>
 I talked to Adam Fraser about this and the probable solution will be a
 forthcoming newtype called Parallel which can wrap your effects with. This would
@@ -681,12 +681,12 @@ values.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #a020f0;">val</span> <span style="color: #a0522d;">program</span> <span style="color: #a020f0;">=</span> <span style="color: #008b8b;">Traverse</span>[<span style="color: #008b8b;">List</span>].traverse(<span style="color: #008b8b;">List</span>(<span style="color: #008b8b;">1</span>,<span style="color: #008b8b;">2</span>,<span style="color: #008b8b;">3</span>,<span style="color: #008b8b;">4</span>,<span style="color: #008b8b;">8</span>)) {
-  n <span style="color: #a020f0;">=&gt;</span>
-  <span style="color: #008b8b;">Nested</span>[<span style="color: #008b8b;">IO</span>.<span style="color: #008b8b;">Par</span>,<span style="color: #008b8b;">Const</span>[(<span style="color: #008b8b;">Long</span>, <span style="color: #008b8b;">Int</span>, <span style="color: #008b8b;">List</span>[<span style="color: #008b8b;">String</span>], <span style="color: #008b8b;">List</span>[<span style="color: #008b8b;">Long</span>]),?], <span style="color: #008b8b;">String</span>](
-    <span style="color: #008b8b;">Par</span>(time(exampleIO(n)).map{
-      <span style="color: #a020f0;">case</span> <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">=&gt;</span>  (time, a) <span style="color: #a020f0;">=&gt;</span>
-         <span style="color: #008b8b;">Const</span>((time, <span style="color: #008b8b;">1</span>, <span style="color: #008b8b;">List</span>(a), <span style="color: #008b8b;">List</span>(time)))
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">program</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Traverse</span>[<span style="color: #00bcff;">List</span>].traverse(<span style="color: #00bcff;">List</span>(<span style="color: #00bcff;">1</span>,<span style="color: #00bcff;">2</span>,<span style="color: #00bcff;">3</span>,<span style="color: #00bcff;">4</span>,<span style="color: #00bcff;">8</span>)) {
+  n <span style="color: #b6a0ff;">=&gt;</span>
+  <span style="color: #00bcff;">Nested</span>[<span style="color: #00bcff;">IO</span>.<span style="color: #00bcff;">Par</span>,<span style="color: #00bcff;">Const</span>[(<span style="color: #00bcff;">Long</span>, <span style="color: #00bcff;">Int</span>, <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>], <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">Long</span>]),?], <span style="color: #00bcff;">String</span>](
+    <span style="color: #00bcff;">Par</span>(time(exampleIO(n)).map{
+      <span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">=&gt;</span>  (time, a) <span style="color: #b6a0ff;">=&gt;</span>
+         <span style="color: #00bcff;">Const</span>((time, <span style="color: #00bcff;">1</span>, <span style="color: #00bcff;">List</span>(a), <span style="color: #00bcff;">List</span>(time)))
         })
   )
 }
@@ -706,9 +706,9 @@ even surpass it.
 </div>
 </div>
 
-<div id="outline-container-org51dafa1" class="outline-2">
-<h2 id="org51dafa1">Some final defense for ap</h2>
-<div class="outline-text-2" id="text-org51dafa1">
+<div id="outline-container-orgeea2b6c" class="outline-2">
+<h2 id="orgeea2b6c">Some final defense for ap</h2>
+<div class="outline-text-2" id="text-orgeea2b6c">
 <p>
 Whilst ap is certainly not a perfect for Scala, what it does have going for it
 from a pedagogical point of view is that you can teach Functor, Monad and
@@ -732,9 +732,9 @@ stepchild we call <code>ap</code>.
 </div>
 </div>
 
-<div id="outline-container-orge5caa0e" class="outline-2">
-<h2 id="orge5caa0e">Things I missed</h2>
-<div class="outline-text-2" id="text-orge5caa0e">
+<div id="outline-container-org22cb0da" class="outline-2">
+<h2 id="org22cb0da">Things I missed</h2>
+<div class="outline-text-2" id="text-org22cb0da">
 <p>
 I intend to write more on Prelude soon, but until I do here the bits I didn't
 mention that are nevertheless very interesting features.
@@ -765,9 +765,9 @@ into it much, but it seems to work quite well with minimal effort.
 </div>
 </div>
 
-<div id="outline-container-org6f533b7" class="outline-2">
-<h2 id="org6f533b7">Wrapping things up</h2>
-<div class="outline-text-2" id="text-org6f533b7">
+<div id="outline-container-org8666f56" class="outline-2">
+<h2 id="org8666f56">Wrapping things up</h2>
+<div class="outline-text-2" id="text-org8666f56">
 <p>
 As zio-prelude evolves I expect it will at first grow, then shed some features
 into modules or libraries, before shrinking to a smaller but coherent core.

@@ -5,9 +5,9 @@ date: '2020-11-18T00:00:00.000-08:00'
 tags: [scala, scala-3, dotty]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
-<div id="outline-container-orgcde1e55" class="outline-2">
-<h2 id="orgcde1e55">What's new in Scala 3</h2>
-<div class="outline-text-2" id="text-orgcde1e55">
+<div id="outline-container-orgdfb085b" class="outline-2">
+<h2 id="orgdfb085b">Some Scala 3 Things</h2>
+<div class="outline-text-2" id="text-orgdfb085b">
 <p>
 This is the companion blog for my first Functional Justin video which you can find here <a href="https://youtu.be/J01u_Dmrx5U">https://youtu.be/J01u_Dmrx5U</a>. I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an Scala 2 program.
 </p>
@@ -86,9 +86,9 @@ You can compile and run the code to see this working. The code is here. <a href=
 </div>
 </div>
 
-<div id="outline-container-orge593d12" class="outline-2">
-<h2 id="orge593d12">Fun with Enum</h2>
-<div class="outline-text-2" id="text-orge593d12">
+<div id="outline-container-org8786b78" class="outline-2">
+<h2 id="org8786b78">Fun with Enum</h2>
+<div class="outline-text-2" id="text-org8786b78">
 <p>
 Scala enums have been improved greatly. For one they are very simple to create and use just as in other languages.
 </p>
@@ -157,9 +157,9 @@ In fact you can further simplify to the following (you could also remove the bra
 </div>
 </div>
 
-<div id="outline-container-org5e43c95" class="outline-2">
-<h2 id="org5e43c95">Explicit implicits</h2>
-<div class="outline-text-2" id="text-org5e43c95">
+<div id="outline-container-orgc339a82" class="outline-2">
+<h2 id="orgc339a82">Explicit implicits</h2>
+<div class="outline-text-2" id="text-orgc339a82">
 <p>
 A focus of the Scala 3 team is to help beginners access the language and in particular simplifying implicits. There are many subtle changes here but two obvious ones are that you now have different keywords for implicit parameters and creating implicit instances. In our code this means that when we supply the implicit symbol table to eval we now use the new <code>given</code> syntax instead of <code>implicit</code>.
 </p>
@@ -201,9 +201,9 @@ You don't have to change your Scala 2 code at this point, it is still compatible
 </div>
 </div>
 
-<div id="outline-container-orgb34ce43" class="outline-2">
-<h2 id="orgb34ce43">Context Functions</h2>
-<div class="outline-text-2" id="text-orgb34ce43">
+<div id="outline-container-orga0b9c56" class="outline-2">
+<h2 id="orga0b9c56">Context Functions</h2>
+<div class="outline-text-2" id="text-orga0b9c56">
 <p>
 Last and not at all least are context functions. This gives us one more opportunity to remove boiler plate from the eval code. When you create a regular function value it has a type like <code>Function1[A,B]</code>. In other words it is a function that takes a value A and returns vale of type B. Context Functions are a new function value type (this is synthesized by the compiler so you won't see it your code), with an input and an output type. The difference is that the input is understood to be provided implicitly.
 </p>
@@ -287,9 +287,9 @@ You can take a look at the final Scala 3 version of the code here.
 </div>
 </div>
 
-<div id="outline-container-orgbc72c13" class="outline-2">
-<h2 id="orgbc72c13">Final notes</h2>
-<div class="outline-text-2" id="text-orgbc72c13">
+<div id="outline-container-org573436f" class="outline-2">
+<h2 id="org573436f">Final notes</h2>
+<div class="outline-text-2" id="text-org573436f">
 <p>
 Of all the new features in Scala 3, I found Context Functions of most interest because of Martin Odersky's blog from 2016 <a href="https://www.scala-lang.org/blog/2016/12/07/implicit-function-types.html">https://www.scala-lang.org/blog/2016/12/07/implicit-function-types.html</a> where this intriguing quote appears near the end. (Context functions were initially known as implicit functions).
 </p>
@@ -314,9 +314,9 @@ Somewhat of a Fermat's last theorem moment there, and I am also interested in ho
 </div>
 </div>
 
-<div id="outline-container-org9a50569" class="outline-2">
-<h2 id="org9a50569">References</h2>
-<div class="outline-text-2" id="text-org9a50569">
+<div id="outline-container-org6f3673d" class="outline-2">
+<h2 id="org6f3673d">References</h2>
+<div class="outline-text-2" id="text-org6f3673d">
 <p>
 <a href="https://en.wikiquote.org/wiki/Pierre_de_Fermat">https://en.wikiquote.org/wiki/Pierre_de_Fermat</a>
 </p>

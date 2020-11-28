@@ -12,6 +12,7 @@ title: What's Ap?
 date: '2020-04-04T00:00:00.000-08:00'
 tags: [pure-functional-programming, cats, scala, applicative, monads, functors]
 ---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT
 
 #+BEGIN_EXPORT html
@@ -31,7 +32,7 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, functors]
 
 ** Introduction
 This post is aimed at the Scala programmer who is familiar with the basics of
-the language and ideally becoming interested, or already deeply entrenched, in
+the language and ideally becoming interested, or even deeply entrenched, in
 pure functional programming and curious about ~Applicative Functors~. We'll
 delve into the original paper in which they were introduced, converting the
 Haskell code to modern Scala, both custom code and using Cats, Cats Effect and

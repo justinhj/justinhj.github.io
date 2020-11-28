@@ -15,13 +15,13 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, functors, 
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT
 ** What's ZIO Prelude
-Recently ZIO originator, John De Goes, and key contributor Adam Fraser,
-presented their latest functional programming library to the world. ZIO Prelude,
-hereafter referred to as Prelude, is promised as a radical shift in the way
-functional programming is taught, implemented and used. The event was the online
-edition of the SF Scala meetup, and the talk is now available on YouTube [[https://youtu.be/OwmHgL9F_9Q][SF
-Scala: Reimagining Functional Type Classes]]. You can also visit the source code
-on Github [[https://github.com/zio/zio-prelude][zio-prelude]].
+Recently, ZIO creators, John De Goes and Adam Fraser, presented their
+latest functional programming library to the world. ZIO Prelude,
+hereafter referred to as Prelude, is promised as a radical shift in
+the way functional programming is taught, implemented and used. The
+event was the online edition of the SF Scala meetup, and the talk is
+now available on YouTube [[https://youtu.be/OwmHgL9F_9Q][SF Scala: Reimagining Functional Type
+Classes]]. You can also visit the source code on Github [[https://github.com/zio/zio-prelude][zio-prelude]].
 
 For those that don't know, Prelude was initially developed, I'm told, as part of
 John De Goes's "Spartan" training program, so I wasn't able to follow it since

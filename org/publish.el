@@ -25,4 +25,5 @@
      :publishing-function org-publish-attachment
      :recursive nil)
     ("all" :components ("org-justinhj" "css"))
-    ))
+    )
+  )
