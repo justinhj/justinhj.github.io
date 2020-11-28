@@ -14,7 +14,7 @@ tags: [scala, scala-3, dotty]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT
-** What's new in Scala 3
+** Some Scala 3 Things
 This is the companion blog for my first Functional Justin video which you can find here https://youtu.be/J01u_Dmrx5U. I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an Scala 2 program.
 
 The program itself builds a simple Algebraic Data Type (ADT) to represent a simple arithmetic expressions. We can then build expressions in this =algebra= and evaluate it using an eval function using pattern matching...
