@@ -15,7 +15,7 @@ tags: [scala, scala-3, dotty]
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT
 ** What's new in Scala 3
-This is the companion blog for my new first Functional Justin video which you can find here https://youtu.be/J01u_Dmrx5U. I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an Scala 2 program.
+This is the companion blog for my first Functional Justin video which you can find here https://youtu.be/J01u_Dmrx5U. I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an Scala 2 program.
 
 The program itself builds a simple Algebraic Data Type (ADT) to represent a simple arithmetic expressions. We can then build expressions in this =algebra= and evaluate it using an eval function using pattern matching...
 
@@ -27,7 +27,7 @@ case class Mul(left: Exp, right: Exp) extends Exp
 case class Var(identifier: String) extends Exp
 #+END_SRC
 
-Now given an expression like =Mul(Var("z"), Add(Val(30), Mul(Var("x"), Var("y"))))= I'd like to be able to recursively traverse it and calculate a final Int value at the end.
+Now given an expression like ~Mul(Var("z"), Add(Val(30), Mul(Var("x"), Var("y"))))~ I'd like to be able to recursively traverse it and calculate a final Int value at the end.
 
 =Val= represents an Int value, whilst =Add= and =Mul= take care of addition and multiplication. You could go ahead and add more functions. =Var= is interesting because it takes an a string identifier (i.e., a variable name) and will look it up in an environment. The environment is represented a Scala map of String to Int.
 
@@ -91,7 +91,7 @@ Here we've defined three enums that have ordinal values 0 to 2. You can access t
 
 You can also add your own parameters and definitions to enums. The underlying ordinal values are still there. For example you could encode Http Status codes as follows.
 
-#+BEGIN_SRC 
+#+BEGIN_SRC scala 
 enum HttpStatusCode(code: Int) {
   case OK extends HttpStatusCode(200)
   case NotModified extends HttpStatusCode(304)

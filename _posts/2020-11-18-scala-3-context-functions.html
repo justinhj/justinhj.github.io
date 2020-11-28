@@ -5,11 +5,11 @@ date: '2020-11-18T00:00:00.000-08:00'
 tags: [scala, scala-3, dotty]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
-<div id="outline-container-org8d11cc4" class="outline-2">
-<h2 id="org8d11cc4">What&rsquo;s new in Scala 3</h2>
-<div class="outline-text-2" id="text-org8d11cc4">
+<div id="outline-container-orgcde1e55" class="outline-2">
+<h2 id="orgcde1e55">What's new in Scala 3</h2>
+<div class="outline-text-2" id="text-orgcde1e55">
 <p>
-This is the companion blog for my new first Functional Justin video which you can find here <a href="https://youtu.be/J01u_Dmrx5U">https://youtu.be/J01u_Dmrx5U</a>. I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an Scala 2 program.
+This is the companion blog for my first Functional Justin video which you can find here <a href="https://youtu.be/J01u_Dmrx5U">https://youtu.be/J01u_Dmrx5U</a>. I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an Scala 2 program.
 </p>
 
 <p>
@@ -17,16 +17,16 @@ The program itself builds a simple Algebraic Data Type (ADT) to represent a simp
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">sealed</span> <span style="color: #51afef;">trait</span> <span style="color: #ECBE7B;">Exp</span>
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Val</span>(value<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Add</span>(left<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, right<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Mul</span>(left<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, right<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
-<span style="color: #51afef;">case</span> <span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">Var</span>(identifier<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
+<pre class="src src-scala"><span style="color: #f78fe7;">sealed</span> <span style="color: #b6a0ff;">trait</span> <span style="color: #f78fe7;">Exp</span>
+<span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">class</span> <span style="color: #f78fe7;">Val</span>(value<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">Exp</span>
+<span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">class</span> <span style="color: #f78fe7;">Add</span>(left<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>, right<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">Exp</span>
+<span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">class</span> <span style="color: #f78fe7;">Mul</span>(left<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>, right<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">Exp</span>
+<span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">class</span> <span style="color: #f78fe7;">Var</span>(identifier<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">Exp</span>
 </pre>
 </div>
 
 <p>
-Now given an expression like <code>Mul(Var("z"), Add(Val(30), Mul(Var("x"), Var("y"))))</code> I&rsquo;d like to be able to recursively traverse it and calculate a final Int value at the end.
+Now given an expression like <code>Mul(Var("z"), Add(Val(30), Mul(Var("x"), Var("y"))))</code> I'd like to be able to recursively traverse it and calculate a final Int value at the end.
 </p>
 
 <p>
@@ -34,7 +34,7 @@ Now given an expression like <code>Mul(Var("z"), Add(Val(30), Mul(Var("x"), Var(
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">type</span> <span style="color: #a9a1e1;">Env</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Map</span>[<span style="color: #a9a1e1;">String</span>, <span style="color: #a9a1e1;">Int</span>]
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Env</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>]
 </pre>
 </div>
 
@@ -43,27 +43,27 @@ For the eval function we just use a pattern match to dispatch to functions that 
 </p>
 
 <p>
-Here&rsquo;s the eval function and handlers.
+Here's the eval function and handlers.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">eval</span>(exp<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)(<span style="color: #c678dd;">implicit</span> env <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span> <span style="color: #51afef;">=</span> {
-  exp <span style="color: #51afef;">match</span> {
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Var</span>(<span style="color: #dcaeea;">id</span>) <span style="color: #51afef;">=&gt;</span> handleVar(id)
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Val</span>(<span style="color: #dcaeea;">value</span>) <span style="color: #51afef;">=&gt;</span> value
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Add</span>(<span style="color: #dcaeea;">l</span>,<span style="color: #dcaeea;">r</span>) <span style="color: #51afef;">=&gt;</span> handleAdd(l,r)
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Mul</span>(<span style="color: #dcaeea;">l</span>,<span style="color: #dcaeea;">r</span>) <span style="color: #51afef;">=&gt;</span> handleMul(l,r)
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">eval</span>(exp<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>)(<span style="color: #f78fe7;">implicit</span> env <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Env</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span> <span style="color: #b6a0ff;">=</span> {
+  exp <span style="color: #b6a0ff;">match</span> {
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Var</span>(<span style="color: #00d3d0;">id</span>) <span style="color: #b6a0ff;">=&gt;</span> handleVar(id)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> value
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Add</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleAdd(l,r)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Mul</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleMul(l,r)
   }
 }
 
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">handleAdd</span>(l<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, r<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)(<span style="color: #c678dd;">implicit</span> env <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>) <span style="color: #51afef;">=</span> eval(l) + eval(r)
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">handleMul</span>(l<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, r<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)(<span style="color: #c678dd;">implicit</span> env <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>) <span style="color: #51afef;">=</span> eval(l) * eval(r)
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">handleVar</span>(s<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>)(<span style="color: #c678dd;">implicit</span> env<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>) <span style="color: #51afef;">=</span> env.getOrElse(s, <span style="color: #da8548; font-weight: bold;">0</span>)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleAdd</span>(l<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>, r<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>)(<span style="color: #f78fe7;">implicit</span> env <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Env</span>) <span style="color: #b6a0ff;">=</span> eval(l) + eval(r)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleMul</span>(l<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>, r<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>)(<span style="color: #f78fe7;">implicit</span> env <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Env</span>) <span style="color: #b6a0ff;">=</span> eval(l) * eval(r)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>(s<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)(<span style="color: #f78fe7;">implicit</span> env<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Env</span>) <span style="color: #b6a0ff;">=</span> env.getOrElse(s, <span style="color: #00bcff;">0</span>)
 </pre>
 </div>
 
 <p>
-Note that we could have inlined these functions in eval, but it a larger example it&rsquo;s important to break things out to keep things managable.
+Note that we could have inlined these functions in eval, but it a larger example it's important to break things out to keep things managable.
 </p>
 
 <p>
@@ -71,12 +71,12 @@ That is all the implementation we need, and all that remains is to create an exp
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">val</span> <span style="color: #dcaeea;">exp1</span> <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Mul</span>(<span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"z"</span>), <span style="color: #a9a1e1;">Add</span>(<span style="color: #a9a1e1;">Val</span>(<span style="color: #da8548; font-weight: bold;">30</span>), <span style="color: #a9a1e1;">Mul</span>(<span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"x"</span>), <span style="color: #a9a1e1;">Var</span>(<span style="color: #98be65;">"y"</span>))))
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">exp1</span> <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Mul</span>(<span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"z"</span>), <span style="color: #00bcff;">Add</span>(<span style="color: #00bcff;">Val</span>(<span style="color: #00bcff;">30</span>), <span style="color: #00bcff;">Mul</span>(<span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"x"</span>), <span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"y"</span>))))
 
-<span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">env</span> <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Map</span>(<span style="color: #98be65;">"x"</span> -&gt; <span style="color: #da8548; font-weight: bold;">17</span>, <span style="color: #98be65;">"y"</span> -&gt; <span style="color: #da8548; font-weight: bold;">10</span>, <span style="color: #98be65;">"z"</span> -&gt; <span style="color: #da8548; font-weight: bold;">2</span>)
-<span style="color: #51afef;">val</span> <span style="color: #dcaeea;">eval1</span> <span style="color: #51afef;">=</span> eval(exp1)
+<span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">env</span> <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Env</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">17</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">10</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">2</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">eval1</span> <span style="color: #b6a0ff;">=</span> eval(exp1)
 
-println(s<span style="color: #98be65;">"Eval exp gives </span><span style="color: #dcaeea;">$eval1</span><span style="color: #98be65;">"</span>)
+println(s<span style="color: #79a8ff;">"Eval exp gives </span><span style="color: #00d3d0;">$eval1</span><span style="color: #79a8ff;">"</span>)
 </pre>
 </div>
 
@@ -86,31 +86,31 @@ You can compile and run the code to see this working. The code is here. <a href=
 </div>
 </div>
 
-<div id="outline-container-orgf8abbe1" class="outline-2">
-<h2 id="orgf8abbe1">Fun with Enum</h2>
-<div class="outline-text-2" id="text-orgf8abbe1">
+<div id="outline-container-orge593d12" class="outline-2">
+<h2 id="orge593d12">Fun with Enum</h2>
+<div class="outline-text-2" id="text-orge593d12">
 <p>
 Scala enums have been improved greatly. For one they are very simple to create and use just as in other languages.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"> enum <span style="color: #a9a1e1;">StatusCode</span><span style="color: #51afef;">:</span>
-    <span style="color: #51afef;">case</span> <span style="color: #a9a1e1;">OK</span>, <span style="color: #a9a1e1;">TimedOut</span>, <span style="color: #a9a1e1;">Error</span>
+<pre class="src src-scala">enum <span style="color: #00bcff;">StatusCode</span><span style="color: #b6a0ff;">:</span>
+   <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">OK</span>, <span style="color: #00bcff;">TimedOut</span>, <span style="color: #00bcff;">Error</span>
 </pre>
 </div>
 
 <p>
-Here we&rsquo;ve defined three enums that have ordinal values 0 to 2. You can access the ordinal value with the <code>.ordinal</code> method, convert ordinal values to Enums using <code>.fromOrdinal</code> and convert Strings to enums (assuming they match) with <code>.valueOf</code>.
+Here we've defined three enums that have ordinal values 0 to 2. You can access the ordinal value with the <code>.ordinal</code> method, convert ordinal values to Enums using <code>.fromOrdinal</code> and convert Strings to enums (assuming they match) with <code>.valueOf</code>.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">  println(s<span style="color: #98be65;">"Ordinal value of StatusCode.Error is </span><span style="color: #dcaeea;">${StatusCode.Error.ordinal}</span><span style="color: #98be65;">"</span>)
-  println(s<span style="color: #98be65;">"StatusCode from ordinal 1 is </span><span style="color: #dcaeea;">${StatusCode.fromOrdinal(1)}</span><span style="color: #98be65;">"</span>)
-  println(s<span style="color: #98be65;">"StatusCode from string OK is </span><span style="color: #dcaeea;">${StatusCode.valueOf("OK")}</span><span style="color: #98be65;">"</span>)
+<pre class="src src-scala">println(s<span style="color: #79a8ff;">"Ordinal value of StatusCode.Error is </span><span style="color: #00d3d0;">${StatusCode.Error.ordinal}</span><span style="color: #79a8ff;">"</span>)
+println(s<span style="color: #79a8ff;">"StatusCode from ordinal 1 is </span><span style="color: #00d3d0;">${StatusCode.fromOrdinal(1)}</span><span style="color: #79a8ff;">"</span>)
+println(s<span style="color: #79a8ff;">"StatusCode from string OK is </span><span style="color: #00d3d0;">${StatusCode.valueOf("OK")}</span><span style="color: #79a8ff;">"</span>)
 
-  <span style="color: #5B6268;">// </span><span style="color: #5B6268;">Ordinal value of StatusCode.Error is 2</span>
-  <span style="color: #5B6268;">// </span><span style="color: #5B6268;">StatusCode from ordinal 1 is TimedOut</span>
-  <span style="color: #5B6268;">// </span><span style="color: #5B6268;">StatusCode from string OK is OK</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Ordinal value of StatusCode.Error is 2</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">StatusCode from ordinal 1 is TimedOut</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">StatusCode from string OK is OK</span>
 </pre>
 </div>
 
@@ -118,25 +118,26 @@ Here we&rsquo;ve defined three enums that have ordinal values 0 to 2. You can ac
 You can also add your own parameters and definitions to enums. The underlying ordinal values are still there. For example you could encode Http Status codes as follows.
 </p>
 
-<pre class="example">
-enum HttpStatusCode(code: Int) {
-  case OK extends HttpStatusCode(200)
-  case NotModified extends HttpStatusCode(304)
-  case Forbidden extends HttpStatusCode(404)
+<div class="org-src-container">
+<pre class="src src-scala">enum <span style="color: #00bcff;">HttpStatusCode</span>(code<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>) {
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">OK</span> <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">HttpStatusCode</span>(<span style="color: #00bcff;">200</span>)
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">NotModified</span> <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">HttpStatusCode</span>(<span style="color: #00bcff;">304</span>)
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">Forbidden</span> <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">HttpStatusCode</span>(<span style="color: #00bcff;">404</span>)
 
-  def isSuccess = code &gt;= 200 &amp;&amp; code &lt; 300
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isSuccess</span> <span style="color: #b6a0ff;">=</span> code &gt;= <span style="color: #00bcff;">200</span> &amp;&amp; code &lt; <span style="color: #00bcff;">300</span>
 }
 </pre>
+</div>
 
 <p>
 Scala 3 team also took the opportunity to make Enums <code>a more concise notation for ADTs and GADTs</code>. For our purposes that means we can simply the definition of <code>Exp</code> as follows.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">enum <span style="color: #a9a1e1;">Exp</span> {
-  <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Val</span>(<span style="color: #dcaeea;">value</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
-  <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Add</span>(<span style="color: #dcaeea;">left</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, <span style="color: #dcaeea;">right</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
-  <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Var</span>(<span style="color: #dcaeea;">identifier</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>) <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">Exp</span>
+<pre class="src src-scala">enum <span style="color: #00bcff;">Exp</span> {
+  <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Val</span>(<span style="color: #00d3d0;">value</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">Exp</span>
+  <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Add</span>(<span style="color: #00d3d0;">left</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>, <span style="color: #00d3d0;">right</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">Exp</span>
+  <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Var</span>(<span style="color: #00d3d0;">identifier</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">Exp</span>
 }
 </pre>
 </div>
@@ -146,25 +147,25 @@ In fact you can further simplify to the following (you could also remove the bra
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">enum <span style="color: #a9a1e1;">Exp</span> {
-  <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Val</span>(<span style="color: #dcaeea;">value</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>)
-  <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Add</span>(<span style="color: #dcaeea;">left</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, <span style="color: #dcaeea;">right</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)
-  <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Var</span>(<span style="color: #dcaeea;">identifier</span><span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>)
+<pre class="src src-scala">enum <span style="color: #00bcff;">Exp</span> {
+  <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Val</span>(<span style="color: #00d3d0;">value</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)
+  <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Add</span>(<span style="color: #00d3d0;">left</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>, <span style="color: #00d3d0;">right</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>)
+  <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Var</span>(<span style="color: #00d3d0;">identifier</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)
 }
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org07720d3" class="outline-2">
-<h2 id="org07720d3">Explicit implicits</h2>
-<div class="outline-text-2" id="text-org07720d3">
+<div id="outline-container-org5e43c95" class="outline-2">
+<h2 id="org5e43c95">Explicit implicits</h2>
+<div class="outline-text-2" id="text-org5e43c95">
 <p>
 A focus of the Scala 3 team is to help beginners access the language and in particular simplifying implicits. There are many subtle changes here but two obvious ones are that you now have different keywords for implicit parameters and creating implicit instances. In our code this means that when we supply the implicit symbol table to eval we now use the new <code>given</code> syntax instead of <code>implicit</code>.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #c678dd;">implicit</span> <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">env</span> <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Map</span>(<span style="color: #98be65;">"x"</span> -&gt; <span style="color: #da8548; font-weight: bold;">17</span>, <span style="color: #98be65;">"y"</span> -&gt; <span style="color: #da8548; font-weight: bold;">10</span>, <span style="color: #98be65;">"z"</span> -&gt; <span style="color: #da8548; font-weight: bold;">2</span>)
+<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">env</span> <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Env</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">17</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">10</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">2</span>)
 </pre>
 </div>
 
@@ -173,7 +174,7 @@ becomes&#x2026;
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">given envMap as <span style="color: #a9a1e1;">Env</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Map</span>(<span style="color: #98be65;">"x"</span> -&gt; <span style="color: #da8548; font-weight: bold;">7</span>, <span style="color: #98be65;">"y"</span> -&gt; <span style="color: #da8548; font-weight: bold;">6</span>, <span style="color: #98be65;">"z"</span> -&gt; <span style="color: #da8548; font-weight: bold;">22</span>)
+<pre class="src src-scala">given envMap as <span style="color: #00bcff;">Env</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">7</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">6</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">22</span>)
 </pre>
 </div>
 
@@ -190,64 +191,64 @@ becomes&#x2026;
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">eval</span>(exp<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)(using env <span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Env</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">eval</span>(exp<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>)(using env <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Env</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>
 </pre>
 </div>
 
 <p>
-You don&rsquo;t have to change your Scala 2 code at this point, it is still compatible, but for new code and in the long term you should gradually eliminate implicit.
+You don't have to change your Scala 2 code at this point, it is still compatible, but for new code and in the long term you should gradually eliminate implicit.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org1098e4b" class="outline-2">
-<h2 id="org1098e4b">Context Functions</h2>
-<div class="outline-text-2" id="text-org1098e4b">
+<div id="outline-container-orgb34ce43" class="outline-2">
+<h2 id="orgb34ce43">Context Functions</h2>
+<div class="outline-text-2" id="text-orgb34ce43">
 <p>
-Last and not at all least are context functions. This gives us one more opportunity to remove boiler plate from the eval code. When you create a regular function value it has a type like <code>Function1[A,B]</code>. In other words it is a function that takes a value A and returns vale of type B. Context Functions are a new function value type (this is synthesized by the compiler so you won&rsquo;t see it your code), with an input and an output type. The difference is that the input is understood to be provided implicitly.
+Last and not at all least are context functions. This gives us one more opportunity to remove boiler plate from the eval code. When you create a regular function value it has a type like <code>Function1[A,B]</code>. In other words it is a function that takes a value A and returns vale of type B. Context Functions are a new function value type (this is synthesized by the compiler so you won't see it your code), with an input and an output type. The difference is that the input is understood to be provided implicitly.
 </p>
 
 <p>
-Let&rsquo;s make this more concrete. Assume you have a function that needs an <code>ExecutionContext</code>. We can make a Context Function type that will take an implicit execution context and return some paramaterized type T.
+Let's make this more concrete. Assume you have a function that needs an <code>ExecutionContext</code>. We can make a Context Function type that will take an implicit execution context and return some paramaterized type T.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">type</span> <span style="color: #a9a1e1;">Executable</span>[<span style="color: #a9a1e1;">T</span>] <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">ExecutionContext</span> ?=&gt; <span style="color: #a9a1e1;">T</span>
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Executable</span>[<span style="color: #00bcff;">T</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">ExecutionContext</span> ?=&gt; <span style="color: #00bcff;">T</span>
 </pre>
 </div>
 
 <p>
-How would that be used in a real program? Let&rsquo;s say you have some deeply nested function (f4 in the code below) and it is only down at that level you need the implicit execution context. Without implicit parameters you&rsquo;d add the ExecutionContext parameter to every single function call all the way down and then have to take care to pass it along. With Scala 2 implicits you still have to declare the parameter but you can make it implicit and avoid the burden of manually passing it along.
+How would that be used in a real program? Let's say you have some deeply nested function (f4 in the code below) and it is only down at that level you need the implicit execution context. Without implicit parameters you'd add the ExecutionContext parameter to every single function call all the way down and then have to take care to pass it along. With Scala 2 implicits you still have to declare the parameter but you can make it implicit and avoid the burden of manually passing it along.
 </p>
 
 <p>
-With Scala 3 you can define the function to be of type <code>Executable[T]</code> and then we don&rsquo;t need to even name the implicit parameter, we just know that it will be included automatically all the way down. Here is a complete example.
+With Scala 3 you can define the function to be of type <code>Executable[T]</code> and then we don't need to even name the implicit parameter, we just know that it will be included automatically all the way down. Here is a complete example.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">import</span> scala.concurrent.{<span style="color: #a9a1e1;">Future</span>, <span style="color: #a9a1e1;">ExecutionContext</span>, <span style="color: #a9a1e1;">Await</span>}
-<span style="color: #51afef;">import</span> scala.concurrent.duration.<span style="color: #51afef;">_</span>
-<span style="color: #51afef;">import</span> scala.language.postfixOps
+<pre class="src src-scala"><span style="color: #b6a0ff;">import</span> scala.concurrent.{<span style="color: #00bcff;">Future</span>, <span style="color: #00bcff;">ExecutionContext</span>, <span style="color: #00bcff;">Await</span>}
+<span style="color: #b6a0ff;">import</span> scala.concurrent.duration.<span style="color: #b6a0ff;">_</span>
+<span style="color: #b6a0ff;">import</span> scala.language.postfixOps
 
-<span style="color: #51afef;">object</span> <span style="color: #a9a1e1;">Executable</span> <span style="color: #51afef;">extends</span> <span style="color: #ECBE7B;">App</span> {
+<span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">Executable</span> <span style="color: #b6a0ff;">extends</span> <span style="color: #f78fe7;">App</span> {
 
-  <span style="color: #51afef;">type</span> <span style="color: #a9a1e1;">Executable</span>[<span style="color: #a9a1e1;">T</span>] <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">ExecutionContext</span> ?=&gt; <span style="color: #a9a1e1;">T</span>
+  <span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Executable</span>[<span style="color: #00bcff;">T</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">ExecutionContext</span> ?=&gt; <span style="color: #00bcff;">T</span>
 
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">f1</span>(n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Executable</span>[<span style="color: #a9a1e1;">Future</span>[<span style="color: #a9a1e1;">Int</span>]] <span style="color: #51afef;">=</span> f2(n + <span style="color: #da8548; font-weight: bold;">1</span>)
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">f2</span>(n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Executable</span>[<span style="color: #a9a1e1;">Future</span>[<span style="color: #a9a1e1;">Int</span>]] <span style="color: #51afef;">=</span> f3(n + <span style="color: #da8548; font-weight: bold;">1</span>)
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">f3</span>(n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Executable</span>[<span style="color: #a9a1e1;">Future</span>[<span style="color: #a9a1e1;">Int</span>]] <span style="color: #51afef;">=</span> f4(n + <span style="color: #da8548; font-weight: bold;">1</span>)
-  <span style="color: #51afef;">def</span> <span style="color: #c678dd;">f4</span>(n<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Int</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Executable</span>[<span style="color: #a9a1e1;">Future</span>[<span style="color: #a9a1e1;">Int</span>]] <span style="color: #51afef;">=</span> {
-    <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">ex</span> <span style="color: #51afef;">=</span> summon[<span style="color: #a9a1e1;">ExecutionContext</span>]
-    <span style="color: #a9a1e1;">Future</span> {
-      println(s<span style="color: #98be65;">"Hi from the future! n is </span><span style="color: #dcaeea;">$n</span><span style="color: #98be65;">"</span>)
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f1</span>(n<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Executable</span>[<span style="color: #00bcff;">Future</span>[<span style="color: #00bcff;">Int</span>]] <span style="color: #b6a0ff;">=</span> f2(n + <span style="color: #00bcff;">1</span>)
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f2</span>(n<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Executable</span>[<span style="color: #00bcff;">Future</span>[<span style="color: #00bcff;">Int</span>]] <span style="color: #b6a0ff;">=</span> f3(n + <span style="color: #00bcff;">1</span>)
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f3</span>(n<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Executable</span>[<span style="color: #00bcff;">Future</span>[<span style="color: #00bcff;">Int</span>]] <span style="color: #b6a0ff;">=</span> f4(n + <span style="color: #00bcff;">1</span>)
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f4</span>(n<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Executable</span>[<span style="color: #00bcff;">Future</span>[<span style="color: #00bcff;">Int</span>]] <span style="color: #b6a0ff;">=</span> {
+    <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">ex</span> <span style="color: #b6a0ff;">=</span> summon[<span style="color: #00bcff;">ExecutionContext</span>]
+    <span style="color: #00bcff;">Future</span> {
+      println(s<span style="color: #79a8ff;">"Hi from the future! n is </span><span style="color: #00d3d0;">$n</span><span style="color: #79a8ff;">"</span>)
       n
     }
   }
 
   {
-    given ec as <span style="color: #a9a1e1;">ExecutionContext</span> <span style="color: #51afef;">=</span> scala.concurrent.<span style="color: #a9a1e1;">ExecutionContext</span>.global
-    <span style="color: #a9a1e1;">Await</span>.result(f1(<span style="color: #da8548; font-weight: bold;">10</span>), <span style="color: #da8548; font-weight: bold;">1</span> second)
-    <span style="color: #5B6268;">// </span><span style="color: #5B6268;">Hi from the future! n is 13</span>
+    given ec as <span style="color: #00bcff;">ExecutionContext</span> <span style="color: #b6a0ff;">=</span> scala.concurrent.<span style="color: #00bcff;">ExecutionContext</span>.global
+    <span style="color: #00bcff;">Await</span>.result(f1(<span style="color: #00bcff;">10</span>), <span style="color: #00bcff;">1</span> second)
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Hi from the future! n is 13</span>
   }
 
 }
@@ -259,20 +260,20 @@ Context functions reduce boilerplate when dealing with implicit parameters in de
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #51afef;">type</span> <span style="color: #a9a1e1;">WithEnv</span> <span style="color: #51afef;">=</span> <span style="color: #a9a1e1;">Env</span> ?=&gt; <span style="color: #a9a1e1;">Int</span>
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">WithEnv</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Env</span> ?=&gt; <span style="color: #00bcff;">Int</span>
 
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">eval</span>(exp<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">WithEnv</span> <span style="color: #51afef;">=</span>
-  exp <span style="color: #51afef;">match</span> {
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Var</span>(<span style="color: #dcaeea;">id</span>) <span style="color: #51afef;">=&gt;</span> handleVar(id)
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Val</span>(<span style="color: #dcaeea;">value</span>) <span style="color: #51afef;">=&gt;</span> value
-    <span style="color: #51afef;">case</span> <span style="color: #ECBE7B;">Add</span>(<span style="color: #dcaeea;">l</span>,<span style="color: #dcaeea;">r</span>) <span style="color: #51afef;">=&gt;</span> handleAdd(l,r)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">eval</span>(exp<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">WithEnv</span> <span style="color: #b6a0ff;">=</span>
+  exp <span style="color: #b6a0ff;">match</span> {
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Var</span>(<span style="color: #00d3d0;">id</span>) <span style="color: #b6a0ff;">=&gt;</span> handleVar(id)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> value
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Add</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleAdd(l,r)
   }
 
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">handleAdd</span>(l<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>, r<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">Exp</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">WithEnv</span> <span style="color: #51afef;">=</span> eval(l) + eval(r)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleAdd</span>(l<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>, r<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">WithEnv</span> <span style="color: #b6a0ff;">=</span> eval(l) + eval(r)
 
-<span style="color: #51afef;">def</span> <span style="color: #c678dd;">handleVar</span>(s<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">String</span>)<span style="color: #51afef;">:</span> <span style="color: #ECBE7B;">WithEnv</span> <span style="color: #51afef;">=</span>
-  <span style="color: #51afef;">val</span> <span style="color: #dcaeea;">env</span> <span style="color: #51afef;">=</span> summon[<span style="color: #a9a1e1;">Env</span>]
-  env.getOrElse(s, <span style="color: #da8548; font-weight: bold;">0</span>)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>(s<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">WithEnv</span> <span style="color: #b6a0ff;">=</span>
+  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">env</span> <span style="color: #b6a0ff;">=</span> summon[<span style="color: #00bcff;">Env</span>]
+  env.getOrElse(s, <span style="color: #00bcff;">0</span>)
 </pre>
 </div>
 
@@ -286,11 +287,11 @@ You can take a look at the final Scala 3 version of the code here.
 </div>
 </div>
 
-<div id="outline-container-org9f78505" class="outline-2">
-<h2 id="org9f78505">Final notes</h2>
-<div class="outline-text-2" id="text-org9f78505">
+<div id="outline-container-orgbc72c13" class="outline-2">
+<h2 id="orgbc72c13">Final notes</h2>
+<div class="outline-text-2" id="text-orgbc72c13">
 <p>
-Of all the new features in Scala 3, I found Context Functions of most interest because of Martin Odersky&rsquo;s blog from 2016 <a href="https://www.scala-lang.org/blog/2016/12/07/implicit-function-types.html">https://www.scala-lang.org/blog/2016/12/07/implicit-function-types.html</a> where this intriguing quote appears near the end. (Context functions were initially known as implicit functions).
+Of all the new features in Scala 3, I found Context Functions of most interest because of Martin Odersky's blog from 2016 <a href="https://www.scala-lang.org/blog/2016/12/07/implicit-function-types.html">https://www.scala-lang.org/blog/2016/12/07/implicit-function-types.html</a> where this intriguing quote appears near the end. (Context functions were initially known as implicit functions).
 </p>
 
 <blockquote>
@@ -308,14 +309,14 @@ But these discussions will have to wait for another time, as this blog post is a
 </blockquote>
 
 <p>
-Somewhat of a Fermat&rsquo;s last theorem moment there, and I am also interested in how we can represent concepts, that are currently implemented in libraries which model category theory, using vanilla Scala 3 or alternative representations.
+Somewhat of a Fermat's last theorem moment there, and I am also interested in how we can represent concepts, that are currently implemented in libraries which model category theory, using vanilla Scala 3 or alternative representations.
 </p>
 </div>
 </div>
 
-<div id="outline-container-orge04ea6f" class="outline-2">
-<h2 id="orge04ea6f">References</h2>
-<div class="outline-text-2" id="text-orge04ea6f">
+<div id="outline-container-org9a50569" class="outline-2">
+<h2 id="org9a50569">References</h2>
+<div class="outline-text-2" id="text-org9a50569">
 <p>
 <a href="https://en.wikiquote.org/wiki/Pierre_de_Fermat">https://en.wikiquote.org/wiki/Pierre_de_Fermat</a>
 </p>
