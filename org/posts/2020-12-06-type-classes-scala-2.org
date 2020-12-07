@@ -1,0 +1,243 @@
+#+AUTHOR: Justin Heyes-Jones
+#+TITLE: #+TITLE: Type classes with Scala 2
+#+DATE: 2020
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+HTML_HTML5_FANCY:
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: Type classes with Scala 2
+date: '2020-12-06T00:00:00.000-08:00'
+tags: [scala, functional-programming]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+
+<p>
+<img src="/../images/crissy-jarvis-cHhbULJbPwM-unsplash-small.jpg" alt="A colourful abascus" title="Abacus" />
+</p>
+<span>Photo by <a href="https://unsplash.com/@crissyjarvis?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Crissy Jarvis</a> on <a href="https://unsplash.com/s/photos/abacus?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>
+#+END_EXPORT
+
+** Make your own Numeric type class
+This is the companion blog for a Functional Justin video which you can
+find here https://youtu.be/pJFfXhZlR5o. This is a series of
+coffee-break sized videos that each explore a topic in the world of
+Scala Functional Programming.
+
+In this video I talk about Type classes and here is the blog version for those that would rather read.
+
+** What are type classes
+
+Here are some good references for reading about type classes in Scala (they can of course be implemented in other functional programming languages).
+
+Sam Halliday has a great introduction to data types and type classes in his book Functional Programming for Mortals.
+https://leanpub.com/fpmortals/read#leanpub-auto-data-and-functionality
+
+This idea of separating data from functions can also be found in the Cats functional programming library, with the library itself being organised into distinct sections for data types and type classes.
+https://typelevel.org/cats/typeclasses.html
+https://typelevel.org/cats/datatypes
+
+In my own words, type classes are not explicitly part of the Scala
+language, but are rather a pattern of implementation that enable you
+to define behaviours which can then be implemented for data
+types. Data types are values like strings and numbers, collections
+like lists and sets and "higher kinded types" like IO, ZIO and so on.
+
+Type classes do not have to be implemented a certain way, but in Cats,
+Scalaz and other libraries you will find them implemented just as they
+are here, but additional layers of complexity to manage things like
+stack safety and take advantage of tools to generate boilerplate code.
+
+In general type classes consist of:
+
+- A trait that has one, or sometimes more, type parameters.
+- It contains one or more abstract methods. These define behaviours that must be implemented for each ~instance~.
+- Also you will find generalized methods that are built using the abstract ones.
+- Typically a type class contains no data
+
+** Numeric
+
+In the video I coded up the Numeric type class. What is Numeric? It is
+a type class you'll find in the Scala standard library and is used to
+build a generic representation of numbers.
+
+https://www.scala-lang.org/api/current/scala/math/Numeric.html
+
+What I develop here is just enough that we can use it for the
+expression evaluator in the first video (which only requires add and
+multiply operations).
+
+You can find the complete code here
+
+https://github.com/justinhj/evalexample/blob/master/src/main/scala/Scala2Numeric.scala
+
+Let's look at the pieces one by one...
+
+#+BEGIN_SRC scala
+trait Numeric[T] {
+  def Add(a: T, b: T): T
+  def Mul(a: T, b: T): T
+
+  def square(a: T): T = mul(a, a)
+}
+#+END_SRC
+
+Here we define the trait which decribes the core of our type class;
+what it can do, and what you need to implement if you want your data
+type to be an instance of this typeclass.
+
+Add and Mul are abstract, whilst the square function is derived or
+generalized and does not need to be implemented when making new
+supported instances.
+
+** Instances
+
+Once you have the interface for your type class you can define instances for various data types. Here we define the instance for =Long=.
+
+#+BEGIN_SRC scala
+implicit val numericLong: Numeric[Long] = new Numeric[Long] {
+  def add(a: Long, b: Long): Long = a + b
+  def mul(a: Long, b: Long): Long = a * b
+}
+#+END_SRC
+
+Note that this is implicit to make it easier to use our instances with
+other types, taking advantage of the fact that users can import the
+definititions and then use them in their code.
+
+Here's an example function that is written using the Numeric type
+class as a parameter. This function displays what we call =ad-hoc
+polymorphism=, in that this function does not know all of the
+instances that exist for the input type =T=, nor does it need to. All
+it knows is that to do its work it needs an instance of =Numeric[T]=
+so that it can access the =add= method.
+
+#+BEGIN_SRC scala
+def sumList[T](ts: List[T])(implicit numeric: Numeric[T]): T = {
+  ts.reduce((a, b) => numeric.Add(a,b))
+}
+#+END_SRC
+
+Now we can sum a list of any =T= where T has a Numeric instance. Here we use the Int instance (not shown).
+
+#+BEGIN_SRC scala
+val l1 = List(1, 2, 3, 4)
+val sum = sumList(l1)
+
+println(s"sum of int list is $sum")
+// sum of int list is 10
+#+END_SRC
+
+** Improving the ergonomics
+
+So that's all you need to build type classes but we can take a couple
+of steps to make things more ergonomic. For one we can ditch the
+implicit parameter and instead make use of
+[[https://docs.scala-lang.org/tutorials/FAQ/context-bounds.html]context
+bounds]]. This makes things clearer for the caller of the function.
+
+#+BEGIN_SRC scala
+def sumList[T : Numeric](ts: List[T]): T = {
+  val numeric = implicitly[Numeric[T]]
+  ts.reduce((a, b) => numeric.add(a,b))
+}
+#+END_SRC
+
+Note that we have to ~summon~ the implicit Numeric instance using
+=implicitly=. This is a function in the standard library which takes
+advantage of the way context bounds work: the context bound ~Numeric~
+specifies that there is an implicit Numeric instance in scope, but
+there is no named parameter as before. The implicitly function lets
+us access that implicit in a succinct way.
+
+#+BEGIN_SRC scala
+def implicitly[T](implicit e: T): T = e
+#+END_SRC
+
+So using context bounds helps a little with the use of type classes,
+the next step is to use implicit conversions so that we take the
+functions in our type class and make them look like ordinary methods
+on the data type.
+
+#+BEGIN_SRC scala
+object ops {
+
+  implicit class NumericOps[T](a: T)(implicit numeric: Numeric[T]) {
+    def add(b: T): T = numeric.add(a, b)
+    def mul(b: T): T = numeric.mul(a, b)
+
+    def +(b: T): T = add(b)
+    def *(b: T): T = mul(b)
+  }
+
+}
+#+END_SRC
+
+Now if we import ops we can take advantage of the implicit conversion from type T to type NumericOps[T] to give us syntax like below.
+
+#+BEGIN_SRC scala
+val s1 = "abcd"
+val s2 = "efgh"
+val product = s1 * s2
+println(s"product $product")
+// product aeafagahbebfbgbhcecfcgchdedfdgdh
+#+END_SRC
+
+So you can see that by implementing a somewhat goofy instance of
+Numeric for string (given below) we now have the ability to use the
+multiplication operator on it as if it was a regular number.
+
+#+BEGIN_SRC scala
+implicit val stringNumeric: Numeric[String] = new Numeric[String] {
+    def add(a: String, b: String): String = a + b
+
+    def mul(a: String, b: String): String = for (
+      as <- a;
+      bs <- b;
+      s <- as.toString ++ bs.toString) yield s
+  }
+#+END_SRC
+
+Note that while this implentation of string arithmetic is not very
+rigorous and just for fun, there's nothing to stop you from
+implementing Numeric for data types that do have well defined
+arithmetic operations such as Roman Numerals.
+
+** Coherence
+
+Type class coherence is an important concept I'll leave you with. This
+is a guideline in place to keep programs easy to reason about. It's a
+good practice to keep common instances together with your type classes
+so that users can easily find them, and don't duplicate the work. It's
+also important that you don't try to make multiple instances and let
+the users select one depending on their needs. The reason for that is
+the behaviour of your program can change profoundly when you do this,
+and that's terrible. It means you can't take advantage of ~local
+reasoning~, one of the benefits of functional programming. You would
+need to be very careful with imports to make sure you are using the
+instance you think you are.
+
+** Final words
+
+If you're coming from Java or similar OOP language you may recognise
+some of this as the adapter pattern (except with Scala
+implicits). Type class traits also have similarities to Go interfaces,
+although the type class pattern goes a bit beyond them in scope.
+
+I would be amiss not to mention Haskell here, which has type classes
+implemented as a first-class language construct, and for some people
+the over-use of type classes in Scala is somewhat of an
+anti-pattern. We will see in future videos that the pattern will be
+greatly simplified in Scala 3 however.
+
+** References
+
+Typelevel Cats functional programming library documentation
+https://typelevel.org/cats/
+
+Functional Programming for Mortals
+https://leanpub.com/fpmortals
+
+\copy 2020 Justin Heyes-Jones. All Rights Reserved.

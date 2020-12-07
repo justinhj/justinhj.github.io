@@ -1,0 +1,334 @@
+---
+layout: post
+title: Type classes with Scala 2
+date: '2020-12-06T00:00:00.000-08:00'
+tags: [scala, functional-programming]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+
+<p>
+<img src="/../images/crissy-jarvis-cHhbULJbPwM-unsplash-small.jpg" alt="A colourful abascus" title="Abacus" />
+</p>
+<span>Photo by <a href="https://unsplash.com/@crissyjarvis?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Crissy Jarvis</a> on <a href="https://unsplash.com/s/photos/abacus?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>
+
+<div id="outline-container-org06987d4" class="outline-2">
+<h2 id="org06987d4">Make your own Numeric type class</h2>
+<div class="outline-text-2" id="text-org06987d4">
+<p>
+This is the companion blog for a Functional Justin video which you can
+find here <a href="https://youtu.be/pJFfXhZlR5o">https://youtu.be/pJFfXhZlR5o</a>. This is a series of
+coffee-break sized videos that each explore a topic in the world of
+Scala Functional Programming.
+</p>
+
+<p>
+In this video I talk about Type classes and here is the blog version for those that would rather read.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org577138b" class="outline-2">
+<h2 id="org577138b">What are type classes</h2>
+<div class="outline-text-2" id="text-org577138b">
+<p>
+Here are some good references for reading about type classes in Scala (they can of course be implemented in other functional programming languages).
+</p>
+
+<p>
+Sam Halliday has a great introduction to data types and type classes in his book Functional Programming for Mortals.
+<a href="https://leanpub.com/fpmortals/read#leanpub-auto-data-and-functionality">https://leanpub.com/fpmortals/read#leanpub-auto-data-and-functionality</a>
+</p>
+
+<p>
+This idea of separating data from functions can also be found in the Cats functional programming library, with the library itself being organised into distinct sections for data types and type classes.
+<a href="https://typelevel.org/cats/typeclasses.html">https://typelevel.org/cats/typeclasses.html</a>
+<a href="https://typelevel.org/cats/datatypes">https://typelevel.org/cats/datatypes</a>
+</p>
+
+<p>
+In my own words, type classes are not explicitly part of the Scala
+language, but are rather a pattern of implementation that enable you
+to define behaviours which can then be implemented for data
+types. Data types are values like strings and numbers, collections
+like lists and sets and "higher kinded types" like IO, ZIO and so on.
+</p>
+
+<p>
+Type classes do not have to be implemented a certain way, but in Cats,
+Scalaz and other libraries you will find them implemented just as they
+are here, but additional layers of complexity to manage things like
+stack safety and take advantage of tools to generate boilerplate code.
+</p>
+
+<p>
+In general type classes consist of:
+</p>
+
+<ul class="org-ul">
+<li>A trait that has one, or sometimes more, type parameters.</li>
+<li>It contains one or more abstract methods. These define behaviours that must be implemented for each <code>instance</code>.</li>
+<li>Also you will find generalized methods that are built using the abstract ones.</li>
+<li>Typically a type class contains no data</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgf16fc53" class="outline-2">
+<h2 id="orgf16fc53">Numeric</h2>
+<div class="outline-text-2" id="text-orgf16fc53">
+<p>
+In the video I coded up the Numeric type class. What is Numeric? It is
+a type class you'll find in the Scala standard library and is used to
+build a generic representation of numbers.
+</p>
+
+<p>
+<a href="https://www.scala-lang.org/api/current/scala/math/Numeric.html">https://www.scala-lang.org/api/current/scala/math/Numeric.html</a>
+</p>
+
+<p>
+What I develop here is just enough that we can use it for the
+expression evaluator in the first video (which only requires add and
+multiply operations).
+</p>
+
+<p>
+You can find the complete code here
+</p>
+
+<p>
+<a href="https://github.com/justinhj/evalexample/blob/master/src/main/scala/Scala2Numeric.scala">https://github.com/justinhj/evalexample/blob/master/src/main/scala/Scala2Numeric.scala</a>
+</p>
+
+<p>
+Let's look at the pieces one by one&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">T</span>] {
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">Add</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">Mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>
+
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">square</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> mul(a, a)
+}
+</pre>
+</div>
+
+<p>
+Here we define the trait which decribes the core of our type class;
+what it can do, and what you need to implement if you want your data
+type to be an instance of this typeclass.
+</p>
+
+<p>
+Add and Mul are abstract, whilst the square function is derived or
+generalized and does not need to be implemented when making new
+supported instances.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5a2e75b" class="outline-2">
+<h2 id="org5a2e75b">Instances</h2>
+<div class="outline-text-2" id="text-org5a2e75b">
+<p>
+Once you have the interface for your type class you can define instances for various data types. Here we define the instance for <code>Long</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">numericLong</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">Long</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">Long</span>] {
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span> <span style="color: #b6a0ff;">=</span> a + b
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span> <span style="color: #b6a0ff;">=</span> a * b
+}
+</pre>
+</div>
+
+<p>
+Note that this is implicit to make it easier to use our instances with
+other types, taking advantage of the fact that users can import the
+definititions and then use them in their code.
+</p>
+
+<p>
+Here's an example function that is written using the Numeric type
+class as a parameter. This function displays what we call <code>ad-hoc
+polymorphism</code>, in that this function does not know all of the
+instances that exist for the input type <code>T</code>, nor does it need to. All
+it knows is that to do its work it needs an instance of <code>Numeric[T]</code>
+so that it can access the <code>add</code> method.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">sumList</span>[<span style="color: #00bcff;">T</span>](ts<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">List</span>[<span style="color: #00bcff;">T</span>])(<span style="color: #f78fe7;">implicit</span> numeric<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">T</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> {
+  ts.reduce((a, b) <span style="color: #b6a0ff;">=&gt;</span> numeric.<span style="color: #00bcff;">Add</span>(a,b))
+}
+</pre>
+</div>
+
+<p>
+Now we can sum a list of any <code>T</code> where T has a Numeric instance. Here we use the Int instance (not shown).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">l1</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">List</span>(<span style="color: #00bcff;">1</span>, <span style="color: #00bcff;">2</span>, <span style="color: #00bcff;">3</span>, <span style="color: #00bcff;">4</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">sum</span> <span style="color: #b6a0ff;">=</span> sumList(l1)
+
+println(s<span style="color: #79a8ff;">"sum of int list is </span><span style="color: #00d3d0;">$sum</span><span style="color: #79a8ff;">"</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">sum of int list is 10</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga1d43eb" class="outline-2">
+<h2 id="orga1d43eb">Improving the ergonomics</h2>
+<div class="outline-text-2" id="text-orga1d43eb">
+<p>
+So that's all you need to build type classes but we can take a couple
+of steps to make things more ergonomic. For one we can ditch the
+implicit parameter and instead make use of
+[[<a href="https://docs.scala-lang.org/tutorials/FAQ/context-bounds.html">https://docs.scala-lang.org/tutorials/FAQ/context-bounds.html</a>]context
+bounds]]. This makes things clearer for the caller of the function.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">sumList</span>[<span style="color: #00bcff;">T</span> <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>](ts<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">List</span>[<span style="color: #00bcff;">T</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> {
+  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">numeric</span> <span style="color: #b6a0ff;">=</span> implicitly[<span style="color: #00bcff;">Numeric</span>[<span style="color: #00bcff;">T</span>]]
+  ts.reduce((a, b) <span style="color: #b6a0ff;">=&gt;</span> numeric.add(a,b))
+}
+</pre>
+</div>
+
+<p>
+Note that we have to <code>summon</code> the implicit Numeric instance using
+<code>implicitly</code>. This is a function in the standard library which takes
+advantage of the way context bounds work: the context bound <code>Numeric</code>
+specifies that there is an implicit Numeric instance in scope, but
+there is no named parameter as before. The implicitly function lets
+us access that implicit in a succinct way.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">implicitly</span>[<span style="color: #00bcff;">T</span>](<span style="color: #f78fe7;">implicit</span> e<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> e
+</pre>
+</div>
+
+<p>
+So using context bounds helps a little with the use of type classes,
+the next step is to use implicit conversions so that we take the
+functions in our type class and make them look like ordinary methods
+on the data type.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">ops</span> {
+
+  <span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">class</span> <span style="color: #f78fe7;">NumericOps</span>[<span style="color: #00bcff;">T</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)(<span style="color: #f78fe7;">implicit</span> numeric<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">T</span>]) {
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> numeric.add(a, b)
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> numeric.mul(a, b)
+
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">+</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> add(b)
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">*</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> mul(b)
+  }
+
+}
+</pre>
+</div>
+
+<p>
+Now if we import ops we can take advantage of the implicit conversion from type T to type NumericOps[T] to give us syntax like below.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">s1</span> <span style="color: #b6a0ff;">=</span> <span style="color: #79a8ff;">"abcd"</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">s2</span> <span style="color: #b6a0ff;">=</span> <span style="color: #79a8ff;">"efgh"</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">product</span> <span style="color: #b6a0ff;">=</span> s1 * s2
+println(s<span style="color: #79a8ff;">"product </span><span style="color: #00d3d0;">$product</span><span style="color: #79a8ff;">"</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">product aeafagahbebfbgbhcecfcgchdedfdgdh</span>
+</pre>
+</div>
+
+<p>
+So you can see that by implementing a somewhat goofy instance of
+Numeric for string (given below) we now have the ability to use the
+multiplication operator on it as if it was a regular number.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">stringNumeric</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">String</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">String</span>] {
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span> <span style="color: #b6a0ff;">=</span> a + b
+
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">for</span> (
+      as <span style="color: #b6a0ff;">&lt;-</span> a;
+      bs <span style="color: #b6a0ff;">&lt;-</span> b;
+      s <span style="color: #b6a0ff;">&lt;-</span> as.toString ++ bs.toString) <span style="color: #b6a0ff;">yield</span> s
+  }
+</pre>
+</div>
+
+<p>
+Note that while this implentation of string arithmetic is not very
+rigorous and just for fun, there's nothing to stop you from
+implementing Numeric for data types that do have well defined
+arithmetic operations such as Roman Numerals.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3dc17f9" class="outline-2">
+<h2 id="org3dc17f9">Coherence</h2>
+<div class="outline-text-2" id="text-org3dc17f9">
+<p>
+Type class coherence is an important concept I'll leave you with. This
+is a guideline in place to keep programs easy to reason about. It's a
+good practice to keep common instances together with your type classes
+so that users can easily find them, and don't duplicate the work. It's
+also important that you don't try to make multiple instances and let
+the users select one depending on their needs. The reason for that is
+the behaviour of your program can change profoundly when you do this,
+and that's terrible. It means you can't take advantage of <code>local
+reasoning</code>, one of the benefits of functional programming. You would
+need to be very careful with imports to make sure you are using the
+instance you think you are.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2224761" class="outline-2">
+<h2 id="org2224761">Final words</h2>
+<div class="outline-text-2" id="text-org2224761">
+<p>
+If you're coming from Java or similar OOP language you may recognise
+some of this as the adapter pattern (except with Scala
+implicits). Type class traits also have similarities to Go interfaces,
+although the type class pattern goes a bit beyond them in scope.
+</p>
+
+<p>
+I would be amiss not to mention Haskell here, which has type classes
+implemented as a first-class language construct, and for some people
+the over-use of type classes in Scala is somewhat of an
+anti-pattern. We will see in future videos that the pattern will be
+greatly simplified in Scala 3 however.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8d2dd51" class="outline-2">
+<h2 id="org8d2dd51">References</h2>
+<div class="outline-text-2" id="text-org8d2dd51">
+<p>
+Typelevel Cats functional programming library documentation
+<a href="https://typelevel.org/cats/">https://typelevel.org/cats/</a>
+</p>
+
+<p>
+Functional Programming for Mortals
+<a href="https://leanpub.com/fpmortals">https://leanpub.com/fpmortals</a>
+</p>
+
+<p>
+&copy; 2020 Justin Heyes-Jones. All Rights Reserved.
+</p>
+</div>
+</div>
