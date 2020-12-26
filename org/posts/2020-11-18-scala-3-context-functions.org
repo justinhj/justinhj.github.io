@@ -14,7 +14,9 @@ tags: [scala, scala-3, dotty]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT
-** Some Scala 3 Things
+** Some Scala 3 Things: Context functions, Enums and significant whitespace
+~Updated: for Scala 3.0.0-M3 `as` keyword was removed~
+
 This is the companion blog for my first Functional Justin video which you can find here https://youtu.be/J01u_Dmrx5U. I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an Scala 2 program.
 
 The program itself builds a simple Algebraic Data Type (ADT) to represent a simple arithmetic expressions. We can then build expressions in this =algebra= and evaluate it using an eval function using pattern matching...
@@ -131,7 +133,7 @@ implicit val env : Env = Map("x" -> 17, "y" -> 10, "z" -> 2)
 becomes...
 
 #+BEGIN_SRC scala
-given envMap as Env = Map("x" -> 7, "y" -> 6, "z" -> 22)
+given envMap: Env = Map("x" -> 7, "y" -> 6, "z" -> 22)
 #+END_SRC
 
 Similarly, the method parameters now no longer use the implicit keyword and instead you prefix the parameter name with ~using~.
@@ -182,7 +184,7 @@ object Executable extends App {
   }
 
   {
-    given ec as ExecutionContext = scala.concurrent.ExecutionContext.global
+    given ec: ExecutionContext = scala.concurrent.ExecutionContext.global
     Await.result(f1(10), 1 second)
     // Hi from the future! n is 13
   }

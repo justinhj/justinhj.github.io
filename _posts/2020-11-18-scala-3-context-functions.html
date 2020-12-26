@@ -5,9 +5,13 @@ date: '2020-11-18T00:00:00.000-08:00'
 tags: [scala, scala-3, dotty]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
-<div id="outline-container-orgdfb085b" class="outline-2">
-<h2 id="orgdfb085b">Some Scala 3 Things</h2>
-<div class="outline-text-2" id="text-orgdfb085b">
+<div id="outline-container-org48da022" class="outline-2">
+<h2 id="org48da022">Some Scala 3 Things: Context functions, Enums and significant whitespace</h2>
+<div class="outline-text-2" id="text-org48da022">
+<p>
+<code>Updated: for Scala 3.0.0-M3 `as` keyword was removed</code>
+</p>
+
 <p>
 This is the companion blog for my first Functional Justin video which you can find here <a href="https://youtu.be/J01u_Dmrx5U">https://youtu.be/J01u_Dmrx5U</a>. I spend around 15 minutes adding some Scala 3 (formerly Dotty) features to an Scala 2 program.
 </p>
@@ -174,7 +178,7 @@ becomes&#x2026;
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">given envMap as <span style="color: #00bcff;">Env</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">7</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">6</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">22</span>)
+<pre class="src src-scala">given envMap<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Env</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">7</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">6</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">22</span>)
 </pre>
 </div>
 
@@ -246,7 +250,7 @@ With Scala 3 you can define the function to be of type <code>Executable[T]</code
   }
 
   {
-    given ec as <span style="color: #00bcff;">ExecutionContext</span> <span style="color: #b6a0ff;">=</span> scala.concurrent.<span style="color: #00bcff;">ExecutionContext</span>.global
+    given ec<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">ExecutionContext</span> <span style="color: #b6a0ff;">=</span> scala.concurrent.<span style="color: #00bcff;">ExecutionContext</span>.global
     <span style="color: #00bcff;">Await</span>.result(f1(<span style="color: #00bcff;">10</span>), <span style="color: #00bcff;">1</span> second)
     <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Hi from the future! n is 13</span>
   }
