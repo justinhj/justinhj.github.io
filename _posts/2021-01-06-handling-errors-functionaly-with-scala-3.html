@@ -1,0 +1,340 @@
+---
+layout: post
+title: Handling Errors functionally with Scala 3
+date: '2021-01-06T00:00:00.000-08:00'
+tags: [scala, scala-3, dotty]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+<div id="outline-container-orga7e4e63" class="outline-2">
+<h2 id="orga7e4e63">Introduction</h2>
+<div class="outline-text-2" id="text-orga7e4e63">
+<p>
+This is a companion blog for the Functional Justin video series which
+you can find here:
+<a href="https://www.youtube.com/channel/UCkLlM1rb1zQcTjZ7HCf2zpg">https://www.youtube.com/channel/UCkLlM1rb1zQcTjZ7HCf2zpg</a>.
+</p>
+
+<p>
+If you're new to the series I'm exploring Scala 3 and functional
+programming using a simple expression evaluator, and adding features
+to it every week.
+</p>
+
+<p>
+In video 1, <a href="https://youtu.be/J01u_Dmrx5U">https://youtu.be/J01u_Dmrx5U</a>, I showed how you can use
+Scala 3 features like Context Functions to pass context around. The
+eval function below is an expression evaluator that takes expressions
+of type <code>Exp</code>, returns a result of type <code>Int</code> and has an implicit
+environment <code>Env</code> which is a symbol table of values.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">WithEnv</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Env</span> ?=&gt; <span style="color: #00bcff;">Int</span>
+
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">eval</span>(exp<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">WithEnv</span> <span style="color: #b6a0ff;">=</span>
+  exp <span style="color: #b6a0ff;">match</span>
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Var</span>(<span style="color: #00d3d0;">id</span>) <span style="color: #b6a0ff;">=&gt;</span> handleVar(id)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> value
+    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Add</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleAdd(l,r)
+
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>(s<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">WithEnv</span> <span style="color: #b6a0ff;">=</span>
+  summon[<span style="color: #00bcff;">Env</span>].get(s).get
+</pre>
+</div>
+
+<p>
+This is a nice example of context functions, but not so good an
+example of a pure functional program, let's see why.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org1e4d5bd" class="outline-2">
+<h2 id="org1e4d5bd">Purity</h2>
+<div class="outline-text-2" id="text-org1e4d5bd">
+<p>
+What is a pure function? In short it has three properties&#x2026; it is a
+total function, it is deterministic and it has no side effects.
+</p>
+
+<p>
+A <code>total function</code> has an answer (of a fixed type) for everything. Our
+expression evaluator is a total function because every expression you
+put in can be evaluated and returns a value. Now let's say we had a
+divide function, and you can pass in a divisor that is zero and the
+answer is infinity. That is not representable by Int so the function
+is not total. We can only throw an error at this point.
+</p>
+
+<p>
+By <code>deterministic</code>, we mean that the evaluator gives the same answer for
+every input expression, which may seem self-evident, but imagine if we
+had a random number command. When used it would return different
+answers every time and the program would not be deterministic.
+</p>
+
+<p>
+Finally, by <code>no side effects</code>, we mean the program does nothing
+impure. It is not going to print to the screen, send an email, or
+throw errors.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgdba4892" class="outline-2">
+<h2 id="orgdba4892">Is the expression evaluator code pure?</h2>
+<div class="outline-text-2" id="text-orgdba4892">
+<p>
+If your nose wrinkled when you saw this code above
+<code>summon[Env].get(s).get</code> then you're probably an experienced Scala
+programmer who knows that you should not call get on an option.
+</p>
+
+<p>
+What's happening there is a symbol table look up. First I 'summon' the
+symbol table (see video 1 to understand context functions and where
+the symbol table is coming from), then I look up the symbol using
+<code>get</code>. This returns an <code>Option</code> because the symbol may be missing!
+</p>
+
+<p>
+I hopefully pointed out at the time that you shouldn't call <code>get</code> on
+an Option in serious code because it will throw an error. That means
+that as a program that can throw errors, our program is not pure.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd5a7cd6" class="outline-2">
+<h2 id="orgd5a7cd6">Handling errors with Either</h2>
+<div class="outline-text-2" id="text-orgd5a7cd6">
+<p>
+Since the 90s the Haskell folk have been dealing with impurity by
+wrapping it up in data types that describe the effects, and
+manipulating them with type classes. If that sounds hopelessly
+abstract, then fear not, in practise it's quite simple and we will fix
+our problems with a few lines of code.
+</p>
+
+<p>
+Firstly let's look at what we mean by a data type&#x2026; it is usually a
+higher kinded type that "contains" things of another type that you can
+define at compile time.
+</p>
+
+<p>
+Scala's Either is a great example of a data type. It encodes the
+concept of errors. Our pure code does not deal with errors but we can
+still encode errors by wrapping them as follows.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e2</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Left</span>(<span style="color: #79a8ff;">"Oops"</span>)
+</pre>
+</div>
+
+<p>
+By encoding our values like this we can represent a computation that
+has succeeded as a <code>Right</code> value, and a computation that has failed
+with some error as a <code>Left</code> value.
+</p>
+
+<p>
+What this means is we can no longer apply pure functions these values
+directly. That is sort of the point. What we wanted to do was isolate
+pure functions from having to deal with errors at all. So how do we
+operate on Eithers? Well you are probably familiar with the <code>map</code>
+function, and that can be used to apply a pure function to an either!
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e3</span> <span style="color: #b6a0ff;">=</span> e1.map(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Right(11)</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e4</span> <span style="color: #b6a0ff;">=</span> e2.map(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Left("Oops")</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgd80dd15" class="outline-2">
+<h2 id="orgd80dd15">Categorically Speaking</h2>
+<div class="outline-text-2" id="text-orgd80dd15">
+<p>
+You may not really think of it as Category Theory, but whenever you
+map an Either you are using Functors!
+</p>
+
+<p>
+The Haskell documentation is a nice place to learn about Functors. If
+you think of a normal pure function as a mapping of values from A to
+B, a Functor can map values that have been embellished, or wrapped in
+some special data type.
+</p>
+
+<p>
+<a href="https://wiki.haskell.org/Functor">https://wiki.haskell.org/Functor</a>
+</p>
+
+<p>
+Helpfully, the kind folks behind Scala 3 have added how to implement
+type classes to their documentation. We can use that a starting point
+to build our own Functor and then make an instance that works with
+Eithers.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #f78fe7;">Functor</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]]<span style="color: #b6a0ff;">:</span>
+  extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>])
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">B</span>]
+</pre>
+</div>
+
+<p>
+This is all we need to define a Functor type class that can extend
+supported types with a map function. Note that I've added an f to
+differentiate the function from the built in map. Then I added another
+f by mistake, don't tell anyone, they might not notice!
+</p>
+
+<p>
+Before we can use this against an Either we need to implement an
+instance of the typeclass. Remember that Functor needs a type of kind
+<code>F[_]</code>. It has one "type hole". Either has two, which is not going to
+work, so let's start by specialising to Either with only a fixed error
+type of String.
+</p>
+
+<p>
+First we make a type alias that reduces the Either to one unknown
+type, the computation result type <code>A</code>.
+</p>
+
+<p>
+Next we provide an implementation of ffmap that does the work of
+mapping our pure function over an Either.
+</p>
+
+<p>
+Note that this is roughly the same as the pure function. Instead of <code>A
+=&gt; B</code> we are mapping <code>F[A] =&gt; F[B]</code> where F is the Either.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">StringEither</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">A</span>]
+
+given <span style="color: #00bcff;">Functor</span>[<span style="color: #00bcff;">StringEither</span>] <span style="color: #b6a0ff;">with</span>
+  extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">StringEither</span>[<span style="color: #00bcff;">A</span>])
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">StringEither</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
+      x <span style="color: #b6a0ff;">match</span> {
+        <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Right</span>(<span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(f(a))
+        <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Left</span>(<span style="color: #00d3d0;">err</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Left</span>(err)
+      }
+    }
+</pre>
+</div>
+
+<p>
+Let's try it out.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e2</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Left</span>(<span style="color: #79a8ff;">"Oops"</span>)
+
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e3</span> <span style="color: #b6a0ff;">=</span> e1.ffmap(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>) <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Right(11)</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e4</span> <span style="color: #b6a0ff;">=</span> e2.ffmap(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>) <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Left("Oops")</span>
+</pre>
+</div>
+
+<p>
+We can now apply pure functions to Eithers with String error
+types. Where we want to get to is to be able to apply pure functions
+to <code>Either[Error,Numeric[A]]</code> so we're not quite there yet.
+</p>
+
+<p>
+The first problem is that we can't handle the Error type that I want
+to use in my expression evaluator, we can only handle String. Well we
+can just make another instance of Functor for <code>Either[Error,A]</code>?
+</p>
+
+<p>
+Well, yes we could, but how about we make a generic instance of
+Functor for <code>all</code> Eithers?
+</p>
+
+<p>
+To do that we need to use type lambdas. These were available in Scala
+2 but are greatly simplified in Scala 3.
+</p>
+
+<p>
+<a href="https://dotty.epfl.ch/docs/reference/new-types/type-lambdas.html">https://dotty.epfl.ch/docs/reference/new-types/type-lambdas.html</a>
+</p>
+
+<p>
+Here's the new instance for Functor with some notable changes.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span class="linenr">1: </span>given eitherFunctor[<span style="color: #00bcff;">E</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Functor</span>[[<span style="color: #00bcff;">A</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">E</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span>
+<span class="linenr">2: </span>  extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">E</span>,<span style="color: #00bcff;">A</span>])
+<span class="linenr">3: </span>      <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">E</span>,<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
+<span class="linenr">4: </span>        x <span style="color: #b6a0ff;">match</span> {
+<span class="linenr">5: </span>          <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Right</span>(<span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(f(a))
+<span class="linenr">6: </span>          <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Left</span>(<span style="color: #00d3d0;">err</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Left</span>(err)
+<span class="linenr">7: </span>        }
+<span class="linenr">8: </span>      }
+</pre>
+</div>
+
+<p>
+Line 1 is where the action is. First note that we named the given
+instance <code>eitherFunctor</code>. Our previous instance had no name. You <code>can</code>
+leave the name out, but it's not recommended, especially for
+libraries, since it makes the code easier to work with. See also that
+the instance itself takes parameter <code>E</code> which will represent our error
+type.
+</p>
+
+<p>
+Next the instance of Functor is for the type <code>[A] =&gt;&gt; Either[E, A]</code>
+which is our type lambda. It means please give me a type that has a
+single parameter A but that will be substituted into the <code>Either[E,A]</code>
+in a way that is similar to how parameters are substituted into a
+lambda function.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e2</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">Int</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Left</span>(<span style="color: #00bcff;">1</span>)
+
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e3</span> <span style="color: #b6a0ff;">=</span> e1.ffmap(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>) <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Right(11)</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e4</span> <span style="color: #b6a0ff;">=</span> e2.ffmap(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>) <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Left(1)</span>
+</pre>
+</div>
+
+<p>
+Now we can map over any type of Either! As you can see in the first
+case the pure function mapped over the A. In the second case the pure
+function was not executed and the error value is simply passed along.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org02dcf84" class="outline-2">
+<h2 id="org02dcf84">Wrap up</h2>
+<div class="outline-text-2" id="text-org02dcf84">
+<p>
+I hope you enjoyed this blog and/or video. Please share, like or
+subscribe and help me spread this content to those that may find it
+useful.
+</p>
+
+<p>
+&copy; 2020 Justin Heyes-Jones. All Rights Reserved.
+</p>
+</div>
+</div>
