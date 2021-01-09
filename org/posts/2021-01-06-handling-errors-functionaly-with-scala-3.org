@@ -15,13 +15,15 @@ tags: [scala, scala-3, dotty]
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT
 ** Introduction
-This is a companion blog for the Functional Justin video series which
-you can find here:
-https://www.youtube.com/channel/UCkLlM1rb1zQcTjZ7HCf2zpg.
+This is a companion blog my fifth Functional Justin YouTube video
+which you can find here: https://youtu.be/wNVQ75KM8-4
 
 If you're new to the series I'm exploring Scala 3 and functional
 programming using a simple expression evaluator, and adding features
-to it every week.
+to it every week. Most of the videos are coffee break sized (10-15
+minutes) but this one took a bit longer as I needed more time to
+explain the concepts. Next time will probably be back down to the more
+bite-sized format.
 
 In video 1, https://youtu.be/J01u_Dmrx5U, I showed how you can use
 Scala 3 features like Context Functions to pass context around. The
@@ -248,5 +250,17 @@ Next time we'll look at the Functor laws and show that our code obeys them.
 I hope you enjoyed this blog and/or video. Please share, like or
 subscribe and help me spread this content to those that may find it
 useful.
+
+** For further info
+
+Source code
+
+https://github.com/justinhj/evalexample
+
+Read more
+
+https://dotty.epfl.ch/docs/reference/new-types/type-lambdas.html
+https://dotty.epfl.ch/docs/reference/contextual/extension-methods.html
+https://dotty.epfl.ch/docs/reference/contextual/type-classes.html
 
 \copy 2020 Justin Heyes-Jones. All Rights Reserved.
