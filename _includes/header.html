@@ -28,11 +28,6 @@
           </li>
           {% endif %}
 	  
-          {% if site.twitter_username %}
-          <li>
-            {% include icon-twitter.html username=site.twitter_username %}
-          </li>
-          {% endif %}
 	  <li>
 	    <a href="mailto:{{ site.email }}">
 	      <span class="icon">
@@ -68,6 +63,14 @@
 	      </span>
 	    </a>
 	  </li>
+
+	  {% if site.twitter_username %}
+          <li>
+            {% include icon-twitter.html username=site.twitter_username %}
+          </li>
+          {% endif %}
+
+	  
         </ul>
       </div>
       
