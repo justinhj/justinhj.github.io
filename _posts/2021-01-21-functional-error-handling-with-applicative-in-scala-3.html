@@ -1,0 +1,430 @@
+---
+layout: post
+title: Functional Error Handling with Applicative in Scala 3
+date: '2021-01-21T00:00:00.000-08:00'
+tags: [scala, scala-3, dotty, applicative, monads, applicative-functor]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+<div id="outline-container-org446e6de" class="outline-2">
+<h2 id="org446e6de">Introduction</h2>
+<div class="outline-text-2" id="text-org446e6de">
+<p>
+This is a companion blog my sixth Functional Justin YouTube video
+which you can find here: <a href="https://youtu.be/3GPXEzO14ZE">https://youtu.be/3GPXEzO14ZE</a>
+</p>
+
+<p>
+In the video I talked about the Functor Laws and continued working on
+the example program that evaluates arithmetic expressions. I use
+Monad, then Applicative, to show how we can make a Numeric instance
+for Either, so we can handle errors in a nice functional way.
+</p>
+
+<p>
+Since the episode I spent a bit of time cleaning up the code and
+putting what we already saw (Numeric and Functor) into their own
+packages. I also went ahead and implemented Applicative and Monad
+which will be used in the the video and below.
+</p>
+
+<p>
+You can find the typeclasses here:
+</p>
+
+<p>
+<a href="https://github.com/justinhj/evalexample/tree/video6/src/main/scala/org/justinhj/typeclasses">https://github.com/justinhj/evalexample/tree/video6/src/main/scala/org/justinhj/typeclasses</a>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7239c67" class="outline-2">
+<h2 id="org7239c67">Functor Laws</h2>
+<div class="outline-text-2" id="text-org7239c67">
+<p>
+Our Functor type class really only exists to implement the map
+function, and we already have a map function in the Scala standard
+library for such things as Options, Lists and Futures. You might
+wonder why we would go the trouble of making our own abstraction just
+to write a function that we already had.
+</p>
+
+<p>
+The goal of abstractions like Functor is not just to provide useful
+functions like map, but to provide a principled layer that we can
+build further abstractions upon. For example we will see that
+Applicative can be built on top of Functor, Monad on top of
+Applicative, and this is only possible because Functor behaves in
+accordance to strict rules that it brought with it from Category
+Theory.
+</p>
+
+<p>
+You can read more about Functors on the Haskell documentation pages:
+</p>
+
+<p>
+<a href="https://wiki.haskell.org/Functor">https://wiki.haskell.org/Functor</a>
+</p>
+
+<p>
+Another great resource is the famous "red book"&#x2026; 
+</p>
+
+<p>
+<a href="https://www.manning.com/books/functional-programming-in-scala">https://www.manning.com/books/functional-programming-in-scala</a>
+</p>
+</div>
+
+<div id="outline-container-org4d5e7ba" class="outline-3">
+<h3 id="org4d5e7ba">Functors preserve identity morphisms</h3>
+<div class="outline-text-3" id="text-org4d5e7ba">
+<p>
+What this law states is that if we map over some effect with the
+identity function, then neither the effect nor any value inside it
+will change.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Identity law for functors...</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">l1</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">List</span>(<span style="color: #00bcff;">1</span>, <span style="color: #00bcff;">2</span>, <span style="color: #00bcff;">3</span>)
+assert(l1 == l1.fmap(a <span style="color: #b6a0ff;">=&gt;</span> identity(a)))
+
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+assert(e1 == e1.fmap(identity))
+</pre>
+</div>
+
+<p>
+In the two examples we mapped an Either and a List using the identity
+function and nothing changed.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org66929de" class="outline-3">
+<h3 id="org66929de">Functors preserve composition of morphisms</h3>
+<div class="outline-text-3" id="text-org66929de">
+<p>
+If we have two functions, f and g, it doesn't matter if we map over
+some effect with f first then map over it with g, or we map over it
+one time with the composition of f and g. Using the either and list
+from above we can show this the case here.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span> <span style="color: #b6a0ff;">=</span> a + <span style="color: #00bcff;">1</span>
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">g</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span> <span style="color: #b6a0ff;">=</span> a - <span style="color: #00bcff;">1</span>
+
+assert(e1.fmap(f).fmap(g) == e1.fmap(a <span style="color: #b6a0ff;">=&gt;</span> g(f(a))))
+assert(l1.fmap(f).fmap(g) == l1.fmap(a <span style="color: #b6a0ff;">=&gt;</span> g(f(a))))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org56b299d" class="outline-3">
+<h3 id="org56b299d">Importing given instances</h3>
+<div class="outline-text-3" id="text-org56b299d">
+<p>
+Note that in Scala pre version 3 if you use a wildcard import <code>_</code> then
+you get all everything exposed in that package. That means you get all
+the implicit instances too. It was a source of confusion for beginners
+and even experienced Scala programmers to know which file to import
+and sometimes to know where instances you are using are defined.
+</p>
+
+<p>
+To help with that NO implicits are imported with a regular wildcard
+and instead you must import them with the new given syntax.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">import</span> org.justinhj.typeclasses.functor.{given, <span style="color: #b6a0ff;">_</span>}
+</pre>
+</div>
+
+<p>
+If you want you can also import only specific instances. This, in my
+opinon, will make things a lot simpler and more precise.
+</p>
+
+<p>
+One caveat here is that the given wildcard must appear before the
+underscore wildcard.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org132dab1" class="outline-2">
+<h2 id="org132dab1">Implementing Numeric for Either</h2>
+</div>
+
+<div id="outline-container-org233d793" class="outline-2">
+<h2 id="org233d793">Functor isn't enough</h2>
+<div class="outline-text-2" id="text-org233d793">
+<p>
+The following code implements an arithmetic expression evaluator using
+the Numeric type class developed in a previous video and adds error
+handling by using Either. Each step of our evaluator has this signature.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>] ?=&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]
+</pre>
+</div>
+
+<p>
+Which means it is a function takes an input environment (our symbol
+table) as an implicit argument, and returns an Either where the error
+(or Left) type is EvalError. EvalError represents the different errors
+our code will handle. It is a sum type implemented as a Scala 3 enum
+(seen in a previous video).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">enum <span style="color: #00bcff;">EvalError</span> {
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">InvalidSymboName</span>
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">SymbolNotFound</span>
+}
+</pre>
+</div>
+
+<p>
+In previous blogs/videos I showed how we can implement a Numeric
+instance so we can do arithmetic on many different types, just so long
+as we create an instance of Numeric to handle them. Now we must
+implement Numeric for the following type <code>Numeric[Either[EvalError, A]]</code>.
+</p>
+
+<p>
+The instance signature is
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">given evalResultNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span> {
+</pre>
+</div>
+
+<p>
+Now we must implement the methods of Numeric. Because our numeric
+values are inside the EvalResult (an Either) we can't just implement
+the multiply directly. We need a way to get inside it. As we saw in
+the previous blog/video, Functor gives us a way to apply a pure
+function to an effect. Since mul is a pure function, maybe we can use
+it?
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+  a.fmap { <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">DOES NOT COMPILE, WRONG TYPE</span>
+    aa <span style="color: #b6a0ff;">=&gt;</span> 
+    b.fmap {
+      bb <span style="color: #b6a0ff;">=&gt;</span>
+        aa * bb
+    }
+  }
+}
+</pre>
+</div>
+
+<p>
+Note I am using the name fmap and fflatMap to make it clear we are not
+using the standard library implementations here. This is just for
+clarity but is not a good practise because, for example, you will lose
+the ability to use for comprehensions.
+</p>
+
+<p>
+What went wrong here is that Functor's map operation has the signature
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>])
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">B</span>]
+</pre>
+</div>
+
+
+<p>
+which means it takes our <code>Either[EvalError, Numeric[A]]</code> and a pure
+function, which it will apply to the Numeric. Unfortunately we end up
+with an extra layer of Either! Let's see why&#x2026;
+</p>
+
+<img class="img" src="../../../images/flatmapcallout1.png" border="0" style="padding: 30px;" alt="flatmap types diagram reproduced in code" width="600"/>
+<img class="img" src="../../../images/flatmapcallout2.png" border="0" style="padding: 30px;" alt="flatmap types diagram reproduced in code" width="600"/>
+<img class="img" src="../../../images/flatmapcallout3.png" border="0" style="padding: 30px;" alt="flatmap types diagram reproduced in code" width="600"/>
+<img class="img" src="../../../images/flatmapcallout4.png" border="0" style="padding: 30px;" alt="flatmap types diagram reproduced in code" width="600"/>
+</div>
+</div>
+
+<div id="outline-container-orgd724df9" class="outline-2">
+<h2 id="orgd724df9">Monad to the rescue</h2>
+<div class="outline-text-2" id="text-orgd724df9">
+<p>
+So instead of Functor with its map function, we need Monad and its
+flatMap which let's us implement all the arithmetic functions in a
+straightforward manner.
+</p>
+
+<p>
+<a href="https://github.com/justinhj/evalexample/blob/video6/src/main/scala/org/justinhj/typeclasses/monad/Monad.scala">https://github.com/justinhj/evalexample/blob/video6/src/main/scala/org/justinhj/typeclasses/monad/Monad.scala</a>
+</p>
+
+<p>
+I've implemented Monad in the file above and made it available to the
+code. The implementation is simple and based on the example given in
+the Dotty documentation. The main difference is I've also implemented
+Applicative, since we will use that in a moment, and Monad extends
+Applicative.
+</p>
+
+<p>
+<a href="https://dotty.epfl.ch/docs/reference/contextual/type-classes.html">https://dotty.epfl.ch/docs/reference/contextual/type-classes.html</a>
+</p>
+
+<p>
+Now each arithmetic operator can be implemented as follows, which
+achieves our goal of being principled and functional and let's us
+handle errors at the type level.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+  a.fflatMap {
+    aa <span style="color: #b6a0ff;">=&gt;</span> 
+      b.map {
+        bb <span style="color: #b6a0ff;">=&gt;</span>
+          aa * bb
+      }
+  }
+}
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org6e166ea" class="outline-3">
+<h3 id="org6e166ea">Map2 we love you</h3>
+<div class="outline-text-3" id="text-org6e166ea">
+<p>
+Unfortunately it's bit verbose. Monad is more powerful than we need in
+fact. We could use Applicative instead. I will talk more about Monad
+and Applicative in a later video, but in short you can think of Monads
+as being good for putting two effects together and flattening the
+result, whilst Applicative is good for passing multiple effect values
+as parameters to some pure function.
+</p>
+
+<p>
+You can see the Applicative implementation here. 
+</p>
+
+<p>
+<a href="https://github.com/justinhj/evalexample/blob/video6/src/main/scala/org/justinhj/typeclasses/applicative/Applicative">https://github.com/justinhj/evalexample/blob/video6/src/main/scala/org/justinhj/typeclasses/applicative/Applicative</a>
+</p>
+
+<p>
+Now, Functor has map, Monad has flatMap and Applicative has its own
+mapping function called ap. Whilst it's out of scope for right now,
+the ap mapping function makes it possible to apply two or more effects
+as parameters to a pure function, which is exactly what we need
+here. From ap you can derive methods that make this much simpler, map2
+for example. Here we use map 2 to take any two input effects and apply
+the multiply operator to them&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> 
+  a.map2(b)((a,b) <span style="color: #b6a0ff;">=&gt;</span> a * b)
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9aafbe9" class="outline-2">
+<h2 id="org9aafbe9">Division by Zero</h2>
+<div class="outline-text-2" id="text-org9aafbe9">
+<p>
+What we have at this point is a nice implementation of Numeric that
+uses Either's for error handling, which in turn is built on
+Applicative. Let's see how easy it is to add new errors and
+capabilities to the expression evaluator.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">enum <span style="color: #00bcff;">EvalError</span> {
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">InvalidSymboName</span>
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">SymbolNotFound</span>
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">DivisionByZero</span>
+}
+</pre>
+</div>
+
+<p>
+First we add a new error type DivisionByZero. The next thing we need
+is for Numeric to have a concept of whether a number is zero or
+not. Remember that we can implement Numeric for many different types
+and not all of them represent zero the same way. We can therefore add
+an isZero predicate to the type class.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isZero</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Boolean</span> 
+</pre>
+</div>
+
+<p>
+Next every instance of Numeric needs an implementation of it, so for
+exapmle in the Int instance we have the following.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isZero</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>) <span style="color: #b6a0ff;">=</span> a == <span style="color: #00bcff;">0</span>
+</pre>
+</div>
+
+<p>
+The implementation for Numeric Either let's us write the isZero for
+any value in an either as long as that value has a numeric instance of
+its own.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">given evalResultNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span> {
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isZero</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Boolean</span> <span style="color: #b6a0ff;">=</span> {
+    a <span style="color: #b6a0ff;">match</span> {
+      <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Right</span>(<span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">if</span> summon[<span style="color: #00bcff;">Numeric</span>[<span style="color: #00bcff;">A</span>]].isZero(a) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">true</span>
+      <span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">false</span>
+    }
+  }
+</pre>
+</div>
+
+<p>
+Finally we can implement the division operator for Numeric Either like this.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">div</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+  <span style="color: #b6a0ff;">if</span> isZero(b) then
+    <span style="color: #00bcff;">Left</span>(<span style="color: #00bcff;">EvalError</span>.<span style="color: #00bcff;">DivisionByZero</span>)
+  <span style="color: #b6a0ff;">else</span> 
+    a.map2(b)(<span style="color: #b6a0ff;">_</span> / <span style="color: #b6a0ff;">_</span>)
+}
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge991672" class="outline-2">
+<h2 id="orge991672">Wrap up</h2>
+<div class="outline-text-2" id="text-orge991672">
+<p>
+That's all for now, I hope you enjoyed this post and video. Please
+contact me using the methods above with any questions, suggestions or
+corrections!
+</p>
+</div>
+</div>

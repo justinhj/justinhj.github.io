@@ -1,0 +1,313 @@
+#+AUTHOR: Justin Heyes-Jones
+#+TITLE: #+TITLE: Functional Error Handling with Applicative in Scala 3
+#+DATE: 2021
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+HTML_HTML5_FANCY:
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: Functional Error Handling with Applicative in Scala 3
+date: '2021-01-21T00:00:00.000-08:00'
+tags: [scala, scala-3, dotty, applicative, monads, applicative-functor]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+#+END_EXPORT
+** Introduction
+This is a companion blog my sixth Functional Justin YouTube video
+which you can find here: https://youtu.be/3GPXEzO14ZE
+
+In the video I talked about the Functor Laws and continued working on
+the example program that evaluates arithmetic expressions. I use
+Monad, then Applicative, to show how we can make a Numeric instance
+for Either, so we can handle errors in a nice functional way.
+
+Since the episode I spent a bit of time cleaning up the code and
+putting what we already saw (Numeric and Functor) into their own
+packages. I also went ahead and implemented Applicative and Monad
+which will be used in the the video and below.
+
+You can find the typeclasses here:
+
+https://github.com/justinhj/evalexample/tree/video6/src/main/scala/org/justinhj/typeclasses
+
+** Functor Laws
+
+Our Functor type class really only exists to implement the map
+function, and we already have a map function in the Scala standard
+library for such things as Options, Lists and Futures. You might
+wonder why we would go the trouble of making our own abstraction just
+to write a function that we already had.
+
+The goal of abstractions like Functor is not just to provide useful
+functions like map, but to provide a principled layer that we can
+build further abstractions upon. For example we will see that
+Applicative can be built on top of Functor, Monad on top of
+Applicative, and this is only possible because Functor behaves in
+accordance to strict rules that it brought with it from Category
+Theory.
+
+You can read more about Functors on the Haskell documentation pages:
+
+https://wiki.haskell.org/Functor
+
+Another great resource is the famous "red book"... 
+
+https://www.manning.com/books/functional-programming-in-scala
+
+*** Functors preserve identity morphisms
+
+What this law states is that if we map over some effect with the
+identity function, then neither the effect nor any value inside it
+will change.
+
+#+BEGIN_SRC scala
+  // Identity law for functors...
+  val l1 = List(1, 2, 3)
+  assert(l1 == l1.fmap(a => identity(a)))
+
+  val e1: Either[String, Int] = Right(10)
+  assert(e1 == e1.fmap(identity))
+#+END_SRC
+
+In the two examples we mapped an Either and a List using the identity
+function and nothing changed.
+
+*** Functors preserve composition of morphisms 
+
+If we have two functions, f and g, it doesn't matter if we map over
+some effect with f first then map over it with g, or we map over it
+one time with the composition of f and g. Using the either and list
+from above we can show this the case here.
+
+#+BEGIN_SRC scala
+  def f(a: Int): Int = a + 1
+  def g(a: Int): Int = a - 1
+
+  assert(e1.fmap(f).fmap(g) == e1.fmap(a => g(f(a))))
+  assert(l1.fmap(f).fmap(g) == l1.fmap(a => g(f(a))))
+#+END_SRC
+
+*** Importing given instances
+
+Note that in Scala pre version 3 if you use a wildcard import ~_~ then
+you get all everything exposed in that package. That means you get all
+the implicit instances too. It was a source of confusion for beginners
+and even experienced Scala programmers to know which file to import
+and sometimes to know where instances you are using are defined.
+
+To help with that NO implicits are imported with a regular wildcard
+and instead you must import them with the new given syntax.
+
+#+BEGIN_SRC scala
+import org.justinhj.typeclasses.functor.{given, _}
+#+END_SRC
+
+If you want you can also import only specific instances. This, in my
+opinon, will make things a lot simpler and more precise.
+
+One caveat here is that the given wildcard must appear before the
+underscore wildcard.
+
+** Implementing Numeric for Either
+
+** Functor isn't enough
+
+The following code implements an arithmetic expression evaluator using
+the Numeric type class developed in a previous video and adds error
+handling by using Either. Each step of our evaluator has this signature.
+
+#+BEGIN_SRC scala
+  type WithEnv[A] = Env[A] ?=> Either[EvalError, A]
+#+END_SRC
+
+Which means it is a function takes an input environment (our symbol
+table) as an implicit argument, and returns an Either where the error
+(or Left) type is EvalError. EvalError represents the different errors
+our code will handle. It is a sum type implemented as a Scala 3 enum
+(seen in a previous video).
+
+#+BEGIN_SRC scala
+enum EvalError {
+  case InvalidSymboName
+  case SymbolNotFound
+}
+#+END_SRC
+
+In previous blogs/videos I showed how we can implement a Numeric
+instance so we can do arithmetic on many different types, just so long
+as we create an instance of Numeric to handle them. Now we must
+implement Numeric for the following type ~Numeric[Either[EvalError, A]]~.
+
+The instance signature is
+
+#+BEGIN_SRC scala
+  given evalResultNumeric[A: Numeric]: Numeric[Either[EvalError, A]] with {
+#+END_SRC
+
+Now we must implement the methods of Numeric. Because our numeric
+values are inside the EvalResult (an Either) we can't just implement
+the multiply directly. We need a way to get inside it. As we saw in
+the previous blog/video, Functor gives us a way to apply a pure
+function to an effect. Since mul is a pure function, maybe we can use
+it?
+
+#+BEGIN_SRC scala
+def mul(a: EvalResult[A], b: EvalResult[A]): EvalResult[A] = {
+  a.fmap { // DOES NOT COMPILE, WRONG TYPE
+    aa => 
+    b.fmap {
+      bb =>
+        aa * bb
+    }
+  }
+}
+#+END_SRC
+
+Note I am using the name fmap and fflatMap to make it clear we are not
+using the standard library implementations here. This is just for
+clarity but is not a good practise because, for example, you will lose
+the ability to use for comprehensions.
+
+What went wrong here is that Functor's map operation has the signature
+
+#+BEGIN_SRC scala
+  extension [A, B](x: F[A])
+    def ffmap(f: A => B): F[B]
+#+END_SRC
+
+
+which means it takes our ~Either[EvalError, Numeric[A]]~ and a pure
+function, which it will apply to the Numeric. Unfortunately we end up
+with an extra layer of Either! Let's see why...
+
+#+BEGIN_EXPORT html
+<img class="img" src="../../../images/flatmapcallout1.png" border="0" style="padding: 30px;" alt="flatmap types diagram reproduced in code" width="600"/>
+<img class="img" src="../../../images/flatmapcallout2.png" border="0" style="padding: 30px;" alt="flatmap types diagram reproduced in code" width="600"/>
+<img class="img" src="../../../images/flatmapcallout3.png" border="0" style="padding: 30px;" alt="flatmap types diagram reproduced in code" width="600"/>
+<img class="img" src="../../../images/flatmapcallout4.png" border="0" style="padding: 30px;" alt="flatmap types diagram reproduced in code" width="600"/>
+#+END_EXPORT
+
+** Monad to the rescue
+
+So instead of Functor with its map function, we need Monad and its
+flatMap which let's us implement all the arithmetic functions in a
+straightforward manner.
+
+https://github.com/justinhj/evalexample/blob/video6/src/main/scala/org/justinhj/typeclasses/monad/Monad.scala
+
+I've implemented Monad in the file above and made it available to the
+code. The implementation is simple and based on the example given in
+the Dotty documentation. The main difference is I've also implemented
+Applicative, since we will use that in a moment, and Monad extends
+Applicative.
+
+https://dotty.epfl.ch/docs/reference/contextual/type-classes.html
+
+Now each arithmetic operator can be implemented as follows, which
+achieves our goal of being principled and functional and let's us
+handle errors at the type level.
+
+#+BEGIN_SRC scala
+def mul(a: EvalResult[A], b: EvalResult[A]): EvalResult[A] = {
+  a.fflatMap {
+    aa => 
+      b.map {
+        bb =>
+          aa * bb
+      }
+  }
+}
+#+END_SRC
+
+*** Map2 we love you
+
+Unfortunately it's bit verbose. Monad is more powerful than we need in
+fact. We could use Applicative instead. I will talk more about Monad
+and Applicative in a later video, but in short you can think of Monads
+as being good for putting two effects together and flattening the
+result, whilst Applicative is good for passing multiple effect values
+as parameters to some pure function.
+
+You can see the Applicative implementation here. 
+
+https://github.com/justinhj/evalexample/blob/video6/src/main/scala/org/justinhj/typeclasses/applicative/Applicative
+
+Now, Functor has map, Monad has flatMap and Applicative has its own
+mapping function called ap. Whilst it's out of scope for right now,
+the ap mapping function makes it possible to apply two or more effects
+as parameters to a pure function, which is exactly what we need
+here. From ap you can derive methods that make this much simpler, map2
+for example. Here we use map 2 to take any two input effects and apply
+the multiply operator to them...
+
+#+BEGIN_SRC scala
+def mul(a: EvalResult[A], b: EvalResult[A]): EvalResult[A] = 
+  a.map2(b)((a,b) => a * b)
+#+END_SRC
+
+** Division by Zero
+
+What we have at this point is a nice implementation of Numeric that
+uses Either's for error handling, which in turn is built on
+Applicative. Let's see how easy it is to add new errors and
+capabilities to the expression evaluator.
+
+#+BEGIN_SRC scala
+enum EvalError {
+  case InvalidSymboName
+  case SymbolNotFound
+  case DivisionByZero
+}
+#+END_SRC
+
+First we add a new error type DivisionByZero. The next thing we need
+is for Numeric to have a concept of whether a number is zero or
+not. Remember that we can implement Numeric for many different types
+and not all of them represent zero the same way. We can therefore add
+an isZero predicate to the type class.
+
+#+BEGIN_SRC scala
+def isZero(a: T): Boolean 
+#+END_SRC
+
+Next every instance of Numeric needs an implementation of it, so for
+exapmle in the Int instance we have the following.
+
+#+BEGIN_SRC scala
+def isZero(a: Int) = a == 0
+#+END_SRC
+
+The implementation for Numeric Either let's us write the isZero for
+any value in an either as long as that value has a numeric instance of
+its own.
+
+#+BEGIN_SRC scala
+given evalResultNumeric[A: Numeric]: Numeric[Either[EvalError, A]] with {
+  def isZero(a: EvalResult[A]): Boolean = {
+    a match {
+      case Right(a) if summon[Numeric[A]].isZero(a) => true
+      case _ => false
+    }
+  }
+#+END_SRC
+
+Finally we can implement the division operator for Numeric Either like this.
+
+#+BEGIN_SRC scala
+def div(a: EvalResult[A], b: EvalResult[A]): EvalResult[A] = {
+  if isZero(b) then
+    Left(EvalError.DivisionByZero)
+  else 
+    a.map2(b)(_ / _)
+}
+#+END_SRC
+
+** Wrap up
+
+That's all for now, I hope you enjoyed this post and video. Please
+contact me using the methods above with any questions, suggestions or
+corrections!
+
+ 
