@@ -1,0 +1,498 @@
+---
+layout: post
+title: Monads in Scala 3 for the Genius
+date: '2021-01-21T00:00:00.000-08:00'
+tags: [scala, scala-3, dotty, monads, category-theory]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+<div id="outline-container-org7308792" class="outline-2">
+<h2 id="org7308792">Introduction</h2>
+<div class="outline-text-2" id="text-org7308792">
+<p>
+This is a companion blog the seventh Functional Justin YouTube video
+which you can find here: <a href="https://youtu.be/3GPXEzO14ZE">https://youtu.be/3GPXEzO14ZE</a> 
+</p>
+
+<p>
+The source code shown in the video and in the fragments below can be found here:
+<a href="https://github.com/justinhj/evalexample/tree/video-7">https://github.com/justinhj/evalexample/tree/video-7</a>
+</p>
+
+<p>
+The goal here is to make 10-15 minute videos that each cover an
+isolated topic in pure functional programming with Scala. There is an
+also overarching goal to cover a certain number of base topics you
+need in functional programming. Once that is complete I will start
+doing deep dives into FP libraries such as Cats and Zio.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgeaeaecb" class="outline-2">
+<h2 id="orgeaeaecb">Monads for the Genius</h2>
+<div class="outline-text-2" id="text-orgeaeaecb">
+<p>
+The title may sound like clickbait, and it most surely is, but the
+point is that for most Scala programmers, even those working with
+functional programming libraries, most of what you need to know about
+Monads is what the type signatures of the methods are and how you can
+leverage those in your code. For bonus points you can learn the Monad
+laws and implement your own lawful Monad instances.
+</p>
+
+<p>
+If you want to know why Monad consists of pure (or unit) and flatMap,
+and why Monads are functors (they have map) you need to dig a little
+deeper, and for that reason I targeted this post at the genius, but
+perhaps the curious would be a better way to put it.
+</p>
+
+<p>
+In this post and the accompanying video I will show the category
+theory you need to understand monad and derive an implementation of
+the monad type class from that theoretical foundation. From there the
+next step is to show the monad in use on effects and how to implement
+and use flatMap (or bind).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3c1d4f1" class="outline-2">
+<h2 id="org3c1d4f1">Just enough Category Theory</h2>
+<div class="outline-text-2" id="text-org3c1d4f1">
+<p>
+Category theory is a candidate for a theory that describes all of mathematics, and has been applied to a number of areas.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>. If you want to know more about it than the very basics then I recommend Category Theory for Progammers.<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup>
+</p>
+
+<p>
+The essence of category theory is the category itself, which consists of objects and morphisms that transition from one object to another. 
+</p>
+
+<img class="img" src="../../../images/Categories3.png" border="0" style="padding: 30px;" alt="Category theory diagram" width="600"/>
+
+<p>
+In addition there must be an identity morphism on each object. This simply gives you a way to transition from an object to itself.
+</p>
+
+<img class="img" src="../../../images/Categories4.png" border="0" style="padding: 30px;" alt="Category theory diagram" width="600"/>
+
+<p>
+Morphisms between objects can compose. Here we have a morphism from A to B (f) and another from B to C (g). We can compose f and g, giving us a single morphism from A to C.
+</p>
+
+<img class="img" src="../../../images/Categories5.png" border="0" style="padding: 30px;" alt="Category theory diagram" width="600"/>
+
+<p>
+Composition must follow the associative law. As shown below that means if we have three morphisms f,g and h, it doesn't matter how we compose them as long we don't change the order they are applied. We can compose them in two different ways.
+</p>
+
+<img class="img" src="../../../images/Categories6.png" border="0" style="padding: 30px;" alt="Category theory diagram" width="600"/>
+</div>
+</div>
+
+<div id="outline-container-orgcc20678" class="outline-2">
+<h2 id="orgcc20678">The category of Scala types and functions</h2>
+<div class="outline-text-2" id="text-orgcc20678">
+<p>
+Let's make the concept of a category more concrete by seeing how it can be encoded in Scala. One example of a category is the category of Scala types and functions.
+</p>
+
+<p>
+In the code below we have a lawful category. The objects are the Scala
+types (Ints, Booleans, Strings) and the morphisms that take us from
+one object to the next are ordinary Scala functions. There are three
+examples f,g and h.
+</p>
+
+<p>
+Remember to be a category we need an identity morphism, which turns out to be simply the Scala <code>identity</code>. (A =&gt; A).
+</p>
+
+<p>
+The other thing we need is a way to combine morphisms that must be associative. We have that with the built in function <code>compose</code>!
+</p>
+
+<p>
+As you can see in the code it is straightforward to show the laws of the category are upheld.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Category of Scala functions</span>
+
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">f</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Int</span> <span style="color: #b6a0ff;">=</span> a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">g</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Boolean</span> <span style="color: #b6a0ff;">=</span> b <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #b6a0ff;">if</span>(b == <span style="color: #00bcff;">1</span>) <span style="color: #00bcff;">true</span> <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">false</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">h</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Boolean</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">String</span> <span style="color: #b6a0ff;">=</span> c <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #b6a0ff;">if</span>(c == <span style="color: #00bcff;">true</span>) <span style="color: #79a8ff;">"Winner!"</span> <span style="color: #b6a0ff;">else</span> <span style="color: #79a8ff;">"Loser!"</span>
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Identity</span>
+f.compose((a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>) <span style="color: #b6a0ff;">=&gt;</span> identity(a))(<span style="color: #00bcff;">0</span>) == f(<span style="color: #00bcff;">0</span>)
+
+f(<span style="color: #00bcff;">0</span>) == f.compose((a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>) <span style="color: #b6a0ff;">=&gt;</span> identity(a))(<span style="color: #00bcff;">0</span>)
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Composition must be associative</span>
+h.compose(g.compose(f))(<span style="color: #00bcff;">0</span>) == (h.compose(g.compose(f)))(<span style="color: #00bcff;">0</span>)
+</pre>
+</div>
+
+<p>
+Above you can see composing the identity function with f gives the same result as calling f alone. 
+</p>
+
+<p>
+You can also see that composition is associative. We compose h with g
+and f in different ways, without changing the order, and get the same
+results.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org1bf1bba" class="outline-2">
+<h2 id="org1bf1bba">A monad is just a functor in the category of Kleisli arrows</h2>
+<div class="outline-text-2" id="text-org1bf1bba">
+<p>
+What's the problem?
+</p>
+
+<p>
+Well there are two problems here. For one many readers may be saying
+"What? Surely a monad is a just a monoid in the category of
+endofunctors!"<sup><a id="fnr.3" class="footref" href="#fn.3">3</a></sup>
+</p>
+
+<p>
+Perhaps another group are completely lost. Well the famous quote about
+monads is absolutely right, but that is a different way to arrive at
+Monads than the simpler one we are looking at here.
+</p>
+
+<p>
+Instead we will arrive at Monads by making a simple change to the
+Category of Scala types and functions. The only change we will make is
+instead of Scala functions of the form <code>A =&gt; B</code> we will instead use
+what is known as a Kliesli arrow, which has the form <code>"A =&gt; F[B]</code>.
+</p>
+
+<p>
+You may recognize that shape of function from the argument to Scala's
+flatMap. In other words it is the type of function that maps a pure
+value to an effectful value.
+</p>
+
+<p>
+Let's look at how we can encode this new category directly in Scala as a monad!
+</p>
+
+<p>
+Note I will call the Monad type class Monad1 to avoid confusion with
+the more usual Monad definition in the code.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #f78fe7;">Monad1</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]]<span style="color: #b6a0ff;">:</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">unit</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">A</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>]
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>]
+</pre>
+</div>
+
+<p>
+In the definition above we have all we need to implement the category
+of Scala objects and Kliesli arrows (and incidentally this is, by
+definition, a monad).
+</p>
+
+<p>
+Firstly what are the objects? Just like before the objects are Scala types.
+</p>
+
+<p>
+Next what are the morphisms? We stated the morphisms would be of the form <code>A =&gt; F[B]</code>.
+</p>
+
+<p>
+Finally what is the identity? The identity has the same form as any
+other morphism except that it maps a type to itself, so the identity
+is <code>A =&gt; F[A]</code>. We can implement that in Scala with the <code>unit</code>
+function above.
+</p>
+
+<p>
+With Scala functions we used the compose function. Here we need to
+write our own code that composes two Kleisli arrows returning a new
+one. This is the direct analog of the compose function that works with
+simple functions.
+</p>
+
+<p>
+For convenience, just like with any other Scala 3 type class we need a
+way to summon a Monad of a particular type into existence and for that
+we write the apply function as follows.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">Monad1</span><span style="color: #b6a0ff;">:</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">apply</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]](using m<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad1</span>[<span style="color: #00bcff;">F</span>]) <span style="color: #b6a0ff;">=</span> m
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org23d83bd" class="outline-2">
+<h2 id="org23d83bd">Implementation of Monad for Option</h2>
+<div class="outline-text-2" id="text-org23d83bd">
+<div class="org-src-container">
+<pre class="src src-scala">given optionMonad1<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad1</span>[<span style="color: #00bcff;">Option</span>] <span style="color: #b6a0ff;">with</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">unit</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">A</span>) <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Option</span>(a)
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Option</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Option</span>[<span style="color: #00bcff;">C</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Option</span>[<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> {
+    a <span style="color: #b6a0ff;">=&gt;</span> 
+      lf(a) <span style="color: #b6a0ff;">match</span> {
+        <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Some</span>(<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span>
+          rf(b) <span style="color: #b6a0ff;">match</span> {
+            <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Some</span>(<span style="color: #00d3d0;">c</span>) <span style="color: #b6a0ff;">=&gt;</span>
+              <span style="color: #00bcff;">Option</span>(c)
+            <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">None</span>
+          }
+        <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">None</span>          
+      } 
+  }
+</pre>
+</div>
+
+<p>
+You can see that unit is just a call to the Option constructor, whilst
+compose will return a new function that first applies <code>lf</code> to the
+input, then if that yields a value and not a None, it will apply <code>rf</code>
+to that yielding a new Option.
+</p>
+
+<p>
+Now we can write code that composes "effect generating" functions (or
+Kliesli arrows) together. Here I make three simple functions that
+operate on Scala values and produce Options.
+</p>
+
+<p>
+Here we use the Monad1 option to compose f,g and h&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f</span>(n<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Option</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> n == <span style="color: #00bcff;">4</span> then <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">Option</span>(n)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">g</span>(n<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Option</span>[<span style="color: #00bcff;">Boolean</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> n%<span style="color: #00bcff;">2</span>==<span style="color: #00bcff;">1</span> then <span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">true</span>) <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">false</span>)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">h</span>(b<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">Boolean</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Option</span>[<span style="color: #00bcff;">String</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> b then <span style="color: #00bcff;">Some</span>(<span style="color: #79a8ff;">"Winner!"</span>) <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">None</span>
+
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">fcomposed</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Monad1</span>[<span style="color: #00bcff;">Option</span>].compose(f,g)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">fghComposed</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Monad1</span>[<span style="color: #00bcff;">Option</span>].compose(fcomposed, h)
+
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">i</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Float</span>) <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">0.0</span>
+
+println(fghComposed(<span style="color: #00bcff;">1</span>))
+println(fghComposed(<span style="color: #00bcff;">2</span>))
+println(fghComposed(<span style="color: #00bcff;">3</span>))
+println(fghComposed(<span style="color: #00bcff;">4</span>))
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Output:</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Some(Winner!)</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">None</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Some(Winner!)</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">None</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgac02738" class="outline-2">
+<h2 id="orgac02738">The Monad laws</h2>
+<div class="outline-text-2" id="text-orgac02738">
+<p>
+At this point we've shown that one implementation of a Monad involves
+the unit and compose functions. We can now see a demonstration of the
+monad laws in this form.
+</p>
+
+<p>
+Left and right indentity laws are shown by composing a function with
+unit. This is equivalent to what we did with Scala functions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">left and right identity</span>
+m1.compose(f, m1.unit)(<span style="color: #00bcff;">1</span>) == f(<span style="color: #00bcff;">1</span>)
+f(<span style="color: #00bcff;">1</span>) == m1.compose(f, m1.unit)(<span style="color: #00bcff;">1</span>)
+</pre>
+</div>
+
+<p>
+We can also demonstrate the associtive law in action, whereby
+composing f,g and h works both ways.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">m1.compose(m1.compose(f,g), h)(<span style="color: #00bcff;">1</span>) == m1.compose(f, m1.compose(g,h))(<span style="color: #00bcff;">1</span>)
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgca9a98d" class="outline-2">
+<h2 id="orgca9a98d">What about flatMap?</h2>
+<div class="outline-text-2" id="text-orgca9a98d">
+<p>
+So far so good, we conjured up a monad from just category theory and a
+simple twist on the category of types and functions. You may be
+wondering how we get from this new definition of Monad to the one we
+see in Cats and Scalaz, and why even in the Scala standard library we
+have flatMap but not compose for Kliesli arrows.
+</p>
+
+<p>
+Well fortunately flatMap can be written in terms of compose, so we can
+be assured that the more convenient and familiar representation of
+Monads is exactly equivalent!
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">flatMap</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>](fa<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>])(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>])(using m<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad1</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
+  <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">F[A] =&gt; F[A]</span>
+  <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">A =&gt; F[B]</span>
+  m.compose((a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">=&gt;</span> identity(a), a <span style="color: #b6a0ff;">=&gt;</span> f(a))(fa)
+}
+</pre>
+</div>
+
+<p>
+I found this implementation a bit tricky to understand at first but if
+you look at it and reference the Option instance above it should make
+sense after a little thought. The "trick" is that we are given an
+<code>F[A]</code> and so we pass that as the first argument to compose using the
+identity function to get it back unchanged. (Mapping an F[A] to itself
+is actually the map function of Functor!)
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge1d6303" class="outline-2">
+<h2 id="orge1d6303">compose from flatMap</h2>
+<div class="outline-text-2" id="text-orge1d6303">
+<p>
+Should your starting point be the more traditional Monad with pure and
+flatMap, you can in fact derive the compose function as follows.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">import</span> org.justinhj.typeclasses.monad.{given,<span style="color: #b6a0ff;">_</span>}
+
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>])(using m<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> {
+  a <span style="color: #b6a0ff;">=&gt;</span>
+    <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">fb</span> <span style="color: #b6a0ff;">=</span> m.pure(a).flatMap(lf)
+    fb.flatMap(rf) 
+}
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge886783" class="outline-2">
+<h2 id="orge886783">Final remarks</h2>
+<div class="outline-text-2" id="text-orge886783">
+<p>
+One last thing you may be interested in is that you can implement monad as pure and flatmap, pure and compose or as third set pure, map and flatten.
+</p>
+
+<p>
+My favourite reference for exploring Monads in Scala is the so called
+red book which devotes chapter 11 to the subject.<sup><a id="fnr.4" class="footref" href="#fn.4">4</a></sup> The nice thing about
+that particular book is it encourages the sort of exploration and
+discovery of these concepts that makes them so fun to work with!
+</p>
+
+<p>
+There is some duplication in the names when we use category theory in Scala that can cause confusion. Here's a little guide.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Purpose</th>
+<th scope="col" class="org-left">Functions</th>
+<th scope="col" class="org-left">Kleislis</th>
+<th scope="col" class="org-left">&#xa0;</th>
+<th scope="col" class="org-left">&#xa0;</th>
+<th scope="col" class="org-left">&#xa0;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Identity</td>
+<td class="org-left">identity</td>
+<td class="org-left">unit</td>
+<td class="org-left">pure</td>
+<td class="org-left">return</td>
+<td class="org-left">point</td>
+</tr>
+
+<tr>
+<td class="org-left">Sequence two effects</td>
+<td class="org-left">n/a</td>
+<td class="org-left">flatMap</td>
+<td class="org-left">bind</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">Flatten a nested effect</td>
+<td class="org-left">n/a</td>
+<td class="org-left">flatten</td>
+<td class="org-left">join</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Finally it was really my goal here to show that there is not much to
+categories and therefore not much to monads. The terminology is
+unfamiliar but I think the concepts are quite straightforward. I would
+love to know if this blog and/or video failed to make sense, so feel
+free to reach out to be on the youtube comments or via the contact
+details above and I will take on board your suggestions.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+Uses of Category Theory <a href="https://math.stackexchange.com/a/1210742/2914">https://math.stackexchange.com/a/1210742/2914</a>
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> <div class="footpara"><p class="footpara">
+Category Theory for Programmers <a href="https://github.com/hmemcpy/milewski-ctfp-pdf">https://github.com/hmemcpy/milewski-ctfp-pdf</a>
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.3" class="footnum" href="#fnr.3">3</a></sup> <div class="footpara"><p class="footpara">
+James Iry and the famous monad quote <a href="https://stackoverflow.com/questions/3870088/a-monad-is-just-a-monoid-in-the-category-of-endofunctors-whats-the-problem#3870310">https://stackoverflow.com/questions/3870088/a-monad-is-just-a-monoid-in-the-category-of-endofunctors-whats-the-problem#3870310</a>
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.4" class="footnum" href="#fnr.4">4</a></sup> <div class="footpara"><p class="footpara">
+Functional Programming in Scala <a href="https://www.manning.com/books/functional-programming-in-scala">https://www.manning.com/books/functional-programming-in-scala</a>
+</p></div></div>
+
+
+</div>
+</div>
