@@ -16,7 +16,8 @@ tags: [scala, scala-3, dotty, monads, category-theory]
 #+END_EXPORT
 ** Introduction
 This is a companion blog the seventh Functional Justin YouTube video
-which you can find here: https://youtu.be/3GPXEzO14ZE 
+which you can find here:
+https://www.youtube.com/watch?v=B1FSxbmZpCE
 
 The source code shown in the video and in the fragments below can be found here:
 https://github.com/justinhj/evalexample/tree/video-7
@@ -38,7 +39,8 @@ laws and implement your own lawful Monad instances.
 If you want to know why Monad consists of pure (or unit) and flatMap,
 and why Monads are functors (they have map) you need to dig a little
 deeper, and for that reason I targeted this post at the genius, but
-perhaps the curious would be a better way to put it.
+perhaps the curious would be a better way to put it, it hopefully will
+not be a really difficult topic to follow.
 
 In this post and the accompanying video I will show the category
 theory you need to understand monad and derive an implementation of
