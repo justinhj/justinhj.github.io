@@ -16,7 +16,7 @@ which you can find here:
 
 <p>
 The source code shown in the video and in the fragments below can be found here:
-<a href="https://github.com/justinhj/evalexample/tree/video-7">https://github.com/justinhj/evalexample/tree/video-7</a>
+<a href="https://github.com/justinhj/evalexample/tree/video-7-r2">https://github.com/justinhj/evalexample/tree/video-7-r2</a>
 </p>
 
 <p>
@@ -248,8 +248,7 @@ we write the apply function as follows.
       lf(a) <span style="color: #b6a0ff;">match</span> {
         <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Some</span>(<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span>
           rf(b) <span style="color: #b6a0ff;">match</span> {
-            <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Some</span>(<span style="color: #00d3d0;">c</span>) <span style="color: #b6a0ff;">=&gt;</span>
-              <span style="color: #00bcff;">Option</span>(c)
+            <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Some</span>(<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> rf(b)
             <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">None</span>
           }
         <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">None</span>          
@@ -262,7 +261,8 @@ we write the apply function as follows.
 You can see that unit is just a call to the Option constructor, whilst
 compose will return a new function that first applies <code>lf</code> to the
 input, then if that yields a value and not a None, it will apply <code>rf</code>
-to that yielding a new Option.
+to that yielding a new Option. Please note I made an overly complex
+version of this in the video, and only realized once it was too late.
 </p>
 
 <p>

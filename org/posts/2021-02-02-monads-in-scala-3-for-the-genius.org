@@ -20,7 +20,7 @@ which you can find here:
 https://www.youtube.com/watch?v=B1FSxbmZpCE
 
 The source code shown in the video and in the fragments below can be found here:
-https://github.com/justinhj/evalexample/tree/video-7
+https://github.com/justinhj/evalexample/tree/video-7-r2
 
 The goal here is to make 10-15 minute videos that each cover an
 isolated topic in pure functional programming with Scala. There is an
@@ -179,8 +179,7 @@ given optionMonad1: Monad1[Option] with
       lf(a) match {
         case Some(b) =>
           rf(b) match {
-            case Some(c) =>
-              Option(c)
+            case Some(b) => rf(b)
             case None => None
           }
         case None => None          
@@ -191,7 +190,8 @@ given optionMonad1: Monad1[Option] with
 You can see that unit is just a call to the Option constructor, whilst
 compose will return a new function that first applies ~lf~ to the
 input, then if that yields a value and not a None, it will apply ~rf~
-to that yielding a new Option.
+to that yielding a new Option. Please note I made an overly complex
+version of this in the video, and only realized once it was too late.
 
 Now we can write code that composes "effect generating" functions (or
 Kliesli arrows) together. Here I make three simple functions that
