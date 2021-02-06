@@ -20,7 +20,7 @@ which you can find here:
 https://www.youtube.com/watch?v=B1FSxbmZpCE
 
 The source code shown in the video and in the fragments below can be found here:
-https://github.com/justinhj/evalexample/tree/video-7-r2
+https://github.com/justinhj/evalexample/blob/video-7-r3/src/main/scala/livevideos/Video7.scala
 
 The goal here is to make 10-15 minute videos that each cover an
 isolated topic in pure functional programming with Scala. There is an
@@ -275,11 +275,8 @@ flatMap, you can in fact derive the compose function as follows.
 #+BEGIN_SRC scala
 import org.justinhj.typeclasses.monad.{given,_}
 
-def compose[F[_],A,B,C](lf: A => F[B], rf: B => F[C])(using m: Monad[F]): A => F[C] = {
-  a =>
-    val fb = m.pure(a).flatMap(lf)
-    fb.flatMap(rf) 
-}
+def compose[F[_],A,B,C](lf: A => F[B], rf: B => F[C])(using m: Monad[F]): A => F[C] = 
+  a => lf(a).flatMap(rf) 
 #+END_SRC
 
 ** Final remarks

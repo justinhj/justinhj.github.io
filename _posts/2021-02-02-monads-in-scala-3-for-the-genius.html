@@ -16,7 +16,7 @@ which you can find here:
 
 <p>
 The source code shown in the video and in the fragments below can be found here:
-<a href="https://github.com/justinhj/evalexample/tree/video-7-r2">https://github.com/justinhj/evalexample/tree/video-7-r2</a>
+<a href="https://github.com/justinhj/evalexample/blob/video-7-r3/src/main/scala/livevideos/Video7.scala">https://github.com/justinhj/evalexample/blob/video-7-r3/src/main/scala/livevideos/Video7.scala</a>
 </p>
 
 <p>
@@ -381,11 +381,8 @@ flatMap, you can in fact derive the compose function as follows.
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">import</span> org.justinhj.typeclasses.monad.{given,<span style="color: #b6a0ff;">_</span>}
 
-<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>])(using m<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> {
-  a <span style="color: #b6a0ff;">=&gt;</span>
-    <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">fb</span> <span style="color: #b6a0ff;">=</span> m.pure(a).flatMap(lf)
-    fb.flatMap(rf) 
-}
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>])(using m<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> 
+  a <span style="color: #b6a0ff;">=&gt;</span> lf(a).flatMap(rf) 
 </pre>
 </div>
 </div>
