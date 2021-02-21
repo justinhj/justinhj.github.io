@@ -1,0 +1,27 @@
+---
+layout: default
+comments: true
+---
+
+<div class="home">
+
+  <h3>Popular posts</h3>
+  <div class="post-content">
+
+
+  <ul class="post-list">
+    {% for post in site.top_posts %}
+      <li>
+        <h2>
+		<a class="post-link" href="{{ post | prepend: site.baseurl }}">{{ post | prepend: site.baseurl }}</a>
+        </h2>
+      </li>
+    {% endfor %}
+  </ul>
+
+
+  </div>
+
+
+
+</div>

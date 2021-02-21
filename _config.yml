@@ -26,6 +26,19 @@ include: ["images","css","_orgcss"]
 plugins_dir:
   - jekyll-mentions
 
+top_posts:
+  - 2019/06/19/comonads-for-life.html
+  - 2009/01/12/finding-writable-files-in-directory-in.html
+  - 2017/07/16/future-with-timeout.html
+  - 2020/04/04/whats-ap.html
+  - 2019/05/04/using-47degs-fetch-with-zio.html
+  - 2020/08/02/whats-ap-with-zio-prelude.html
+  - 2019/04/06/hacker-news-api-5.html
+  - 2017/06/02/future-either-and-monad-transformers.html
+  - 2019/06/09/monoids-for-production.html
+  - 2020/03/09/how-to-blog-with-org-mode.html
+  - 2017/06/18/future-either-with-cats.html
+
 collections:
   my_tags:
     output: true
