@@ -1,7 +1,6 @@
 ---
 layout: post
 title:  "Using 47 Degree's Fetch library with ZIO"
-date:   2019-05-05 00:00:00 -0000
 tags: [scala, functional-programming, zio, hacker-news-api, 47-degs, fetch]
 ---
 

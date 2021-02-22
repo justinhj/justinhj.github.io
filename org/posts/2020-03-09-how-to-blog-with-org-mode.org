@@ -8,7 +8,6 @@
 ---
 layout: post
 title: How to blog with Org-mode
-date: '2020-03-09T00:00:00.000-08:00'
 tags: [emacs, org-mode, blogging, github-pages, jekyll]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />

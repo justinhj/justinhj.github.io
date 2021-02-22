@@ -1,7 +1,6 @@
 ---
 layout: post
 title:  Comonads for Life
-date:   2019-06-20 00:00:00 -0000
 tags: [scala, functional-programming, comonads, pure-functional-programming, typelevel, cats, zio]
 ---
 

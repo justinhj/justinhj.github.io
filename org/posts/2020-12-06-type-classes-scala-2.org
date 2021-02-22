@@ -9,7 +9,6 @@
 ---
 layout: post
 title: Type classes with Scala 2
-date: '2020-12-06T00:00:00.000-08:00'
 tags: [scala, functional-programming]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />

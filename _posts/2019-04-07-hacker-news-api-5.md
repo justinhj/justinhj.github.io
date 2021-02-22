@@ -1,7 +1,6 @@
 ---
 layout: post
 title:  "Hacker News API Part 5"
-date:   2019-04-07 00:00:00 -0000
 tags: [scala, functional-programming, zio, hacker-news-api]
 ---
 

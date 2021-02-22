@@ -9,7 +9,6 @@
 ---
 layout: post
 title: What's Ap?
-date: '2020-04-04T00:00:00.000-08:00'
 tags: [pure-functional-programming, cats, scala, applicative, monads, functors]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />

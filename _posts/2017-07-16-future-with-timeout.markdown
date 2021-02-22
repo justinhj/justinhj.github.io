@@ -1,7 +1,6 @@
 ---
 layout: post
 title:  "Future with timeout"
-date:   2017-07-16 10:00:40 -0000
 tags: [scala, functional-programming]
 ---
 
