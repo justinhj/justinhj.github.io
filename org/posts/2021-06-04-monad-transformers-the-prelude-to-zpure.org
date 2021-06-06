@@ -1,0 +1,228 @@
+#+AUTHOR: Justin Heyes-Jones
+#+TITLE: #+TITLE: Monad Transformers: The prelude to ZPure
+#+DATE: 2021
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+HTML_HTML5_FANCY:
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: Monad Transformers - the prelude to ZPure
+tags: [scala, scala-3, dotty, monads, category-theory]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+#+END_EXPORT
+
+#+BEGIN_EXPORT html
+<img class="img" src="../../../images/monadtransformers.png" border="0" style="padding: 30px;" alt="Diagram of monad transformers with the ZPure type" width="600"/>
+#+END_EXPORT
+
+** Introduction
+This is a companion blog to four episodes of "Functional Justin", my
+YouTube series on Scala and funtional programming which you can find
+here https://www.youtube.com/c/FunctionalJustin
+
+The same ground is covered here as the video so it's up to you which
+you find more useful!
+
+All of the source code can be found in these two repositories.
+
+Functional Justin's live videos and Scala 3 category theory based
+library code for the first part of the blog can be found here.
+https://github.com/justinhj/evalexample/tree/video-13
+
+And the Zio Prelude code, developed in the final video and later in this blog can be found here.
+https://github.com/justinhj/ZPurePlay/blob/video-13-a/src/main/scala/EvalZpureVideo.scala
+
+In previous blogs and videos I've described a program that evaluates
+arithmetic expressions as this is a nice testbed for various
+functional effects. So far I've demonstrated how by using different
+data types and type classes one can make the same program behave
+differently.
+
+This is important for a couple of reasons. It means that you can
+compose interesting programs from smaller, well understood components,
+and because we can understand and change the behaviour of our program
+by using different types.
+
+As a starting point lets begin with a version of the program that has
+error handling using the Either data type and Numeric which is a
+generic implementation of numbers.
+
+If you didn't catch up on earlier posts let's recap. An example run of
+the program requires an environment (symbol table) provided using the
+Scala 3 implicit mechanism (using the given keyword). I call eval on a
+sample expression tree which yields either a Right or a Left result
+since I'm using Either as the result effect type.
+
+#+BEGIN_SRC scala
+  given envMap: Env[Int] = Map("x" -> 7, "y" -> 6, "z" -> 22)
+
+  val exp1 : Exp[Int] = Mul(Var("z"), Add(Val(10), Sub(Var("x"), Var("y"))))
+
+  val eval1 = eval(exp1)
+
+  println(s"Eval exp gives $eval1")
+
+// [info] running Scala3EvalEither 
+// Eval exp gives Right(242)
+
+#+END_SRC
+
+I represent the errors as a Scala 3 enum which is a nice way to create
+ADT's (algebraic data types), similar to how you would do it in Rust.
+
+#+BEGIN_SRC scala
+  enum EvalError {
+    case InvalidSymboName
+    case SymbolNotFound
+    case DivisionByZero
+  }
+#+END_SRC
+
+The next things to look at are an ADT to represent the program steps a return type.
+
+#+BEGIN_SRC scala
+
+  enum Exp[A]:
+    case Val(value: A) extends Exp[A]
+    case Add(left: Exp[A], right: Exp[A]) extends Exp[A]
+    case Sub(left: Exp[A], right: Exp[A]) extends Exp[A]
+    case Mul(left: Exp[A], right: Exp[A]) extends Exp[A]
+    case Div(left: Exp[A], right: Exp[A]) extends Exp[A]
+    case Var(identifier: String) extends Exp[A]
+
+  type Env[A] = Map[String, A]
+
+  import Exp._
+
+  type WithEnv[A] = Env[A] ?=> Either[EvalError, A]
+#+END_SRC
+
+The ~Env~ type is a simple map for strings to values that we will use
+as a symbol table so that variables can be looked up at runtime. The
+~?->~ syntax indicates that the return type is a context function. An
+earlier blog discusses that, but in short it allows us to thread our
+Env symbol table through the computation easily.
+
+Here is the main body of the code.
+
+#+BEGIN_SRC scala
+  def eval[A : Numeric](exp: Exp[A]): WithEnv[A] =
+    exp match
+      case Var(id) => handleVar(id)
+      case Val(value) => Right(value)
+      case Add(l,r) => handleAdd(l,r)
+      case Sub(l,r) => handleSub(l,r)
+      case Div(l,r) => handleDiv(l,r)
+      case Mul(l,r) => handleMul(l,r)
+
+  def handleAdd[A : Numeric](l: Exp[A] , r: Exp[A] ): WithEnv[A] = eval(l) + eval(r)
+  def handleSub[A : Numeric](l: Exp[A] , r: Exp[A] ): WithEnv[A] = eval(l) - eval(r)
+  def handleMul[A : Numeric](l: Exp[A] , r: Exp[A] ): WithEnv[A] = eval(l) * eval(r)
+  def handleDiv[A : Numeric](l: Exp[A] , r: Exp[A] ): WithEnv[A] = eval(l) / eval(r)
+
+  def handleVar[A](s: String): WithEnv[A] =
+    summonEnv.get(s) match {
+      case Some(value) => Right(value)
+      case None => Left(EvalError.SymbolNotFound)
+    }
+#+END_SRC
+
+Those arithmetic operators you see are operating not on integers,
+doubles or some other concrete type, but are working on a type A that
+has a Numeric instance. You may wonder then how that ~+~ operator
+knows what to do? The answer is that I implemented an instance of
+Numeric for the type ~Numeric[Either[EvalError,A]]~.
+
+#+BEGIN_SRC scala
+  // Implement Numeric for EvalResult
+  given evalResultNumeric[A: Numeric]: Numeric[Either[EvalError, A]] with {
+
+    def add(fa: EvalResult[A], fb: EvalResult[A]): EvalResult[A] = {
+      fa.map2(fb)((a,b) => a + b)
+    }
+    // ... and so on
+  }
+#+END_SRC
+
+Whilst this is a lot of overhead for a simple program, as your
+programs scale in complexity, this level of abstraction lets you
+control effects as well as swap them in and out as your requirements
+change without having to rewrite the core logic.
+
+As an example, let's introduce a Monad Transformer and show how to
+integrate it with the program above.
+
+** WriterT
+Let's say we want to take an existing effectful program and add a new
+effect to it. The effect I will demonstrate is logging. There is a
+data type called Writer which represents a value and a log. 
+
+#+BEGIN_SRC scala
+Writer[W,A](run: (W,A))
+#+END_SRC
+
+This is not very interesting on its own but if you make a program from
+Writers, sequencing them together using the Monad's flatMap operation
+for example, then the end result consists of a final value and a log
+for ~each step of the program~.
+
+But since I already comitted to using Either, if I change the type to
+Writer then I would lose the ability to handle errors. Instead what I
+want is to keep the Either effect and ~wrap~ it with the capability of
+the Writer monad.
+
+Monad transformers are the answer. Now the trouble with monads is that
+they don't compose manually together. As I covered in a previous blog,
+applicatives do. You can take any two applicative effects such as
+Either and List and compose them with a simple compose functions. 
+
+With Monads the composition of any particular monad has to be
+hand-crafted, so if I want to stack a Reader on top of an Either,
+which I do, then I need to implement a ReaderT (reader transformer).
+
+It only needs to be implented once and for all and can then be applied
+to any other Monad (not just for Either). The idea is to make an
+implementation of Reader that wraps another Monadic data type.
+
+#+BEGIN_SRC scala
+case class WriterT[F[_],W,A](private val wrapped: F[(W,A)])
+#+END_SRC
+
+Here you can see the definition of the WriterT data type. The
+difference between WriterT and Writer is that the WriterT wraps an
+existing monad. Note that there is no need to constrain the
+higher-kinded type F to be a Monad, but later on when we use it in
+various ways it is possible to constrain F to be a Functor,
+Applicative or Monad depending on the use-case. This late decision
+making gives more flexibility.
+
+#+BEGIN_SRC scala
+object WriterT:
+  // lift takes any monadic effect and transforms to a WriterT around that monad
+  def lift[F[_],W, A](fa: F[A])(using m: Monoid[W], F: Applicative[F]): WriterT[F,W,A] =
+    WriterT(F.map(fa)(a => (m.zero, a)))
+#+END_SRC
+
+
+** ReaderT TODO rewrite 
+Another way to pass that symbol table around a program would be the
+Reader data type. Reader has a monad type class instance and lets you
+write programs like the one above, that need read-only data, sometimes
+called the environment, to operate with. 
+
+I'd like to convert the code above to use Reader instead of context
+functions, but the trouble is we are already using the Either data
+type so that we can handle errors. The question is how can we use two
+monads instead of one?
+
+
+#+BEGIN_SRC scala
+val x = 1
+#+END_SRC
+
+
+
+

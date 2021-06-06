@@ -4,9 +4,9 @@ title: Handling Errors functionally with Scala 3
 tags: [scala, scala-3, dotty]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
-<div id="outline-container-orga7e4e63" class="outline-2">
-<h2 id="orga7e4e63">Introduction</h2>
-<div class="outline-text-2" id="text-orga7e4e63">
+<div id="outline-container-org98c4581" class="outline-2">
+<h2 id="org98c4581">Introduction</h2>
+<div class="outline-text-2" id="text-org98c4581">
 <p>
 This is a companion blog my fifth Functional Justin YouTube video
 which you can find here: <a href="https://youtu.be/wNVQ75KM8-4">https://youtu.be/wNVQ75KM8-4</a>
@@ -32,13 +32,13 @@ environment <code>Env</code> which is a symbol table of values.
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">WithEnv</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Env</span> ?=&gt; <span style="color: #00bcff;">Int</span>
 
-<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">eval</span>(exp<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Exp</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">WithEnv</span> <span style="color: #b6a0ff;">=</span>
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">eval</span>(exp<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span> <span style="color: #b6a0ff;">=</span>
   exp <span style="color: #b6a0ff;">match</span>
-    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Var</span>(<span style="color: #00d3d0;">id</span>) <span style="color: #b6a0ff;">=&gt;</span> handleVar(id)
-    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> value
-    <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Add</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleAdd(l,r)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Var</span>(<span style="color: #00d3d0;">id</span>) <span style="color: #b6a0ff;">=&gt;</span> handleVar(id)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> value
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Add</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleAdd(l,r)
 
-<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>(s<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">WithEnv</span> <span style="color: #b6a0ff;">=</span>
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>(s<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span> <span style="color: #b6a0ff;">=</span>
   summon[<span style="color: #00bcff;">Env</span>].get(s).get
 </pre>
 </div>
@@ -50,9 +50,9 @@ example of a pure functional program, let's see why.
 </div>
 </div>
 
-<div id="outline-container-org1e4d5bd" class="outline-2">
-<h2 id="org1e4d5bd">Purity</h2>
-<div class="outline-text-2" id="text-org1e4d5bd">
+<div id="outline-container-org1650438" class="outline-2">
+<h2 id="org1650438">Purity</h2>
+<div class="outline-text-2" id="text-org1650438">
 <p>
 What is a pure function? In short it has three properties&#x2026; it is a
 total function, it is deterministic and it has no side effects.
@@ -82,9 +82,9 @@ throw errors.
 </div>
 </div>
 
-<div id="outline-container-orgdba4892" class="outline-2">
-<h2 id="orgdba4892">Is the expression evaluator code pure?</h2>
-<div class="outline-text-2" id="text-orgdba4892">
+<div id="outline-container-orgb716616" class="outline-2">
+<h2 id="orgb716616">Is the expression evaluator code pure?</h2>
+<div class="outline-text-2" id="text-orgb716616">
 <p>
 If your nose wrinkled when you saw this code above
 <code>summon[Env].get(s).get</code> then you're probably an experienced Scala
@@ -106,9 +106,9 @@ that as a program that can throw errors, our program is not pure.
 </div>
 </div>
 
-<div id="outline-container-orgd5a7cd6" class="outline-2">
-<h2 id="orgd5a7cd6">Handling errors with Either</h2>
-<div class="outline-text-2" id="text-orgd5a7cd6">
+<div id="outline-container-org21a7f0e" class="outline-2">
+<h2 id="org21a7f0e">Handling errors with Either</h2>
+<div class="outline-text-2" id="text-org21a7f0e">
 <p>
 Since the 90s the Haskell folk have been dealing with impurity by
 wrapping it up in data types that describe the effects, and
@@ -130,8 +130,8 @@ still encode errors by wrapping them as follows.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
-<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e2</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Left</span>(<span style="color: #79a8ff;">"Oops"</span>)
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e2</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Left</span>(<span style="color: #79a8ff;">"Oops"</span>)
 </pre>
 </div>
 
@@ -159,9 +159,9 @@ function, and that can be used to apply a pure function to an either!
 </div>
 </div>
 
-<div id="outline-container-orgd80dd15" class="outline-2">
-<h2 id="orgd80dd15">Categorically Speaking</h2>
-<div class="outline-text-2" id="text-orgd80dd15">
+<div id="outline-container-org203832a" class="outline-2">
+<h2 id="org203832a">Categorically Speaking</h2>
+<div class="outline-text-2" id="text-org203832a">
 <p>
 You may not really think of it as Category Theory, but whenever you
 map an Either you are using Functors!
@@ -186,9 +186,9 @@ Eithers.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #f78fe7;">Functor</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]]<span style="color: #b6a0ff;">:</span>
-  extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>])
-    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">B</span>]
+<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #6ae4b9;">Functor</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]]<span style="color: #b6a0ff;">:</span>
+  extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>])
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">B</span>]
 </pre>
 </div>
 
@@ -226,11 +226,11 @@ Note that this is roughly the same as the pure function. Instead of <code>A
 <pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">StringEither</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">A</span>]
 
 given <span style="color: #00bcff;">Functor</span>[<span style="color: #00bcff;">StringEither</span>] <span style="color: #b6a0ff;">with</span>
-  extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">StringEither</span>[<span style="color: #00bcff;">A</span>])
-    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">StringEither</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
+  extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">StringEither</span>[<span style="color: #00bcff;">A</span>])
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">StringEither</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
       x <span style="color: #b6a0ff;">match</span> {
-        <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Right</span>(<span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(f(a))
-        <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Left</span>(<span style="color: #00d3d0;">err</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Left</span>(err)
+        <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Right</span>(<span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(f(a))
+        <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Left</span>(<span style="color: #00d3d0;">err</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Left</span>(err)
       }
     }
 </pre>
@@ -241,8 +241,8 @@ Let's try it out.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
-<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e2</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Left</span>(<span style="color: #79a8ff;">"Oops"</span>)
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e2</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Left</span>(<span style="color: #79a8ff;">"Oops"</span>)
 
 <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e3</span> <span style="color: #b6a0ff;">=</span> e1.ffmap(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>) <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Right(11)</span>
 <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e4</span> <span style="color: #b6a0ff;">=</span> e2.ffmap(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>) <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Left("Oops")</span>
@@ -280,12 +280,12 @@ Here's the new instance for Functor with some notable changes.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span class="linenr">1: </span>given eitherFunctor[<span style="color: #00bcff;">E</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Functor</span>[[<span style="color: #00bcff;">A</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">E</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span>
-<span class="linenr">2: </span>  extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">E</span>,<span style="color: #00bcff;">A</span>])
-<span class="linenr">3: </span>      <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">E</span>,<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala"><span class="linenr">1: </span>given eitherFunctor[<span style="color: #00bcff;">E</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Functor</span>[[<span style="color: #00bcff;">A</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">E</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span>
+<span class="linenr">2: </span>  extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">E</span>,<span style="color: #00bcff;">A</span>])
+<span class="linenr">3: </span>      <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">E</span>,<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
 <span class="linenr">4: </span>        x <span style="color: #b6a0ff;">match</span> {
-<span class="linenr">5: </span>          <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Right</span>(<span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(f(a))
-<span class="linenr">6: </span>          <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Left</span>(<span style="color: #00d3d0;">err</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Left</span>(err)
+<span class="linenr">5: </span>          <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Right</span>(<span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(f(a))
+<span class="linenr">6: </span>          <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Left</span>(<span style="color: #00d3d0;">err</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Left</span>(err)
 <span class="linenr">7: </span>        }
 <span class="linenr">8: </span>      }
 </pre>
@@ -309,8 +309,8 @@ lambda function.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
-<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e2</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">Int</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Left</span>(<span style="color: #00bcff;">1</span>)
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e2</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">Int</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Left</span>(<span style="color: #00bcff;">1</span>)
 
 <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e3</span> <span style="color: #b6a0ff;">=</span> e1.ffmap(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>) <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Right(11)</span>
 <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e4</span> <span style="color: #b6a0ff;">=</span> e2.ffmap(a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>) <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Left(1)</span>
@@ -325,18 +325,18 @@ function was not executed and the error value is simply passed along.
 </div>
 </div>
 
-<div id="outline-container-org5b4c13e" class="outline-2">
-<h2 id="org5b4c13e">Functor Laws</h2>
-<div class="outline-text-2" id="text-org5b4c13e">
+<div id="outline-container-org837bdc6" class="outline-2">
+<h2 id="org837bdc6">Functor Laws</h2>
+<div class="outline-text-2" id="text-org837bdc6">
 <p>
 Next time we'll look at the Functor laws and show that our code obeys them.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org02dcf84" class="outline-2">
-<h2 id="org02dcf84">Wrap up</h2>
-<div class="outline-text-2" id="text-org02dcf84">
+<div id="outline-container-orgb73242c" class="outline-2">
+<h2 id="orgb73242c">Wrap up</h2>
+<div class="outline-text-2" id="text-orgb73242c">
 <p>
 I hope you enjoyed this blog and/or video. Please share, like or
 subscribe and help me spread this content to those that may find it
@@ -345,9 +345,9 @@ useful.
 </div>
 </div>
 
-<div id="outline-container-org0e362e4" class="outline-2">
-<h2 id="org0e362e4">For further info</h2>
-<div class="outline-text-2" id="text-org0e362e4">
+<div id="outline-container-org00245d4" class="outline-2">
+<h2 id="org00245d4">For further info</h2>
+<div class="outline-text-2" id="text-org00245d4">
 <p>
 Source code
 </p>

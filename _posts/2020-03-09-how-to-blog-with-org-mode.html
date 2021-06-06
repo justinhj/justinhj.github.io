@@ -4,9 +4,9 @@ title: How to blog with Org-mode
 tags: [emacs, org-mode, blogging, github-pages, jekyll]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
-<div id="outline-container-org5e0db04" class="outline-2">
-<h2 id="org5e0db04">Why blog with Org mode?</h2>
-<div class="outline-text-2" id="text-org5e0db04">
+<div id="outline-container-orgbddb18e" class="outline-2">
+<h2 id="orgbddb18e">Why blog with Org mode?</h2>
+<div class="outline-text-2" id="text-orgbddb18e">
 <blockquote>
 <p>
 Org is a mode for keeping notes, maintaining TODO lists, and project
@@ -44,9 +44,9 @@ modifications to get everything working.
 </div>
 </div>
 
-<div id="outline-container-org0c6ddcb" class="outline-2">
-<h2 id="org0c6ddcb">How to author content with Org mode</h2>
-<div class="outline-text-2" id="text-org0c6ddcb">
+<div id="outline-container-org6bb36e1" class="outline-2">
+<h2 id="org6bb36e1">How to author content with Org mode</h2>
+<div class="outline-text-2" id="text-org6bb36e1">
 <p>
 In my blog repository I made a new folder <code>org/posts</code>. In the <code>org</code> folder I
 added an Emacs Lisp file <code>publish.el</code> which contains some code to set up the
@@ -143,9 +143,9 @@ Which renders the image inline:
 </div>
 </div>
 
-<div id="outline-container-org37f912a" class="outline-2">
-<h2 id="org37f912a">Source code</h2>
-<div class="outline-text-2" id="text-org37f912a">
+<div id="outline-container-org442f616" class="outline-2">
+<h2 id="org442f616">Source code</h2>
+<div class="outline-text-2" id="text-org442f616">
 <p>
 Since you're reading my technical blog you may be the sort of person that likes
 to share code. Org mode supports source code (you can even run it and pass the
@@ -158,8 +158,8 @@ numbers using the <code>-n</code> option:
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">(<span style="color: #b6a0ff;">require</span> '<span style="color: #00bcff;">company</span>)
 
-(<span style="color: #b6a0ff;">defun</span> <span style="color: #feacd0;">custom-dictionary-company-backend</span> (command <span style="color: #f78fe7;">&amp;optional</span> arg <span style="color: #f78fe7;">&amp;rest</span> ignored)
-  <span style="color: #c6eaff;">"Company mode backend for a custom dictionary stored as a radix tree."</span>
+(<span style="color: #b6a0ff;">defun</span> <span style="color: #feacd0;">custom-dictionary-company-backend</span> (command <span style="color: #6ae4b9;">&amp;optional</span> arg <span style="color: #6ae4b9;">&amp;rest</span> ignored)
+  <span style="color: #b0d6f5;">"Company mode backend for a custom dictionary stored as a radix tree."</span>
   (<span style="color: #b6a0ff;">case</span> command
     ('init    
      (<span style="color: #b6a0ff;">unless</span> (boundp 'custom-dictionary-company--words-tree)
@@ -178,13 +178,13 @@ And some Scala code with line numbers
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span class="linenr"> 1: </span><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">main</span>(args<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Array</span>[<span style="color: #00bcff;">String</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Unit</span> <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala"><span class="linenr"> 1: </span><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">main</span>(args<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Array</span>[<span style="color: #00bcff;">String</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Unit</span> <span style="color: #b6a0ff;">=</span> {
 <span class="linenr"> 2: </span>
 <span class="linenr"> 3: </span>  <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">ISO 8601</span>
 <span class="linenr"> 4: </span>  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">lastNotifications</span> <span style="color: #b6a0ff;">=</span> <span style="color: #79a8ff;">"Fri, 06 Mar 2020 22:13:45 GMT"</span>
 <span class="linenr"> 5: </span>
 <span class="linenr"> 6: </span>  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">program</span> <span style="color: #b6a0ff;">=</span> (<span style="color: #b6a0ff;">for</span>(
-<span class="linenr"> 7: </span>      implicit0(backend<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">SttpBackend</span>[<span style="color: #00bcff;">Task</span>,<span style="color: #00bcff;">Nothing</span>,<span style="color: #00bcff;">WebSocketHandler</span>])
+<span class="linenr"> 7: </span>      implicit0(backend<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">SttpBackend</span>[<span style="color: #00bcff;">Task</span>,<span style="color: #00bcff;">Nothing</span>,<span style="color: #00bcff;">WebSocketHandler</span>])
 <span class="linenr"> 8: </span>        <span style="color: #b6a0ff;">&lt;-</span> <span style="color: #00bcff;">AsyncHttpClientZioBackend</span>();
 <span class="linenr"> 9: </span>      response <span style="color: #b6a0ff;">&lt;-</span> getGists().send();
 <span class="linenr">10: </span>      <span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">&lt;-</span> putStrLn(s<span style="color: #79a8ff;">"We got the notifications"</span>);
@@ -197,9 +197,9 @@ And some Scala code with line numbers
 </div>
 </div>
 </div>
-<div id="outline-container-orgf8effc9" class="outline-2">
-<h2 id="orgf8effc9">Implementation notes</h2>
-<div class="outline-text-2" id="text-orgf8effc9">
+<div id="outline-container-org0eb39bb" class="outline-2">
+<h2 id="org0eb39bb">Implementation notes</h2>
+<div class="outline-text-2" id="text-org0eb39bb">
 <p>
 I diverged from the guide I was following. Firstly I made a file <code>publish.el</code>
 which contains the code required to configure the publishing of the blog, and
@@ -241,9 +241,9 @@ Pages.
 </div>
 </div>
 
-<div id="outline-container-orgc814de4" class="outline-2">
-<h2 id="orgc814de4">Summary</h2>
-<div class="outline-text-2" id="text-orgc814de4">
+<div id="outline-container-org96dd1ce" class="outline-2">
+<h2 id="org96dd1ce">Summary</h2>
+<div class="outline-text-2" id="text-org96dd1ce">
 <p>
 One thing I'm not sure about is if I like using Emacs's code blocks instead of
 embedded Github gists. It's certainly possible to use either. Anyway I plan to

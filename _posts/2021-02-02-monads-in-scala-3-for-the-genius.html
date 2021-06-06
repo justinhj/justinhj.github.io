@@ -4,9 +4,9 @@ title: Monads in Scala 3 for the Genius
 tags: [scala, scala-3, dotty, monads, category-theory]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
-<div id="outline-container-org7308792" class="outline-2">
-<h2 id="org7308792">Introduction</h2>
-<div class="outline-text-2" id="text-org7308792">
+<div id="outline-container-org9e88539" class="outline-2">
+<h2 id="org9e88539">Introduction</h2>
+<div class="outline-text-2" id="text-org9e88539">
 <p>
 This is a companion blog the seventh Functional Justin YouTube video
 which you can find here:
@@ -28,9 +28,9 @@ doing deep dives into FP libraries such as Cats and Zio.
 </div>
 </div>
 
-<div id="outline-container-orgeaeaecb" class="outline-2">
-<h2 id="orgeaeaecb">Monads for the Genius</h2>
-<div class="outline-text-2" id="text-orgeaeaecb">
+<div id="outline-container-orgb5739ff" class="outline-2">
+<h2 id="orgb5739ff">Monads for the Genius</h2>
+<div class="outline-text-2" id="text-orgb5739ff">
 <p>
 The title may sound like clickbait, and it most surely is, but the
 point is that for most Scala programmers, even those working with
@@ -58,9 +58,9 @@ and use flatMap (or bind).
 </div>
 </div>
 
-<div id="outline-container-org3c1d4f1" class="outline-2">
-<h2 id="org3c1d4f1">Just enough Category Theory</h2>
-<div class="outline-text-2" id="text-org3c1d4f1">
+<div id="outline-container-org1353719" class="outline-2">
+<h2 id="org1353719">Just enough Category Theory</h2>
+<div class="outline-text-2" id="text-org1353719">
 <p>
 Category theory is a candidate for a theory that describes all of mathematics, and has been applied to a number of areas.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>. If you want to know more about it than the very basics then I recommend Category Theory for Progammers.<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup>
 </p>
@@ -91,9 +91,9 @@ Composition must follow the associative law. As shown below that means if we hav
 </div>
 </div>
 
-<div id="outline-container-orgcc20678" class="outline-2">
-<h2 id="orgcc20678">The category of Scala types and functions</h2>
-<div class="outline-text-2" id="text-orgcc20678">
+<div id="outline-container-org1e6352a" class="outline-2">
+<h2 id="org1e6352a">The category of Scala types and functions</h2>
+<div class="outline-text-2" id="text-org1e6352a">
 <p>
 Let's make the concept of a category more concrete by seeing how it can be encoded in Scala. One example of a category is the category of Scala types and functions.
 </p>
@@ -120,14 +120,14 @@ As you can see in the code it is straightforward to show the laws of the categor
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Category of Scala functions</span>
 
-<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">f</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Int</span> <span style="color: #b6a0ff;">=</span> a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>
-<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">g</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Boolean</span> <span style="color: #b6a0ff;">=</span> b <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #b6a0ff;">if</span>(b == <span style="color: #00bcff;">1</span>) <span style="color: #00bcff;">true</span> <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">false</span>
-<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">h</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Boolean</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">String</span> <span style="color: #b6a0ff;">=</span> c <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #b6a0ff;">if</span>(c == <span style="color: #00bcff;">true</span>) <span style="color: #79a8ff;">"Winner!"</span> <span style="color: #b6a0ff;">else</span> <span style="color: #79a8ff;">"Loser!"</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">f</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Int</span> <span style="color: #b6a0ff;">=</span> a <span style="color: #b6a0ff;">=&gt;</span> a + <span style="color: #00bcff;">1</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">g</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Boolean</span> <span style="color: #b6a0ff;">=</span> b <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #b6a0ff;">if</span>(b == <span style="color: #00bcff;">1</span>) <span style="color: #00bcff;">true</span> <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">false</span>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">h</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Boolean</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">String</span> <span style="color: #b6a0ff;">=</span> c <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #b6a0ff;">if</span>(c == <span style="color: #00bcff;">true</span>) <span style="color: #79a8ff;">"Winner!"</span> <span style="color: #b6a0ff;">else</span> <span style="color: #79a8ff;">"Loser!"</span>
 
 <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Identity</span>
-f.compose((a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>) <span style="color: #b6a0ff;">=&gt;</span> identity(a))(<span style="color: #00bcff;">0</span>) == f(<span style="color: #00bcff;">0</span>)
+f.compose((a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span>) <span style="color: #b6a0ff;">=&gt;</span> identity(a))(<span style="color: #00bcff;">0</span>) == f(<span style="color: #00bcff;">0</span>)
 
-f(<span style="color: #00bcff;">0</span>) == f.compose((a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>) <span style="color: #b6a0ff;">=&gt;</span> identity(a))(<span style="color: #00bcff;">0</span>)
+f(<span style="color: #00bcff;">0</span>) == f.compose((a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span>) <span style="color: #b6a0ff;">=&gt;</span> identity(a))(<span style="color: #00bcff;">0</span>)
 
 <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Composition must be associative</span>
 h.compose(g.compose(f))(<span style="color: #00bcff;">0</span>) == (h.compose(g.compose(f)))(<span style="color: #00bcff;">0</span>)
@@ -146,9 +146,9 @@ results.
 </div>
 </div>
 
-<div id="outline-container-org1bf1bba" class="outline-2">
-<h2 id="org1bf1bba">A monad is just a functor in the category of Kleisli arrows</h2>
-<div class="outline-text-2" id="text-org1bf1bba">
+<div id="outline-container-orgda19ef9" class="outline-2">
+<h2 id="orgda19ef9">A monad is just a functor in the category of Kleisli arrows</h2>
+<div class="outline-text-2" id="text-orgda19ef9">
 <p>
 What's the problem?
 </p>
@@ -188,9 +188,9 @@ the more usual Monad definition in the code.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #f78fe7;">Monad1</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]]<span style="color: #b6a0ff;">:</span>
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">unit</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">A</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>]
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>]
+<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #6ae4b9;">Monad1</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]]<span style="color: #b6a0ff;">:</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">unit</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span><span style="color: #6ae4b9;">A</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>]
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>]
 </pre>
 </div>
 
@@ -230,24 +230,24 @@ we write the apply function as follows.
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">Monad1</span><span style="color: #b6a0ff;">:</span>
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">apply</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]](using m<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad1</span>[<span style="color: #00bcff;">F</span>]) <span style="color: #b6a0ff;">=</span> m
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">apply</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>]](using m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monad1</span>[<span style="color: #00bcff;">F</span>]) <span style="color: #b6a0ff;">=</span> m
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org23d83bd" class="outline-2">
-<h2 id="org23d83bd">Implementation of Monad for Option</h2>
-<div class="outline-text-2" id="text-org23d83bd">
+<div id="outline-container-org4f60c84" class="outline-2">
+<h2 id="org4f60c84">Implementation of Monad for Option</h2>
+<div class="outline-text-2" id="text-org4f60c84">
 <div class="org-src-container">
-<pre class="src src-scala">given optionMonad1<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad1</span>[<span style="color: #00bcff;">Option</span>] <span style="color: #b6a0ff;">with</span>
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">unit</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">A</span>) <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Option</span>(a)
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Option</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Option</span>[<span style="color: #00bcff;">C</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Option</span>[<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala">given optionMonad1<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monad1</span>[<span style="color: #00bcff;">Option</span>] <span style="color: #b6a0ff;">with</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">unit</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span><span style="color: #6ae4b9;">A</span>) <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Option</span>(a)
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Option</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Option</span>[<span style="color: #00bcff;">C</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Option</span>[<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> {
     a <span style="color: #b6a0ff;">=&gt;</span> 
       lf(a) <span style="color: #b6a0ff;">match</span> {
-        <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Some</span>(<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span>
+        <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Some</span>(<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span>
           rf(b) <span style="color: #b6a0ff;">match</span> {
-            <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Some</span>(<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> rf(b)
+            <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Some</span>(<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> rf(b)
             <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">None</span>
           }
         <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">None</span>          
@@ -275,14 +275,14 @@ Here we use the Monad1 option to compose f,g and h&#x2026;
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f</span>(n<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Option</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> n == <span style="color: #00bcff;">4</span> then <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">Option</span>(n)
-<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">g</span>(n<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Option</span>[<span style="color: #00bcff;">Boolean</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> n%<span style="color: #00bcff;">2</span>==<span style="color: #00bcff;">1</span> then <span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">true</span>) <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">false</span>)
-<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">h</span>(b<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">Boolean</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Option</span>[<span style="color: #00bcff;">String</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> b then <span style="color: #00bcff;">Some</span>(<span style="color: #79a8ff;">"Winner!"</span>) <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">None</span>
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f</span>(n<span style="color: #b6a0ff;">:</span><span style="color: #6ae4b9;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Option</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> n == <span style="color: #00bcff;">4</span> then <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">Option</span>(n)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">g</span>(n<span style="color: #b6a0ff;">:</span><span style="color: #6ae4b9;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Option</span>[<span style="color: #00bcff;">Boolean</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> n%<span style="color: #00bcff;">2</span>==<span style="color: #00bcff;">1</span> then <span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">true</span>) <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">Option</span>(<span style="color: #00bcff;">false</span>)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">h</span>(b<span style="color: #b6a0ff;">:</span><span style="color: #6ae4b9;">Boolean</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Option</span>[<span style="color: #00bcff;">String</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> b then <span style="color: #00bcff;">Some</span>(<span style="color: #79a8ff;">"Winner!"</span>) <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">None</span>
 
 <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">fcomposed</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Monad1</span>[<span style="color: #00bcff;">Option</span>].compose(f,g)
 <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">fghComposed</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Monad1</span>[<span style="color: #00bcff;">Option</span>].compose(fcomposed, h)
 
-<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">i</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Float</span>) <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">0.0</span>
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">i</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Float</span>) <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">0.0</span>
 
 println(fghComposed(<span style="color: #00bcff;">1</span>))
 println(fghComposed(<span style="color: #00bcff;">2</span>))
@@ -299,9 +299,9 @@ println(fghComposed(<span style="color: #00bcff;">4</span>))
 </div>
 </div>
 
-<div id="outline-container-orgac02738" class="outline-2">
-<h2 id="orgac02738">The Monad laws</h2>
-<div class="outline-text-2" id="text-orgac02738">
+<div id="outline-container-orgd24b5d9" class="outline-2">
+<h2 id="orgd24b5d9">The Monad laws</h2>
+<div class="outline-text-2" id="text-orgd24b5d9">
 <p>
 At this point we've shown that one implementation of a Monad involves
 the unit and compose functions. We can now see a demonstration of the
@@ -332,9 +332,9 @@ composing f,g and h works both ways.
 </div>
 </div>
 
-<div id="outline-container-orgca9a98d" class="outline-2">
-<h2 id="orgca9a98d">What about flatMap?</h2>
-<div class="outline-text-2" id="text-orgca9a98d">
+<div id="outline-container-org10cc5ed" class="outline-2">
+<h2 id="org10cc5ed">What about flatMap?</h2>
+<div class="outline-text-2" id="text-org10cc5ed">
 <p>
 So far so good, we conjured up a monad from just category theory and a
 simple twist on the category of types and functions. You may be
@@ -350,10 +350,10 @@ Monads is exactly equivalent!
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">flatMap</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>](fa<span style="color: #b6a0ff;">:</span><span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>])(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>])(using m<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad1</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">flatMap</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>](fa<span style="color: #b6a0ff;">:</span><span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>])(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>])(using m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monad1</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> {
   <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">F[A] =&gt; F[A]</span>
   <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">A =&gt; F[B]</span>
-  m.compose((a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">=&gt;</span> identity(a), a <span style="color: #b6a0ff;">=&gt;</span> f(a))(fa)
+  m.compose((a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">=&gt;</span> identity(a), a <span style="color: #b6a0ff;">=&gt;</span> f(a))(fa)
 }
 </pre>
 </div>
@@ -369,9 +369,9 @@ is actually the map function of Functor!)
 </div>
 </div>
 
-<div id="outline-container-orge1d6303" class="outline-2">
-<h2 id="orge1d6303">compose from flatMap</h2>
-<div class="outline-text-2" id="text-orge1d6303">
+<div id="outline-container-org63d0031" class="outline-2">
+<h2 id="org63d0031">compose from flatMap</h2>
+<div class="outline-text-2" id="text-org63d0031">
 <p>
 Should your starting point be the more traditional Monad with pure and
 flatMap, you can in fact derive the compose function as follows.
@@ -380,16 +380,16 @@ flatMap, you can in fact derive the compose function as follows.
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">import</span> org.justinhj.typeclasses.monad.{given,<span style="color: #b6a0ff;">_</span>}
 
-<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>])(using m<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Monad</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> 
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">compose</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>](lf<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">B</span>], rf<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>])(using m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monad</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> 
   a <span style="color: #b6a0ff;">=&gt;</span> lf(a).flatMap(rf) 
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orge886783" class="outline-2">
-<h2 id="orge886783">Final remarks</h2>
-<div class="outline-text-2" id="text-orge886783">
+<div id="outline-container-org67d3bb6" class="outline-2">
+<h2 id="org67d3bb6">Final remarks</h2>
+<div class="outline-text-2" id="text-org67d3bb6">
 <p>
 One last thing you may be interested in is that you can implement monad as pure and flatmap, pure and compose or as third set pure, map and flatten.
 </p>

@@ -4,9 +4,9 @@ title: Functional Error Handling with Applicative in Scala 3
 tags: [scala, scala-3, dotty, applicative, monads, applicative-functor]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
-<div id="outline-container-org446e6de" class="outline-2">
-<h2 id="org446e6de">Introduction</h2>
-<div class="outline-text-2" id="text-org446e6de">
+<div id="outline-container-org56d8e82" class="outline-2">
+<h2 id="org56d8e82">Introduction</h2>
+<div class="outline-text-2" id="text-org56d8e82">
 <p>
 This is a companion blog my sixth Functional Justin YouTube video
 which you can find here: <a href="https://youtu.be/3GPXEzO14ZE">https://youtu.be/3GPXEzO14ZE</a>
@@ -36,9 +36,9 @@ You can find the typeclasses here:
 </div>
 </div>
 
-<div id="outline-container-org7239c67" class="outline-2">
-<h2 id="org7239c67">Functor Laws</h2>
-<div class="outline-text-2" id="text-org7239c67">
+<div id="outline-container-orga7f44da" class="outline-2">
+<h2 id="orga7f44da">Functor Laws</h2>
+<div class="outline-text-2" id="text-orga7f44da">
 <p>
 Our Functor type class really only exists to implement the map
 function, and we already have a map function in the Scala standard
@@ -74,9 +74,9 @@ Another great resource is the famous "red book"&#x2026;
 </p>
 </div>
 
-<div id="outline-container-org4d5e7ba" class="outline-3">
-<h3 id="org4d5e7ba">Functors preserve identity morphisms</h3>
-<div class="outline-text-3" id="text-org4d5e7ba">
+<div id="outline-container-orgdf1599b" class="outline-3">
+<h3 id="orgdf1599b">Functors preserve identity morphisms</h3>
+<div class="outline-text-3" id="text-orgdf1599b">
 <p>
 What this law states is that if we map over some effect with the
 identity function, then neither the effect nor any value inside it
@@ -88,7 +88,7 @@ will change.
 <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">l1</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">List</span>(<span style="color: #00bcff;">1</span>, <span style="color: #00bcff;">2</span>, <span style="color: #00bcff;">3</span>)
 assert(l1 == l1.fmap(a <span style="color: #b6a0ff;">=&gt;</span> identity(a)))
 
-<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
 assert(e1 == e1.fmap(identity))
 </pre>
 </div>
@@ -100,9 +100,9 @@ function and nothing changed.
 </div>
 </div>
 
-<div id="outline-container-org66929de" class="outline-3">
-<h3 id="org66929de">Functors preserve composition of morphisms</h3>
-<div class="outline-text-3" id="text-org66929de">
+<div id="outline-container-org49b33c1" class="outline-3">
+<h3 id="org49b33c1">Functors preserve composition of morphisms</h3>
+<div class="outline-text-3" id="text-org49b33c1">
 <p>
 If we have two functions, f and g, it doesn't matter if we map over
 some effect with f first then map over it with g, or we map over it
@@ -111,8 +111,8 @@ from above we can show this the case here.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span> <span style="color: #b6a0ff;">=</span> a + <span style="color: #00bcff;">1</span>
-<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">g</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span> <span style="color: #b6a0ff;">=</span> a - <span style="color: #00bcff;">1</span>
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">f</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span> <span style="color: #b6a0ff;">=</span> a + <span style="color: #00bcff;">1</span>
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">g</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span> <span style="color: #b6a0ff;">=</span> a - <span style="color: #00bcff;">1</span>
 
 assert(e1.fmap(f).fmap(g) == e1.fmap(a <span style="color: #b6a0ff;">=&gt;</span> g(f(a))))
 assert(l1.fmap(f).fmap(g) == l1.fmap(a <span style="color: #b6a0ff;">=&gt;</span> g(f(a))))
@@ -121,9 +121,9 @@ assert(l1.fmap(f).fmap(g) == l1.fmap(a <span style="color: #b6a0ff;">=&gt;</span
 </div>
 </div>
 
-<div id="outline-container-org56b299d" class="outline-3">
-<h3 id="org56b299d">Importing given instances</h3>
-<div class="outline-text-3" id="text-org56b299d">
+<div id="outline-container-org2564946" class="outline-3">
+<h3 id="org2564946">Importing given instances</h3>
+<div class="outline-text-3" id="text-org2564946">
 <p>
 Note that in Scala pre version 3 if you use a wildcard import <code>_</code> then
 you get all everything exposed in that package. That means you get all
@@ -155,13 +155,13 @@ underscore wildcard.
 </div>
 </div>
 
-<div id="outline-container-org132dab1" class="outline-2">
-<h2 id="org132dab1">Implementing Numeric for Either</h2>
+<div id="outline-container-org43d9bbb" class="outline-2">
+<h2 id="org43d9bbb">Implementing Numeric for Either</h2>
 </div>
 
-<div id="outline-container-org233d793" class="outline-2">
-<h2 id="org233d793">Functor isn't enough</h2>
-<div class="outline-text-2" id="text-org233d793">
+<div id="outline-container-orga9f41c5" class="outline-2">
+<h2 id="orga9f41c5">Functor isn't enough</h2>
+<div class="outline-text-2" id="text-orga9f41c5">
 <p>
 The following code implements an arithmetic expression evaluator using
 the Numeric type class developed in a previous video and adds error
@@ -201,7 +201,7 @@ The instance signature is
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">given evalResultNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span> {
+<pre class="src src-scala">given evalResultNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span> {
 </pre>
 </div>
 
@@ -215,7 +215,7 @@ it?
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
   a.fmap { <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">DOES NOT COMPILE, WRONG TYPE</span>
     aa <span style="color: #b6a0ff;">=&gt;</span> 
     b.fmap {
@@ -239,8 +239,8 @@ What went wrong here is that Functor's map operation has the signature
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">A</span>])
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">F</span>[<span style="color: #00bcff;">B</span>]
+<pre class="src src-scala">extension [<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](x<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>])
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ffmap</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">B</span>]
 </pre>
 </div>
 
@@ -258,9 +258,9 @@ with an extra layer of Either! Let's see why&#x2026;
 </div>
 </div>
 
-<div id="outline-container-orgd724df9" class="outline-2">
-<h2 id="orgd724df9">Monad to the rescue</h2>
-<div class="outline-text-2" id="text-orgd724df9">
+<div id="outline-container-org25495d6" class="outline-2">
+<h2 id="org25495d6">Monad to the rescue</h2>
+<div class="outline-text-2" id="text-org25495d6">
 <p>
 So instead of Functor with its map function, we need Monad and its
 flatMap which let's us implement all the arithmetic functions in a
@@ -290,7 +290,7 @@ handle errors at the type level.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
   a.fflatMap {
     aa <span style="color: #b6a0ff;">=&gt;</span> 
       b.map {
@@ -303,9 +303,9 @@ handle errors at the type level.
 </div>
 </div>
 
-<div id="outline-container-org6e166ea" class="outline-3">
-<h3 id="org6e166ea">Map2 we love you</h3>
-<div class="outline-text-3" id="text-org6e166ea">
+<div id="outline-container-org957c8d2" class="outline-3">
+<h3 id="org957c8d2">Map2 we love you</h3>
+<div class="outline-text-3" id="text-org957c8d2">
 <p>
 Unfortunately it's bit verbose. Monad is more powerful than we need in
 fact. We could use Applicative instead. I will talk more about Monad
@@ -334,7 +334,7 @@ the multiply operator to them&#x2026;
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> 
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> 
   a.map2(b)((a,b) <span style="color: #b6a0ff;">=&gt;</span> a * b)
 </pre>
 </div>
@@ -342,9 +342,9 @@ the multiply operator to them&#x2026;
 </div>
 </div>
 
-<div id="outline-container-org9aafbe9" class="outline-2">
-<h2 id="org9aafbe9">Division by Zero</h2>
-<div class="outline-text-2" id="text-org9aafbe9">
+<div id="outline-container-org6accaa4" class="outline-2">
+<h2 id="org6accaa4">Division by Zero</h2>
+<div class="outline-text-2" id="text-org6accaa4">
 <p>
 What we have at this point is a nice implementation of Numeric that
 uses Either's for error handling, which in turn is built on
@@ -370,7 +370,7 @@ an isZero predicate to the type class.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isZero</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Boolean</span> 
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isZero</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Boolean</span> 
 </pre>
 </div>
 
@@ -380,7 +380,7 @@ exapmle in the Int instance we have the following.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isZero</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Int</span>) <span style="color: #b6a0ff;">=</span> a == <span style="color: #00bcff;">0</span>
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isZero</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span>) <span style="color: #b6a0ff;">=</span> a == <span style="color: #00bcff;">0</span>
 </pre>
 </div>
 
@@ -391,10 +391,10 @@ its own.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">given evalResultNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span> {
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isZero</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Boolean</span> <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala">given evalResultNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span> {
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isZero</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Boolean</span> <span style="color: #b6a0ff;">=</span> {
     a <span style="color: #b6a0ff;">match</span> {
-      <span style="color: #b6a0ff;">case</span> <span style="color: #f78fe7;">Right</span>(<span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">if</span> summon[<span style="color: #00bcff;">Numeric</span>[<span style="color: #00bcff;">A</span>]].isZero(a) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">true</span>
+      <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Right</span>(<span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">if</span> summon[<span style="color: #00bcff;">Numeric</span>[<span style="color: #00bcff;">A</span>]].isZero(a) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">true</span>
       <span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">false</span>
     }
   }
@@ -406,7 +406,7 @@ Finally we can implement the division operator for Numeric Either like this.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">div</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">div</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
   <span style="color: #b6a0ff;">if</span> isZero(b) then
     <span style="color: #00bcff;">Left</span>(<span style="color: #00bcff;">EvalError</span>.<span style="color: #00bcff;">DivisionByZero</span>)
   <span style="color: #b6a0ff;">else</span> 
@@ -417,9 +417,9 @@ Finally we can implement the division operator for Numeric Either like this.
 </div>
 </div>
 
-<div id="outline-container-orge991672" class="outline-2">
-<h2 id="orge991672">Wrap up</h2>
-<div class="outline-text-2" id="text-orge991672">
+<div id="outline-container-org2c69f4b" class="outline-2">
+<h2 id="org2c69f4b">Wrap up</h2>
+<div class="outline-text-2" id="text-org2c69f4b">
 <p>
 That's all for now, I hope you enjoyed this post and video. Please
 contact me using the methods above with any questions, suggestions or

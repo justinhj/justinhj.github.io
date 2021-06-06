@@ -9,9 +9,9 @@ tags: [scala, functional-programming]
 </p>
 <span>Photo by <a href="https://unsplash.com/@crissyjarvis?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Crissy Jarvis</a> on <a href="https://unsplash.com/s/photos/abacus?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></span>
 
-<div id="outline-container-org06987d4" class="outline-2">
-<h2 id="org06987d4">Make your own Numeric type class</h2>
-<div class="outline-text-2" id="text-org06987d4">
+<div id="outline-container-orge38ea18" class="outline-2">
+<h2 id="orge38ea18">Make your own Numeric type class</h2>
+<div class="outline-text-2" id="text-orge38ea18">
 <p>
 This is the companion blog for a Functional Justin video which you can
 find here <a href="https://youtu.be/pJFfXhZlR5o">https://youtu.be/pJFfXhZlR5o</a>. This is a series of
@@ -25,9 +25,9 @@ In this video I talk about Type classes and here is the blog version for those t
 </div>
 </div>
 
-<div id="outline-container-org577138b" class="outline-2">
-<h2 id="org577138b">What are type classes</h2>
-<div class="outline-text-2" id="text-org577138b">
+<div id="outline-container-orge66e206" class="outline-2">
+<h2 id="orge66e206">What are type classes</h2>
+<div class="outline-text-2" id="text-orge66e206">
 <p>
 Here are some good references for reading about type classes in Scala (they can of course be implemented in other functional programming languages).
 </p>
@@ -76,9 +76,9 @@ In general type classes consist of:
 </div>
 </div>
 
-<div id="outline-container-orgf16fc53" class="outline-2">
-<h2 id="orgf16fc53">Numeric</h2>
-<div class="outline-text-2" id="text-orgf16fc53">
+<div id="outline-container-org6576dab" class="outline-2">
+<h2 id="org6576dab">Numeric</h2>
+<div class="outline-text-2" id="text-org6576dab">
 <p>
 In the video I implemented the Numeric type class. What is Numeric? It
 is a type class you'll find in the Scala standard library and is used
@@ -108,11 +108,11 @@ Let's look at the pieces one by one&#x2026;
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">T</span>] {
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">Add</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">Mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>
+<pre class="src src-scala"><span style="color: #b6a0ff;">trait</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">T</span>] {
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">Add</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">Mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>
 
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">square</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> mul(a, a)
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">square</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span> <span style="color: #b6a0ff;">=</span> mul(a, a)
 }
 </pre>
 </div>
@@ -131,17 +131,17 @@ supported instances.
 </div>
 </div>
 
-<div id="outline-container-org5a2e75b" class="outline-2">
-<h2 id="org5a2e75b">Instances</h2>
-<div class="outline-text-2" id="text-org5a2e75b">
+<div id="outline-container-org059d026" class="outline-2">
+<h2 id="org059d026">Instances</h2>
+<div class="outline-text-2" id="text-org059d026">
 <p>
 Once you have the interface for your type class you can define instances for various data types. Here we define the instance for <code>Long</code>.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">numericLong</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">Long</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">Long</span>] {
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span> <span style="color: #b6a0ff;">=</span> a + b
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Long</span> <span style="color: #b6a0ff;">=</span> a * b
+<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">numericLong</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">Long</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">Long</span>] {
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Long</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Long</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Long</span> <span style="color: #b6a0ff;">=</span> a + b
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Long</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Long</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Long</span> <span style="color: #b6a0ff;">=</span> a * b
 }
 </pre>
 </div>
@@ -162,7 +162,7 @@ so that it can access the <code>add</code> method.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">sumList</span>[<span style="color: #00bcff;">T</span>](ts<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">List</span>[<span style="color: #00bcff;">T</span>])(<span style="color: #f78fe7;">implicit</span> numeric<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">T</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">sumList</span>[<span style="color: #00bcff;">T</span>](ts<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">List</span>[<span style="color: #00bcff;">T</span>])(<span style="color: #f78fe7;">implicit</span> numeric<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">T</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span> <span style="color: #b6a0ff;">=</span> {
   ts.reduce((a, b) <span style="color: #b6a0ff;">=&gt;</span> numeric.<span style="color: #00bcff;">Add</span>(a,b))
 }
 </pre>
@@ -183,9 +183,9 @@ println(s<span style="color: #79a8ff;">"sum of int list is </span><span style="c
 </div>
 </div>
 
-<div id="outline-container-orga1d43eb" class="outline-2">
-<h2 id="orga1d43eb">Improving the ergonomics</h2>
-<div class="outline-text-2" id="text-orga1d43eb">
+<div id="outline-container-org645a66c" class="outline-2">
+<h2 id="org645a66c">Improving the ergonomics</h2>
+<div class="outline-text-2" id="text-org645a66c">
 <p>
 So that's all you need to build type classes but we can take a couple
 of steps to make things more ergonomic. For one we can ditch the
@@ -195,7 +195,7 @@ bounds]]. This makes things clearer for the caller of the function.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">sumList</span>[<span style="color: #00bcff;">T</span> <span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>](ts<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">List</span>[<span style="color: #00bcff;">T</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> {
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">sumList</span>[<span style="color: #00bcff;">T</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](ts<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">List</span>[<span style="color: #00bcff;">T</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span> <span style="color: #b6a0ff;">=</span> {
   <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">numeric</span> <span style="color: #b6a0ff;">=</span> implicitly[<span style="color: #00bcff;">Numeric</span>[<span style="color: #00bcff;">T</span>]]
   ts.reduce((a, b) <span style="color: #b6a0ff;">=&gt;</span> numeric.add(a,b))
 }
@@ -212,7 +212,7 @@ us access that implicit in a succinct way.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">implicitly</span>[<span style="color: #00bcff;">T</span>](<span style="color: #f78fe7;">implicit</span> e<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> e
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">implicitly</span>[<span style="color: #00bcff;">T</span>](<span style="color: #f78fe7;">implicit</span> e<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span> <span style="color: #b6a0ff;">=</span> e
 </pre>
 </div>
 
@@ -226,12 +226,12 @@ on the data type.
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">ops</span> {
 
-  <span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">class</span> <span style="color: #f78fe7;">NumericOps</span>[<span style="color: #00bcff;">T</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)(<span style="color: #f78fe7;">implicit</span> numeric<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">T</span>]) {
-    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> numeric.add(a, b)
-    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> numeric.mul(a, b)
+  <span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">NumericOps</span>[<span style="color: #00bcff;">T</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)(<span style="color: #f78fe7;">implicit</span> numeric<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">T</span>]) {
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span> <span style="color: #b6a0ff;">=</span> numeric.add(a, b)
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span> <span style="color: #b6a0ff;">=</span> numeric.mul(a, b)
 
-    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">+</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> add(b)
-    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">*</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">T</span> <span style="color: #b6a0ff;">=</span> mul(b)
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">+</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span> <span style="color: #b6a0ff;">=</span> add(b)
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">*</span>(b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">T</span> <span style="color: #b6a0ff;">=</span> mul(b)
   }
 
 }
@@ -258,10 +258,10 @@ multiplication operator on it as if it was a regular number.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">stringNumeric</span><span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">String</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #f78fe7;">Numeric</span>[<span style="color: #00bcff;">String</span>] {
-    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span> <span style="color: #b6a0ff;">=</span> a + b
+<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">stringNumeric</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">String</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">String</span>] {
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span> <span style="color: #b6a0ff;">=</span> a + b
 
-    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #f78fe7;">String</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">for</span> (
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mul</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>, b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">for</span> (
       as <span style="color: #b6a0ff;">&lt;-</span> a;
       bs <span style="color: #b6a0ff;">&lt;-</span> b;
       s <span style="color: #b6a0ff;">&lt;-</span> as.toString ++ bs.toString) <span style="color: #b6a0ff;">yield</span> s
@@ -278,9 +278,9 @@ arithmetic operations such as Roman Numerals.
 </div>
 </div>
 
-<div id="outline-container-org3dc17f9" class="outline-2">
-<h2 id="org3dc17f9">Coherence</h2>
-<div class="outline-text-2" id="text-org3dc17f9">
+<div id="outline-container-org40f4c54" class="outline-2">
+<h2 id="org40f4c54">Coherence</h2>
+<div class="outline-text-2" id="text-org40f4c54">
 <p>
 Type class coherence is an important concept I'll leave you with. This
 is a guideline in place to keep programs easy to reason about. It's a
@@ -297,9 +297,9 @@ instance you think you are.
 </div>
 </div>
 
-<div id="outline-container-org2224761" class="outline-2">
-<h2 id="org2224761">Final words</h2>
-<div class="outline-text-2" id="text-org2224761">
+<div id="outline-container-orgc682686" class="outline-2">
+<h2 id="orgc682686">Final words</h2>
+<div class="outline-text-2" id="text-orgc682686">
 <p>
 If you're coming from Java or similar OOP language you may recognise
 some of this as the adapter pattern (except with Scala
@@ -317,9 +317,9 @@ greatly simplified in Scala 3 however.
 </div>
 </div>
 
-<div id="outline-container-org8d2dd51" class="outline-2">
-<h2 id="org8d2dd51">References</h2>
-<div class="outline-text-2" id="text-org8d2dd51">
+<div id="outline-container-orgc07e8a4" class="outline-2">
+<h2 id="orgc07e8a4">References</h2>
+<div class="outline-text-2" id="text-orgc07e8a4">
 <p>
 Typelevel Cats functional programming library documentation
 <a href="https://typelevel.org/cats/">https://typelevel.org/cats/</a>

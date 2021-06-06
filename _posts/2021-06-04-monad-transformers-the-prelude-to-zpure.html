@@ -1,0 +1,284 @@
+---
+layout: post
+title: Monad Transformers - the prelude to ZPure
+tags: [scala, scala-3, dotty, monads, category-theory]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+
+<img class="img" src="../../../images/monadtransformers.png" border="0" style="padding: 30px;" alt="Diagram of monad transformers with the ZPure type" width="600"/>
+
+<div id="outline-container-org6619e07" class="outline-2">
+<h2 id="org6619e07">Introduction</h2>
+<div class="outline-text-2" id="text-org6619e07">
+<p>
+This is a companion blog to four episodes of "Functional Justin", my
+YouTube series on Scala and funtional programming which you can find
+here <a href="https://www.youtube.com/c/FunctionalJustin">https://www.youtube.com/c/FunctionalJustin</a>
+</p>
+
+<p>
+The same ground is covered here as the video so it's up to you which
+you find more useful!
+</p>
+
+<p>
+All of the source code can be found in these two repositories.
+</p>
+
+<p>
+Functional Justin's live videos and Scala 3 category theory based
+library code for the first part of the blog can be found here.
+<a href="https://github.com/justinhj/evalexample/tree/video-13">https://github.com/justinhj/evalexample/tree/video-13</a>
+</p>
+
+<p>
+And the Zio Prelude code, developed in the final video and later in this blog can be found here.
+<a href="https://github.com/justinhj/ZPurePlay/blob/video-13-a/src/main/scala/EvalZpureVideo.scala">https://github.com/justinhj/ZPurePlay/blob/video-13-a/src/main/scala/EvalZpureVideo.scala</a>
+</p>
+
+<p>
+In previous blogs and videos I've described a program that evaluates
+arithmetic expressions as this is a nice testbed for various
+functional effects. So far I've demonstrated how by using different
+data types and type classes one can make the same program behave
+differently.
+</p>
+
+<p>
+This is important for a couple of reasons. It means that you can
+compose interesting programs from smaller, well understood components,
+and because we can understand and change the behaviour of our program
+by using different types.
+</p>
+
+<p>
+As a starting point lets begin with a version of the program that has
+error handling using the Either data type and Numeric which is a
+generic implementation of numbers.
+</p>
+
+<p>
+If you didn't catch up on earlier posts let's recap. An example run of
+the program requires an environment (symbol table) provided using the
+Scala 3 implicit mechanism (using the given keyword). I call eval on a
+sample expression tree which yields either a Right or a Left result
+since I'm using Either as the result effect type.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">  <span style="color: #b6a0ff;">given</span> envMap<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Env</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">7</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">6</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">22</span>)
+
+  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">exp1</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Mul</span>(<span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"z"</span>), <span style="color: #00bcff;">Add</span>(<span style="color: #00bcff;">Val</span>(<span style="color: #00bcff;">10</span>), <span style="color: #00bcff;">Sub</span>(<span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"x"</span>), <span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"y"</span>))))
+
+  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">eval1</span> <span style="color: #b6a0ff;">=</span> eval(exp1)
+
+  println(s<span style="color: #79a8ff;">"Eval exp gives </span><span style="color: #00d3d0;">$eval1</span><span style="color: #79a8ff;">"</span>)
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">[info] running Scala3EvalEither </span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Eval exp gives Right(242)</span>
+
+</pre>
+</div>
+
+<p>
+I represent the errors as a Scala 3 enum which is a nice way to create
+ADT's (algebraic data types), similar to how you would do it in Rust.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">enum</span> <span style="color: #00bcff;">EvalError</span> {
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">InvalidSymboName</span>
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">SymbolNotFound</span>
+  <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">DivisionByZero</span>
+}
+</pre>
+</div>
+
+<p>
+The next things to look at are an ADT to represent the program steps a return type.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">
+<span style="color: #b6a0ff;">enum</span> <span style="color: #00bcff;">Exp</span>[<span style="color: #00bcff;">A</span>]<span style="color: #b6a0ff;">:</span>
+  <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Val</span>(<span style="color: #00d3d0;">value</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]
+  <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Add</span>(<span style="color: #00d3d0;">left</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>], <span style="color: #00d3d0;">right</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]
+  <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Sub</span>(<span style="color: #00d3d0;">left</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>], <span style="color: #00d3d0;">right</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]
+  <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Mul</span>(<span style="color: #00d3d0;">left</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>], <span style="color: #00d3d0;">right</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]
+  <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Div</span>(<span style="color: #00d3d0;">left</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>], <span style="color: #00d3d0;">right</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]
+  <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Var</span>(<span style="color: #00d3d0;">identifier</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]
+
+<span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">A</span>]
+
+<span style="color: #b6a0ff;">import</span> <span style="color: #00bcff;">Exp</span>.<span style="color: #b6a0ff;">_</span>
+
+<span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>] ?=&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]
+</pre>
+</div>
+
+<p>
+The <code>Env</code> type is a simple map for strings to values that we will use
+as a symbol table so that variables can be looked up at runtime. The
+<code>?-&gt;</code> syntax indicates that the return type is a context function. An
+earlier blog discusses that, but in short it allows us to thread our
+Env symbol table through the computation easily.
+</p>
+
+<p>
+Here is the main body of the code.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">eval</span>[<span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](exp<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+  exp <span style="color: #b6a0ff;">match</span>
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Var</span>(<span style="color: #00d3d0;">id</span>) <span style="color: #b6a0ff;">=&gt;</span> handleVar(id)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(value)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Add</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleAdd(l,r)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Sub</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleSub(l,r)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Div</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleDiv(l,r)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Mul</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleMul(l,r)
+
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleAdd</span>[<span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](l<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] , r<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] )<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> eval(l) + eval(r)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleSub</span>[<span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](l<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] , r<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] )<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> eval(l) - eval(r)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleMul</span>[<span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](l<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] , r<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] )<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> eval(l) * eval(r)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleDiv</span>[<span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](l<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] , r<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] )<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> eval(l) / eval(r)
+
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>[<span style="color: #00bcff;">A</span>](s<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+  summonEnv.get(s) <span style="color: #b6a0ff;">match</span> {
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Some</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(value)
+    <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Left</span>(<span style="color: #00bcff;">EvalError</span>.<span style="color: #00bcff;">SymbolNotFound</span>)
+  }
+</pre>
+</div>
+
+<p>
+Those arithmetic operators you see are operating not on integers,
+doubles or some other concrete type, but are working on a type A that
+has a Numeric instance. You may wonder then how that <code>+</code> operator
+knows what to do? The answer is that I implemented an instance of
+Numeric for the type <code>Numeric[Either[EvalError,A]]</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Implement Numeric for EvalResult</span>
+<span style="color: #b6a0ff;">given</span> evalResultNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span> {
+
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>], fb<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+    fa.map2(fb)((a,b) <span style="color: #b6a0ff;">=&gt;</span> a + b)
+  }
+  <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">... and so on</span>
+}
+</pre>
+</div>
+
+<p>
+Whilst this is a lot of overhead for a simple program, as your
+programs scale in complexity, this level of abstraction lets you
+control effects as well as swap them in and out as your requirements
+change without having to rewrite the core logic.
+</p>
+
+<p>
+As an example, let's introduce a Monad Transformer and show how to
+integrate it with the program above.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge92bcca" class="outline-2">
+<h2 id="orge92bcca">WriterT</h2>
+<div class="outline-text-2" id="text-orge92bcca">
+<p>
+Let's say we want to take an existing effectful program and add a new
+effect to it. The effect I will demonstrate is logging. There is a
+data type called Writer which represents a value and a log. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #00bcff;">Writer</span>[<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>](run<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>))
+</pre>
+</div>
+
+<p>
+This is not very interesting on its own but if you make a program from
+Writers, sequencing them together using the Monad's flatMap operation
+for example, then the end result consists of a final value and a log
+for <code>each step of the program</code>.
+</p>
+
+<p>
+But since I already comitted to using Either, if I change the type to
+Writer then I would lose the ability to handle errors. Instead what I
+want is to keep the Either effect and <code>wrap</code> it with the capability of
+the Writer monad.
+</p>
+
+<p>
+Monad transformers are the answer. Now the trouble with monads is that
+they don't compose manually together. As I covered in a previous blog,
+applicatives do. You can take any two applicative effects such as
+Either and List and compose them with a simple compose functions. 
+</p>
+
+<p>
+With Monads the composition of any particular monad has to be
+hand-crafted, so if I want to stack a Reader on top of an Either,
+which I do, then I need to implement a ReaderT (reader transformer).
+</p>
+
+<p>
+It only needs to be implented once and for all and can then be applied
+to any other Monad (not just for Either). The idea is to make an
+implementation of Reader that wraps another Monadic data type.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>](<span style="color: #f78fe7;">private</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">wrapped</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[(<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>)])
+</pre>
+</div>
+
+<p>
+Here you can see the definition of the WriterT data type. The
+difference between WriterT and Writer is that the WriterT wraps an
+existing monad. Note that there is no need to constrain the
+higher-kinded type F to be a Monad, but later on when we use it in
+various ways it is possible to constrain F to be a Functor,
+Applicative or Monad depending on the use-case. This late decision
+making gives more flexibility.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">WriterT</span><span style="color: #b6a0ff;">:</span>
+  <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">lift takes any monadic effect and transforms to a WriterT around that monad</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">lift</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">W</span>, <span style="color: #00bcff;">A</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>])(<span style="color: #b6a0ff;">using</span> m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], <span style="color: #00bcff;">F</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Applicative</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+    <span style="color: #00bcff;">WriterT</span>(<span style="color: #00bcff;">F</span>.map(fa)(a <span style="color: #b6a0ff;">=&gt;</span> (m.zero, a)))
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgbfebc29" class="outline-2">
+<h2 id="orgbfebc29">ReaderT TODO rewrite</h2>
+<div class="outline-text-2" id="text-orgbfebc29">
+<p>
+Another way to pass that symbol table around a program would be the
+Reader data type. Reader has a monad type class instance and lets you
+write programs like the one above, that need read-only data, sometimes
+called the environment, to operate with. 
+</p>
+
+<p>
+I'd like to convert the code above to use Reader instead of context
+functions, but the trouble is we are already using the Either data
+type so that we can handle errors. The question is how can we use two
+monads instead of one?
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">x</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">1</span>
+</pre>
+</div>
+</div>
+</div>
