@@ -196,33 +196,269 @@ difference between WriterT and Writer is that the WriterT wraps an
 existing monad. Note that there is no need to constrain the
 higher-kinded type F to be a Monad, but later on when we use it in
 various ways it is possible to constrain F to be a Functor,
-Applicative or Monad depending on the use-case. This late decision
-making gives more flexibility.
+Applicative or Monad depending on the use-case. Choosing the type
+bounds that constrain what the wrapped type must support based on the
+individual functions needs gives you more flexibility.
+
+For example if you have a data type that has a map operation but no
+meaningful way to make a flatMap, you can still use the Monad
+transformer as long as you only use Functor level methods.
+
+*** Lifting
+
+In order to use WriterT there needs to be a mechanism to take your
+inner data type (Either in this case) and make an instance of WriterT.
+That can be done like this in my implementation by using the WriterT
+constructor. For example let's say we have an Either instance we can
+transform it to a WriterT like this.
+
+#+BEGIN_SRC scala
+  val e1: Either[EvalError,Int] = Right(10)
+  val w1 = WriterT(e1.map(n => (List.empty[String], n)))
+#+END_SRC
+
+It's not straightforward because the WriterT wrapped type must be
+~F[(W,A)]~ and we had an F[A]. That is why I need to use the map
+operation to take any value the Either may have and combine it with an
+empty log. Here we assume the log is a list of strings and Scala is
+able to infer that too.
+
+Since this needed often the lift method is often added which takes
+care of creating an empty log message and mapping it for us.
 
 #+BEGIN_SRC scala
 object WriterT:
-  // lift takes any monadic effect and transforms to a WriterT around that monad
-  def lift[F[_],W, A](fa: F[A])(using m: Monoid[W], F: Applicative[F]): WriterT[F,W,A] =
+  def lift[F[_],W, A](fa: F[A])(using m: Monoid[W], F: Functor[F]): WriterT[F,W,A] =
     WriterT(F.map(fa)(a => (m.zero, a)))
+
+// ... 
+
+  val e1: Either[EvalError,Int] = Right(10)
+  val w1: WriterT[[A] =>> Either[EvalError,A],List[String],Int] = 
+    WriterT.lift(e1)
 #+END_SRC
 
+Couple of interesting things to note about the lift method type
+signature. For one you can see that the log must be a Monoid. A Monoid
+is a type that must have two useful operations that make it useful for
+logs: It must be able to produce an empty element of whatever type it
+is specialized for, and it must be able to join that type together.
 
-** ReaderT TODO rewrite 
-Another way to pass that symbol table around a program would be the
-Reader data type. Reader has a monad type class instance and lets you
-write programs like the one above, that need read-only data, sometimes
-called the environment, to operate with. 
+This gives the user the flexibility to use any data type for the log
+and not have to worry about providing an empty log or an append
+function. The example here is a monoid since it is a list of
+strings. We can obviously produce an empty list easily, and the append
+function is also trivial, so if you look at my Monoid instance for
+lists you can see the implementation is trivial.
 
-I'd like to convert the code above to use Reader instead of context
-functions, but the trouble is we are already using the Either data
-type so that we can handle errors. The question is how can we use two
-monads instead of one?
+Another interesting thing is the Functor type constraint. As I
+mentioned above, although we call them Monad transformers, they can be
+used with Functors, Applicatives and Monads. Since the lift function
+only needs map, it needs only the Functor type constraint.
 
+*** Evaluating expressions with a log
+Now I'll walk through the changes needed to convert the expression
+evaluator from having the return type Either, to being one of
+WriterT[Either]
 
 #+BEGIN_SRC scala
-val x = 1
+// Without log
+type WithEnv[A] = Env[A] ?=> Either[EvalError, A]
+// With log
+type WithEnv[A] = Env[A] ?=> WriterT[[A1] =>> Either[EvalError, A1], List[String], A]
 #+END_SRC
 
+The next step is to make small changes to my programs implementation
+to manage this new type. As you can see, the simplest change, handling
+a basic numeric value, just involves lifting our original Either and
+adding a log entry.
 
+#+BEGIN_SRC scala -n
+  def eval[A : Numeric](exp: Exp[A]): WithEnv[A] =
+    exp match
+      case Var(id) => handleVar(id)
+      case Val(value) => WriterT.lift[[A1] =>> EvalResult[A1], List[String], A](Right(value)).tell(List(s"Val $value"))
+      case Add(l,r) => handleAdd(l,r)
+      case Sub(l,r) => handleSub(l,r)
+      case Div(l,r) => handleDiv(l,r)
+      case Mul(l,r) => handleMul(l,r)
+#+END_SRC
 
+You can see in line 4 the code is a matter of lifting the value
+wrapped in an Either. The type annotation is needed and creates some
+noise.  I use the tell function to add a log entry for this step.
 
+~tell~ is a method on the WriterT data type itself, and it takes
+advantage of the log types monoid to combine this new log entry with
+any prior ones. 
+
+#+BEGIN_SRC scala
+  def tell(l1: W)(using m: Monoid[W], f: Functor[F]): WriterT[F,W,A] =
+    WriterT(wrapped.map{
+      (l2,a) =>
+        (m.combine(l2, l1), a)
+    })
+#+END_SRC
+
+By this technique at the end of a computation we
+should see a log of entries.
+
+For example the expression ~Val(10)~ would be logged as ~"Val
+10"~. Having a step-by-step log of your application has various uses
+including the following.
+
+1. Debugging. View the state of your computation in detail
+2. Auditing and statistics. Analyze the log of your computation for business information.
+3. Restore a failed computation. You can log at each step enough information to resume an expensive computation that may have been interrupted.
+
+These kind of benefits come with traditional logging, but building it
+into your application in a pure and type rich way can amplify the
+benefits.
+
+Let's take a look at the symbol table lookup part of the program.
+
+#+BEGIN_SRC scala
+  def handleVar[A](s: String): WithEnv[A] =
+    summonEnv.get(s) match {
+      case Some(value) => {
+        WriterT.lift[[A1] =>> Either[EvalError,A1],List[String],A](Right(value)).tell(List(s"Var $s ($value)"))
+      }
+      case None => WriterT.lift(Left(EvalError.SymbolNotFound))
+    }
+#+END_SRC
+
+Again the change is virtually mechanical. We lifted our old code and
+added the tell call to add some logging information. When we view
+variable lookups in the log you will see something like ~Var("x")~
+written as ~Var x (7)~ where 7 is its value in the symbol table.
+
+*** Extending numeric
+#+BEGIN_SRC scala
+  def handleAdd[A : Numeric](l: Exp[A] , r: Exp[A] ): WithEnv[A] = eval(l) + eval(r)
+#+END_SRC
+
+The remainder of the program involves expressions like this one. We
+use the ~+~ operator to add two other expressions together. How that
+works is a combination of operator overloading, extension methods and
+implementing an implicit implementation of Numeric for our new WriterT
+return type.
+
+Here I'm defining an implicit instance of Numeric that handles things
+are Writers around Eithers. In previous posts this is where I first
+implemented addition for different types of number, and then added the
+ability to handle errors in a type safe and functional manner.
+
+I'm just extending that technique to handle a more complicated type.
+
+#+BEGIN_SRC scala   
+given evalResultWNumeric[A: Numeric]: Numeric[WriterT[[A1] =>> Either[EvalError, A1], List[String], A]] with
+  // ... implementations
+#+END_SRC
+
+The implementation of Add assuming a Monadic instance is available is as follows.
+
+#+BEGIN_SRC scala
+  val M = writerTMonad[[A1] =>> Either[EvalError,A1], List[String]]
+
+  def add(fa: EvalResultW[A], fb: EvalResultW[A]): EvalResultW[A] = {
+      M.flatMap(fa) {
+        a => M.map(fb){
+          b =>
+            a + b
+        }
+      } : EvalResultW[A]
+    }
+#+END_SRC
+
+Which does the job but it doesn't include any logging. We can add that too.
+
+#+BEGIN_SRC scala
+  def add(fa: EvalResultW[A], fb: EvalResultW[A]): EvalResultW[A] = {
+      M.flatMap(fa) {
+        a => M.flatMap(fb){
+          b =>
+            val result = a + b 
+            val w1: EvalResultW[A] = WriterT.lift(Right(result))
+            w1.tell(List(s"Added $a and $b giving $result"))
+        }
+      }
+    }
+#+END_SRC
+
+Note that by nesting the flatMaps we have access to a,b and the result
+of the computation so we can put all of that into the tell call,
+resulting in a log like ~Added 22 and 23 giving 45~.
+
+There's nothing really wrong with this implementation, but it's
+important to always think about the priniciple of least power. Did I
+really need a Monad here? Well in fact there is a great function for
+applying a computation across two different effects and that is
+~map2~. It also requires only Applicative, so I can use that instead.
+
+#+BEGIN_SRC scala
+   val App = writerTApplicative[[A1] =>> Either[EvalError,A1], List[String]]
+
+    def add(fa: EvalResultW[A], fb: EvalResultW[A]): EvalResultW[A] = {
+      App.map2(fa)(fb) {
+        case (a,b) => a + b
+      }
+    }
+#+END_SRC
+
+This simplifies the code greatly but notice that I am no longer
+logging anything. Unfortunately, I no longer have access to the result
+of the computation. One clean solution I found here was to write a
+helper method that is like a logging version of map2. Like map2 it
+takes a function of two arguments to map the effect values, but it
+takes a second function that takes the two values and their result and
+let's you build a log entry from them.
+
+#+BEGIN_SRC scala
+ def mapTell2[A,B,C,F[_],W](fa: WriterT[F,W,A],fb: WriterT[F,W,B],fabc: (A,B) => C,fabcw: (A,B,C) => W)
+                            (using m: Monoid[W], f: Monad[F]): WriterT[F,W,C] = {
+    val r = fa.unwrap().map2(fb.unwrap()){
+      case ((al,a),(bl,b)) =>
+        val c = fabc(a,b)
+        val w = fabcw(a,b,c)
+        val prev = m.combine(al,bl)
+        (m.combine(prev,w),c)
+    }
+    WriterT(r)
+  }
+#+END_SRC
+
+While this looks like a handful what it is really doing is
+straightforward. Like map2 the input is two effects. First I unwrap
+them which gives us the inner effect, and running map2 on those gives
+the log and the value of each effect.
+
+Once I've run the user function fabc on those values, I have the
+result value c and I can use that to build a log with the fabcw
+function. Finally we need to combine the prior logs with the new log
+and return the result.
+
+Here's the function in action.
+
+#+BEGIN_SRC scala
+ def sub(a: EvalResultW[A], b: EvalResultW[A]): EvalResultW[A] = {
+      mapTell2(a,b,(a, b) => a / b,(a,b,c) => List(s"$c: subtracted $a from $b"))
+ }
+#+END_SRC
+
+By moving all that complexity into a helper function, each operator is now quite simple.
+
+#+BEGIN_SRC
+[info] running Scala3EvalEitherTWriter 
+WriterT(Right((List(Var y (6), Var x (7), Val 10, Var z (22)),45)))
+Var y (6)
+Var x (7)
+Val 10
+Var z (22)
+exp01 WriterT(Left(DivisionByZero))
+#+END_SRC
+
+In summary, you can use WriterT to convert any effectful program into
+one with step-by-step logging.
+
+** ReaderT
+Another 

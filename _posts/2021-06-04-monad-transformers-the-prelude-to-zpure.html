@@ -243,20 +243,351 @@ difference between WriterT and Writer is that the WriterT wraps an
 existing monad. Note that there is no need to constrain the
 higher-kinded type F to be a Monad, but later on when we use it in
 various ways it is possible to constrain F to be a Functor,
-Applicative or Monad depending on the use-case. This late decision
-making gives more flexibility.
+Applicative or Monad depending on the use-case. Choosing the type
+bounds that constrain what the wrapped type must support based on the
+individual functions needs gives you more flexibility.
+</p>
+
+<p>
+For example if you have a data type that has a map operation but no
+meaningful way to make a flatMap, you can still use the Monad
+transformer as long as you only use Functor level methods.
+</p>
+</div>
+
+<div id="outline-container-org70ad577" class="outline-3">
+<h3 id="org70ad577">Lifting</h3>
+<div class="outline-text-3" id="text-org70ad577">
+<p>
+In order to use WriterT there needs to be a mechanism to take your
+inner data type (Either in this case) and make an instance of WriterT.
+That can be done like this in my implementation by using the WriterT
+constructor. For example let's say we have an Either instance we can
+transform it to a WriterT like this.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">EvalError</span>,<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">w1</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">WriterT</span>(e1.map(n <span style="color: #b6a0ff;">=&gt;</span> (<span style="color: #00bcff;">List</span>.empty[<span style="color: #00bcff;">String</span>], n)))
+</pre>
+</div>
+
+<p>
+It's not straightforward because the WriterT wrapped type must be
+<code>F[(W,A)]</code> and we had an F[A]. That is why I need to use the map
+operation to take any value the Either may have and combine it with an
+empty log. Here we assume the log is a list of strings and Scala is
+able to infer that too.
+</p>
+
+<p>
+Since this needed often the lift method is often added which takes
+care of creating an empty log message and mapping it for us.
 </p>
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">WriterT</span><span style="color: #b6a0ff;">:</span>
-  <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">lift takes any monadic effect and transforms to a WriterT around that monad</span>
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">lift</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">W</span>, <span style="color: #00bcff;">A</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>])(<span style="color: #b6a0ff;">using</span> m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], <span style="color: #00bcff;">F</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Applicative</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">lift</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">W</span>, <span style="color: #00bcff;">A</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>])(<span style="color: #b6a0ff;">using</span> m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], <span style="color: #00bcff;">F</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Functor</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
     <span style="color: #00bcff;">WriterT</span>(<span style="color: #00bcff;">F</span>.map(fa)(a <span style="color: #b6a0ff;">=&gt;</span> (m.zero, a)))
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">... </span>
+
+  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">e1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Either</span>[<span style="color: #00bcff;">EvalError</span>,<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">10</span>)
+  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">w1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[[<span style="color: #00bcff;">A</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>,<span style="color: #00bcff;">A</span>],<span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>],<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> 
+    <span style="color: #00bcff;">WriterT</span>.lift(e1)
+</pre>
+</div>
+
+<p>
+Couple of interesting things to note about the lift method type
+signature. For one you can see that the log must be a Monoid. A Monoid
+is a type that must have two useful operations that make it useful for
+logs: It must be able to produce an empty element of whatever type it
+is specialized for, and it must be able to join that type together.
+</p>
+
+<p>
+This gives the user the flexibility to use any data type for the log
+and not have to worry about providing an empty log or an append
+function. The example here is a monoid since it is a list of
+strings. We can obviously produce an empty list easily, and the append
+function is also trivial, so if you look at my Monoid instance for
+lists you can see the implementation is trivial.
+</p>
+
+<p>
+Another interesting thing is the Functor type constraint. As I
+mentioned above, although we call them Monad transformers, they can be
+used with Functors, Applicatives and Monads. Since the lift function
+only needs map, it needs only the Functor type constraint.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org9d03e19" class="outline-3">
+<h3 id="org9d03e19">Evaluating expressions with a log</h3>
+<div class="outline-text-3" id="text-org9d03e19">
+<p>
+Now I'll walk through the changes needed to convert the expression
+evaluator from having the return type Either, to being one of
+WriterT[Either]
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Without log</span>
+<span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>] ?=&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">With log</span>
+<span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>] ?=&gt; <span style="color: #00bcff;">WriterT</span>[[<span style="color: #00bcff;">A1</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A1</span>], <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>], <span style="color: #00bcff;">A</span>]
+</pre>
+</div>
+
+<p>
+The next step is to make small changes to my programs implementation
+to manage this new type. As you can see, the simplest change, handling
+a basic numeric value, just involves lifting our original Either and
+adding a log entry.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span class="linenr">1: </span><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">eval</span>[<span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](exp<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+<span class="linenr">2: </span>  exp <span style="color: #b6a0ff;">match</span>
+<span class="linenr">3: </span>    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Var</span>(<span style="color: #00d3d0;">id</span>) <span style="color: #b6a0ff;">=&gt;</span> handleVar(id)
+<span class="linenr">4: </span>    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">WriterT</span>.lift[[<span style="color: #00bcff;">A1</span>] =&gt;&gt; <span style="color: #00bcff;">EvalResult</span>[<span style="color: #00bcff;">A1</span>], <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>], <span style="color: #00bcff;">A</span>](<span style="color: #00bcff;">Right</span>(value)).tell(<span style="color: #00bcff;">List</span>(s<span style="color: #79a8ff;">"Val </span><span style="color: #00d3d0;">$value</span><span style="color: #79a8ff;">"</span>))
+<span class="linenr">5: </span>    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Add</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleAdd(l,r)
+<span class="linenr">6: </span>    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Sub</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleSub(l,r)
+<span class="linenr">7: </span>    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Div</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleDiv(l,r)
+<span class="linenr">8: </span>    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Mul</span>(<span style="color: #00d3d0;">l</span>,<span style="color: #00d3d0;">r</span>) <span style="color: #b6a0ff;">=&gt;</span> handleMul(l,r)
+</pre>
+</div>
+
+<p>
+You can see in line 4 the code is a matter of lifting the value
+wrapped in an Either. The type annotation is needed and creates some
+noise.  I use the tell function to add a log entry for this step.
+</p>
+
+<p>
+<code>tell</code> is a method on the WriterT data type itself, and it takes
+advantage of the log types monoid to combine this new log entry with
+any prior ones. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">tell</span>(l1<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">W</span>)(<span style="color: #b6a0ff;">using</span> m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Functor</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+  <span style="color: #00bcff;">WriterT</span>(wrapped.map{
+    (l2,a) <span style="color: #b6a0ff;">=&gt;</span>
+      (m.combine(l2, l1), a)
+  })
+</pre>
+</div>
+
+<p>
+By this technique at the end of a computation we
+should see a log of entries.
+</p>
+
+<p>
+For example the expression <code>Val(10)</code> would be logged as <code>"Val
+10"</code>. Having a step-by-step log of your application has various uses
+including the following.
+</p>
+
+<ol class="org-ol">
+<li>Debugging. View the state of your computation in detail</li>
+<li>Auditing and statistics. Analyze the log of your computation for business information.</li>
+<li>Restore a failed computation. You can log at each step enough information to resume an expensive computation that may have been interrupted.</li>
+</ol>
+
+<p>
+These kind of benefits come with traditional logging, but building it
+into your application in a pure and type rich way can amplify the
+benefits.
+</p>
+
+<p>
+Let's take a look at the symbol table lookup part of the program.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>[<span style="color: #00bcff;">A</span>](s<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+  summonEnv.get(s) <span style="color: #b6a0ff;">match</span> {
+    <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Some</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> {
+      <span style="color: #00bcff;">WriterT</span>.lift[[<span style="color: #00bcff;">A1</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>,<span style="color: #00bcff;">A1</span>],<span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>],<span style="color: #00bcff;">A</span>](<span style="color: #00bcff;">Right</span>(value)).tell(<span style="color: #00bcff;">List</span>(s<span style="color: #79a8ff;">"Var </span><span style="color: #00d3d0;">$s</span><span style="color: #79a8ff;"> (</span><span style="color: #00d3d0;">$value</span><span style="color: #79a8ff;">)"</span>))
+    }
+    <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">WriterT</span>.lift(<span style="color: #00bcff;">Left</span>(<span style="color: #00bcff;">EvalError</span>.<span style="color: #00bcff;">SymbolNotFound</span>))
+  }
+</pre>
+</div>
+
+<p>
+Again the change is virtually mechanical. We lifted our old code and
+added the tell call to add some logging information. When we view
+variable lookups in the log you will see something like <code>Var("x")</code>
+written as <code>Var x (7)</code> where 7 is its value in the symbol table.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org6c7d993" class="outline-3">
+<h3 id="org6c7d993">Extending numeric</h3>
+<div class="outline-text-3" id="text-org6c7d993">
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleAdd</span>[<span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](l<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] , r<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] )<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> eval(l) + eval(r)
+</pre>
+</div>
+
+<p>
+The remainder of the program involves expressions like this one. We
+use the <code>+</code> operator to add two other expressions together. How that
+works is a combination of operator overloading, extension methods and
+implementing an implicit implementation of Numeric for our new WriterT
+return type.
+</p>
+
+<p>
+Here I'm defining an implicit instance of Numeric that handles things
+are Writers around Eithers. In previous posts this is where I first
+implemented addition for different types of number, and then added the
+ability to handle errors in a type safe and functional manner.
+</p>
+
+<p>
+I'm just extending that technique to handle a more complicated type.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">given</span> evalResultWNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">WriterT</span>[[<span style="color: #00bcff;">A1</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A1</span>], <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>], <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span>
+  <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">... implementations</span>
+</pre>
+</div>
+
+<p>
+The implementation of Add assuming a Monadic instance is available is as follows.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">M</span> <span style="color: #b6a0ff;">=</span> writerTMonad[[<span style="color: #00bcff;">A1</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>,<span style="color: #00bcff;">A1</span>], <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>]]
+
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>], fb<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+    <span style="color: #00bcff;">M</span>.flatMap(fa) {
+      a <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">M</span>.map(fb){
+        b <span style="color: #b6a0ff;">=&gt;</span>
+          a + b
+      }
+    } <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>]
+  }
+</pre>
+</div>
+
+<p>
+Which does the job but it doesn't include any logging. We can add that too.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>], fb<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+    <span style="color: #00bcff;">M</span>.flatMap(fa) {
+      a <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">M</span>.flatMap(fb){
+        b <span style="color: #b6a0ff;">=&gt;</span>
+          <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">result</span> <span style="color: #b6a0ff;">=</span> a + b 
+          <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">w1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">WriterT</span>.lift(<span style="color: #00bcff;">Right</span>(result))
+          w1.tell(<span style="color: #00bcff;">List</span>(s<span style="color: #79a8ff;">"Added </span><span style="color: #00d3d0;">$a</span><span style="color: #79a8ff;"> and </span><span style="color: #00d3d0;">$b</span><span style="color: #79a8ff;"> giving </span><span style="color: #00d3d0;">$result</span><span style="color: #79a8ff;">"</span>))
+      }
+    }
+  }
+</pre>
+</div>
+
+<p>
+Note that by nesting the flatMaps we have access to a,b and the result
+of the computation so we can put all of that into the tell call,
+resulting in a log like <code>Added 22 and 23 giving 45</code>.
+</p>
+
+<p>
+There's nothing really wrong with this implementation, but it's
+important to always think about the priniciple of least power. Did I
+really need a Monad here? Well in fact there is a great function for
+applying a computation across two different effects and that is
+<code>map2</code>. It also requires only Applicative, so I can use that instead.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">App</span> <span style="color: #b6a0ff;">=</span> writerTApplicative[[<span style="color: #00bcff;">A1</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>,<span style="color: #00bcff;">A1</span>], <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>]]
+
+ <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>], fb<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+   <span style="color: #00bcff;">App</span>.map2(fa)(fb) {
+     <span style="color: #b6a0ff;">case</span> (<span style="color: #00d3d0;">a</span>,<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> a + b
+   }
+ }
+</pre>
+</div>
+
+<p>
+This simplifies the code greatly but notice that I am no longer
+logging anything. Unfortunately, I no longer have access to the result
+of the computation. One clean solution I found here was to write a
+helper method that is like a logging version of map2. Like map2 it
+takes a function of two arguments to map the effect values, but it
+takes a second function that takes the two values and their result and
+let's you build a log entry from them.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mapTell2</span>[<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>,<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">W</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>],fb<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">B</span>],fabc<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">C</span>,fabcw<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">W</span>)
+                           (<span style="color: #b6a0ff;">using</span> m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monad</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> {
+   <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">r</span> <span style="color: #b6a0ff;">=</span> fa.unwrap().map2(fb.unwrap()){
+     <span style="color: #b6a0ff;">case</span> ((<span style="color: #00d3d0;">al</span>,<span style="color: #00d3d0;">a</span>),(<span style="color: #00d3d0;">bl</span>,<span style="color: #00d3d0;">b</span>)) <span style="color: #b6a0ff;">=&gt;</span>
+       <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">c</span> <span style="color: #b6a0ff;">=</span> fabc(a,b)
+       <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">w</span> <span style="color: #b6a0ff;">=</span> fabcw(a,b,c)
+       <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">prev</span> <span style="color: #b6a0ff;">=</span> m.combine(al,bl)
+       (m.combine(prev,w),c)
+   }
+   <span style="color: #00bcff;">WriterT</span>(r)
+ }
+</pre>
+</div>
+
+<p>
+While this looks like a handful what it is really doing is
+straightforward. Like map2 the input is two effects. First I unwrap
+them which gives us the inner effect, and running map2 on those gives
+the log and the value of each effect.
+</p>
+
+<p>
+Once I've run the user function fabc on those values, I have the
+result value c and I can use that to build a log with the fabcw
+function. Finally we need to combine the prior logs with the new log
+and return the result.
+</p>
+
+<p>
+Here's the function in action.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">sub</span>(a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>], b<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResultW</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+     mapTell2(a,b,(a, b) <span style="color: #b6a0ff;">=&gt;</span> a / b,(a,b,c) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">List</span>(s<span style="color: #79a8ff;">"</span><span style="color: #00d3d0;">$c</span><span style="color: #79a8ff;">: subtracted </span><span style="color: #00d3d0;">$a</span><span style="color: #79a8ff;"> from </span><span style="color: #00d3d0;">$b</span><span style="color: #79a8ff;">"</span>))
+}
+</pre>
+</div>
+
+<p>
+By moving all that complexity into a helper function, each operator is now quite simple.
+</p>
+
+<pre class="example">
+[info] running Scala3EvalEitherTWriter 
+WriterT(Right((List(Var y (6), Var x (7), Val 10, Var z (22)),45)))
+Var y (6)
+Var x (7)
+Val 10
+Var z (22)
+exp01 WriterT(Left(DivisionByZero))
 </pre>
 </div>
 </div>
 </div>
-
 
 <div id="outline-container-orgbfebc29" class="outline-2">
 <h2 id="orgbfebc29">ReaderT TODO rewrite</h2>
@@ -274,7 +605,6 @@ functions, but the trouble is we are already using the Either data
 type so that we can handle errors. The question is how can we use two
 monads instead of one?
 </p>
-
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">x</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">1</span>
