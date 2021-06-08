@@ -5,37 +5,49 @@ tags: [scala, scala-3, dotty, monads, category-theory]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 
-<img class="img" src="../../../images/monadtransformers.png" border="0" style="padding: 30px;" alt="Diagram of monad transformers with the ZPure type" width="600"/>
+<div style="padding: 30px;">
+  <img class="img" src="../../../images/monadtransformers.png" border="1" alt="Diagram of monad transformers with the ZPure type" width="600"/>
+</div>
 
-<div id="outline-container-org6619e07" class="outline-2">
-<h2 id="org6619e07">Introduction</h2>
-<div class="outline-text-2" id="text-org6619e07">
+<div id="outline-container-orga590fd5" class="outline-2">
+<h2 id="orga590fd5">Readers and Writers and Transformers</h2>
+<div class="outline-text-2" id="text-orga590fd5">
 <p>
-This is a companion blog to four episodes of "Functional Justin", my
-YouTube series on Scala and funtional programming which you can find
-here <a href="https://www.youtube.com/c/FunctionalJustin">https://www.youtube.com/c/FunctionalJustin</a>
+BTW you can check out the video here instead: 
+<a href="https://youtu.be/tEnZZlOn-jI">Functional Justin - Another Angle on Monad Transformers</a>
 </p>
 
 <p>
-The same ground is covered here as the video so it's up to you which
-you find more useful!
+There's 20 pages here or over an hour of videos, so let me help you decide if it's worth your time.
 </p>
+</div>
 
+<div id="outline-container-org2fb6705" class="outline-3">
+<h3 id="org2fb6705">Who are you?</h3>
+<div class="outline-text-3" id="text-org2fb6705">
 <p>
-All of the source code can be found in these two repositories.
+You are a Scala programmer or interested in Scala and may have some Haskell or interest in pure functional programming.
 </p>
+</div>
+</div>
 
-<p>
-Functional Justin's live videos and Scala 3 category theory based
-library code for the first part of the blog can be found here.
-<a href="https://github.com/justinhj/evalexample/tree/video-13">https://github.com/justinhj/evalexample/tree/video-13</a>
-</p>
+<div id="outline-container-org9288ae6" class="outline-3">
+<h3 id="org9288ae6">What do I cover?</h3>
+<div class="outline-text-3" id="text-org9288ae6">
+<ul class="org-ul">
+<li>Introduction to Monad transformers</li>
+<li>Implement the WriterT monad in Scala 3 from scratch and used in a program</li>
+<li>Implement the ReaderT monad in Scala 3, also from scratch, and use it</li>
+<li>Why not both? Stack the Reader and Writer monads on top of each other</li>
+<li>Effect rotation and ZIO Prelude's ZPure, another approach to combining effects</li>
+</ul>
+</div>
+</div>
+</div>
 
-<p>
-And the Zio Prelude code, developed in the final video and later in this blog can be found here.
-<a href="https://github.com/justinhj/ZPurePlay/blob/video-13-a/src/main/scala/EvalZpureVideo.scala">https://github.com/justinhj/ZPurePlay/blob/video-13-a/src/main/scala/EvalZpureVideo.scala</a>
-</p>
-
+<div id="outline-container-org36b4052" class="outline-2">
+<h2 id="org36b4052">Evaluating expressions</h2>
+<div class="outline-text-2" id="text-org36b4052">
 <p>
 In previous blogs and videos I've described a program that evaluates
 arithmetic expressions as this is a nice testbed for various
@@ -585,30 +597,614 @@ Val 10
 Var z (22)
 exp01 WriterT(Left(DivisionByZero))
 </pre>
+
+<p>
+In summary, you can use WriterT to convert any effectful program into
+one with step-by-step logging.
+</p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgbfebc29" class="outline-2">
-<h2 id="orgbfebc29">ReaderT TODO rewrite</h2>
-<div class="outline-text-2" id="text-orgbfebc29">
+<div id="outline-container-orgfb53321" class="outline-2">
+<h2 id="orgfb53321">ReaderT</h2>
+<div class="outline-text-2" id="text-orgfb53321">
 <p>
-Another way to pass that symbol table around a program would be the
-Reader data type. Reader has a monad type class instance and lets you
-write programs like the one above, that need read-only data, sometimes
-called the environment, to operate with. 
+Another useful data type with a Monad instance is the Reader. As the
+name may imply, this is the conceptual opposite of Writer. i.e.,
+instead a computation writing its progress to a log, the Reader
+provides an environment of some type that the application can read
+from as it progresses.
 </p>
 
 <p>
-I'd like to convert the code above to use Reader instead of context
-functions, but the trouble is we are already using the Either data
-type so that we can handle errors. The question is how can we use two
-monads instead of one?
+In the program so far I've been using Scala 3 context functions to
+pass around the symbol table. There are reasons you may want to do
+that with a Reader instead. Perhaps you want to take advantage of the
+compositionality and lawfulness of Reader. Perhaps you want the
+context function reserved for some other purpose. Of course you may be
+using Scala 2 and not have access to the context function feature at
+all.
+</p>
+
+<p>
+In one of my videos I show the process of replacing context functions
+with the ReaderT monad transformer. Let's walk through the process
+here.
+</p>
+
+<p>
+First of all let's look at the data type. Like the WriterT, the
+ReaderT wraps another higher kinded type F. As you can see, there is a
+second type parameter R, which is the type of the read-only
+environment. Also you can see from the signature is that what the
+ReaderT contains is a function from R to the F[A]. How that is used
+will become clear.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">x</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">1</span>
+<pre class="src src-scala"><span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">ReaderT</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">R</span>,<span style="color: #00bcff;">A</span>](run<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">R</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">F</span>[<span style="color: #00bcff;">A</span>])
 </pre>
 </div>
+
+<p>
+Just like with WriterT we also would benefit from a lift function that
+let's us take any instance of F and wrap it. Here I'm saying if you
+have some effect <code>F[A]</code> I will give you a ReaderT that wraps it. You
+can run it with some environment and it will yield that <code>F[A]</code> again.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">ReaderT</span><span style="color: #b6a0ff;">:</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">lift</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">R</span>,<span style="color: #00bcff;">A</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">ReaderT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">R</span>,<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">ReaderT</span>(<span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">=&gt;</span> fa)
+</pre>
+</div>
+
+<p>
+When rewriting the program above we can now lookup variables from the
+symbol table. We are returning a function that when given an
+environment can search it for the required symbol. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>[<span style="color: #00bcff;">A</span>](s<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">RResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+   <span style="color: #00bcff;">ReaderT</span>((env<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Env</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">=&gt;</span>
+     env.get(s) <span style="color: #b6a0ff;">match</span> {
+       <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Some</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(value)
+       <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Left</span>(<span style="color: #00bcff;">EvalError</span>.<span style="color: #00bcff;">SymbolNotFound</span>)
+     })
+</pre>
+</div>
+
+<p>
+Literal values are also simple, just lift the Either from before.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">ReaderT</span>.lift(<span style="color: #00bcff;">Right</span>(value))
+</pre>
+</div>
+
+<p>
+The arithmetic operations don't change at all since ReaderT has an
+applicative instance we can just go ahead and use map2.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>], fb<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+    fa.map2(fb)((a,b) <span style="color: #b6a0ff;">=&gt;</span> a + b)
+  }
+</pre>
+</div>
+
+<p>
+Here is what needs to be done to run the code. The main difference is
+that we build a chain of Reader effects then execute them by passing
+an environment to the run method.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">env1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Env</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">1</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">10</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">100</span>)
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">exp1</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Add</span>(<span style="color: #00bcff;">Mul</span>(<span style="color: #00bcff;">Val</span>(<span style="color: #00bcff;">10</span>), <span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"y"</span>)),<span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"z"</span>))
+println(eval(exp1).run(env1)) 
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Right(100))</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga677d25" class="outline-2">
+<h2 id="orga677d25">WriterT and ReaderT</h2>
+<div class="outline-text-2" id="text-orga677d25">
+<div style="padding: 30px;">
+  <img class="img" src="../../../images/monadtransformer.png" border="1" alt="Diagram of monad transformers" width="600"/>
+</div>
+
+<p>
+One thing I find wonderful about functional programming is the
+compositionality. I've shown that you can stack WriterT and ReaderT on
+top of any effect to imbue that effect with more capabilities.
+</p>
+
+<p>
+Now given that WriterT can wrap a monadic effect to give that effect
+logging, and further that ReaderT itself is a monad, it follows that
+you can wrap WriterT around ReaderT to give some effect the powers of
+both! This would work the other way around, and of course you could
+also make an EitherT monad transformer, giving even more
+possibilities.
+</p>
+
+<p>
+The next step is to change the programs return type to be&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #00bcff;">WriterT</span>[
+  [<span style="color: #00bcff;">RA</span>] =&gt;&gt; <span style="color: #00bcff;">ReaderT</span>[[<span style="color: #00bcff;">EA</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">EA</span>], <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>],<span style="color: #00bcff;">RA</span>],
+  <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>],
+  <span style="color: #00bcff;">A</span>]
+</pre>
+</div>
+
+<p>
+Next to modify the program to handle the new effect types.
+</p>
+
+<p>
+The implementation to get a value is easy enough. Starting from the
+inside out the value is put into an Either, lifted into ReaderT and
+lifted once more into WriterT.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">WriterT</span>.lift(
+     <span style="color: #00bcff;">ReaderT</span>.lift(
+       <span style="color: #00bcff;">Right</span>(value))).tell(<span style="color: #00bcff;">List</span>(s<span style="color: #79a8ff;">"Literal value </span><span style="color: #00d3d0;">$value</span><span style="color: #79a8ff;">"</span>))
+</pre>
+</div>
+
+<p>
+Handling variable lookup we take care of the lookup first then wrap
+that into a writer.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>[<span style="color: #00bcff;">A</span>](s<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[[<span style="color: #00bcff;">RA</span>] =&gt;&gt; <span style="color: #00bcff;">ReaderT</span>[[<span style="color: #00bcff;">EA</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">EA</span>], <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>],<span style="color: #00bcff;">RA</span>],<span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>],<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+  <span style="color: #00bcff;">WriterT</span>(<span style="color: #00bcff;">ReaderT</span>((env<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Env</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">=&gt;</span>
+    env.get(s) <span style="color: #b6a0ff;">match</span> {
+      <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Some</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Right</span>(<span style="color: #00bcff;">List</span>(s<span style="color: #79a8ff;">"Looked up var </span><span style="color: #00d3d0;">$s</span><span style="color: #79a8ff;"> (</span><span style="color: #00d3d0;">$value</span><span style="color: #79a8ff;">)"</span>),value)
+      <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">None</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Left</span>(<span style="color: #00bcff;">EvalError</span>.<span style="color: #00bcff;">SymbolNotFound</span>)
+  }))
+</pre>
+</div>
+
+<p>
+I'll skip the rest of the program since the theme is the same; wrap
+the reader code with the writer code and you're done. Let's take a
+look at how to run the program.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">envMap</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Env</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">7</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">6</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">22</span>)
+
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">eval1</span> <span style="color: #b6a0ff;">=</span> eval(exp1).unwrap().run(envMap)
+
+eval1.foreach {
+  (log, value) <span style="color: #b6a0ff;">=&gt;</span>
+    println(s<span style="color: #79a8ff;">"Result is </span><span style="color: #00d3d0;">$value\n</span><span style="color: #79a8ff;">"</span>)
+    log.foreach {
+      println(<span style="color: #b6a0ff;">_</span>)
+    }
+}
+</pre>
+</div>
+
+<p>
+Here you can see that our program has to be run sort of inside
+out. <code>eval(exp1)</code> gives us a <code>WriterT</code>. By calling <code>unwrwap</code> I get the
+<code>ReaderT</code> inside it, which I can then run by passing the environment.
+</p>
+
+<p>
+The response is either an error or a tuple of our log and result,
+which we can then iterate over to print it out.
+</p>
+
+<pre class="example">
+Result is 990
+
+Looked up var z (22)
+Literal value 10
+Literal value 2
+Divided 10 by 2 (5)
+Literal value 2
+Subtracted 2 from 5 (3)
+Looked up var x (7)
+Looked up var y (6)
+Multiplied 7 by 6 (42)
+Added 3 to 42 (45)
+Multiplied 22 by 45 (990)
+
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgd577892" class="outline-2">
+<h2 id="orgd577892">Monad Transformers - some takeaways</h2>
+<div class="outline-text-2" id="text-orgd577892">
+<p>
+You can see that monad transformers offer some expressive power since
+they allow us to manually combine different effect types to get the
+benefit of them all at once. 
+</p>
+
+<p>
+This comes at significant cost though. All this nesting creates
+additional JVM objects that take up heap space and may cause extra
+work for the garbage collector. 
+</p>
+
+<p>
+For the programmer the ergnomics are not great. You have to remember
+the level of nesting you're at at each point of your program and make
+sure to do the right amount of lifting.
+</p>
+
+<p>
+(Just realized I've missed out on a lot of "Do you even lift bro?"
+memery in this post, but it's too late now and perhaps that's for the
+best.)
+</p>
+
+<p>
+Just look at this single simple expression. So much space is taken up
+by the type signature, all the simplicity and elegance is lost.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleAdd</span>[<span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](l<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] , r<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] )<span style="color: #b6a0ff;">:</span> 
+  <span style="color: #00bcff;">WriterT</span>[[<span style="color: #00bcff;">RA</span>] =&gt;&gt; 
+    <span style="color: #00bcff;">ReaderT</span>[[<span style="color: #00bcff;">EA</span>] =&gt;&gt; 
+      <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">EA</span>], 
+      <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>],<span style="color: #00bcff;">RA</span>],
+    <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>],
+    <span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> eval(l) + eval(r)
+</pre>
+</div>
+
+<p>
+Now there ways to help out the Scala compiler and reduce the amount of
+boilerplate, namely "kinda curried type parameters" which is a
+technique used heavily in Scalaz and Zio.
+</p>
+
+<p>
+<a href="https://tpolecat.github.io/2015/07/30/infer.html">https://tpolecat.github.io/2015/07/30/infer.html</a>
+</p>
+
+<p>
+Thinking that maybe the poor type inference is maybe my fault I've
+also written this code using Scalaz and Cats and you can see that each
+implementation has its pros and cons. (BTW in these libraries ReaderT
+is called Kleisli)
+</p>
+
+<p>
+<a href="https://github.com/justinhj/ZPurePlay/blob/master/src/main/scala/EvalScalaz.scala">Reader Writer example in Scalaz</a>
+</p>
+
+<p>
+<a href="https://github.com/justinhj/ZPurePlay/blob/master/src/main/scala/EvalCats.scala">Reader Writer example in Typelevel Cats</a>
+</p>
+
+<p>
+Both implementations had the same problem as I did when not writing
+out the types in full. Scalaz had the same trouble inferring that my
+type was applicative so I had to summon the instance explicitly.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">rwApply</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Apply</span>[<span style="color: #00bcff;">WriterT</span>[<span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>],<span style="color: #00bcff;">Kleisli</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">Error</span>,?],<span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>],?],?]]
+rwApply.apply2(x,y) {
+       <span style="color: #b6a0ff;">case</span> (<span style="color: #00d3d0;">a</span>,<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> a + b
+}
+</pre>
+</div>
+
+<p>
+Cats was able to handle it resulting in less code and needed less type
+annotations in general.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">x.map2(y) {
+  <span style="color: #b6a0ff;">case</span> (<span style="color: #00d3d0;">a</span>,<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> a + b
+}
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9071c96" class="outline-2">
+<h2 id="org9071c96">Effect rotation with Zio Prelude's ZPure</h2>
+<div class="outline-text-2" id="text-org9071c96">
+<p>
+<a href="https://github.com/zio/zio-prelude">Zio Prelude</a> is a new library that acts as a sort of add on library to
+<a href="https://github.com/zio/zio">ZIO</a> (a zero-dependency Scala library for asynchronous and concurrent
+programming) which provides an alternative approach to functional
+abstractions in Scala.
+</p>
+
+<p>
+For the purposes of this blog I'm interested in particular
+experimental data type within the library called <code>ZPure</code>. ZPure has 6
+type parameters and supports the operations of monads, applicatives
+and functors, albeit the names are changed and some of the
+abstractions too.
+</p>
+
+<p>
+From Prelude's own source code "<code>ZPure</code> can be used to model a variety
+of effects including context, state, failure, and logging.", let's see
+how it compares to monad transformers to implement the program above.
+</p>
+
+<p>
+ZPure has six type parameters, which may seem like a lot, but bear in
+mind that every time you combine monads you get more type parameters,
+but they are stacked vertically not horizontally. With ZPure you start
+with all the different effect types one might need but you don't need
+to keep adding more and more, and you don't suffer from creating
+multiple objects per layer of effect.
+</p>
+
+<div style="padding: 30px;">
+  <img class="img" src="../../../images/zpure.png" border="1" alt="ZPure type parameters" width="600"/>
+</div>
+
+<p>
+In the diagram the parameters are.
+</p>
+
+<ul class="org-ul">
+<li><code>W</code> Logging. The type of logs that this effect produces, analagous to Writer</li>
+<li><code>S</code> State. There are two S's because the type encodes an input and output state type</li>
+<li><code>R</code> Reader. The type of the read-only environment</li>
+<li><code>E</code> Error. The type of the error channel</li>
+<li><code>A</code> Value. The type of the happy path computed value</li>
+</ul>
+
+<p>
+Just as before all I need to do is change my programs effect type and
+modify the implementation accordingly. The code for this section can
+be found <a href="https://github.com/justinhj/ZPurePlay/blob/master/src/main/scala/EvalZpure.scala">here</a>.
+</p>
+
+<p>
+Although Prelude supports Scala 3 now I rewrote my program in Scala 2
+in order to do the Scalaz and Cats versions, so the following is also
+pre Scala 3 friendly code. First I made a sealed trait to represent
+the error types and an alias to indicate that my log will be
+strings. 
+</p>
+
+<p>
+Note that ZPure is opinionated about the logging type. In the more
+conventional approach the log has to be a monoid instance. With ZPure
+the log is handled using the ZIO <code>Chunk</code> data type which is a high
+performance data structure with a pure functional interface. What that
+means for us is that we can consider our log type as a single entity
+and not worry about how it is appended.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #f78fe7;">sealed</span> <span style="color: #b6a0ff;">trait</span> <span style="color: #6ae4b9;">Error</span>
+<span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">SymbolNotFound</span> <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Error</span>
+<span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">DivisionByZero</span> <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Error</span>
+
+<span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Log</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">String</span>
+</pre>
+</div>
+
+<p>
+These types will represent the <code>E</code> or error, and <code>W</code> or log. We can
+also encode our symbol table using the <code>R</code> parameter.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>[<span style="color: #00bcff;">String</span>, <span style="color: #00bcff;">A</span>]
+</pre>
+</div>
+
+<p>
+The final type looks like this.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">type</span> <span style="color: #00bcff;">Result</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">ZPure</span>[<span style="color: #00bcff;">Log</span>, <span style="color: #00bcff;">Any</span>, <span style="color: #00bcff;">Any</span>, <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>], <span style="color: #00bcff;">Error</span>, <span style="color: #00bcff;">A</span>]
+</pre>
+</div>
+
+<p>
+Note that I am not using the initial or updated state here so I use
+Any for those parameters so as not to constrain them.
+</p>
+
+<p>
+Once again lets start with the implementation of literal values.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Val</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> 
+  <span style="color: #00bcff;">ZPure</span>.succeed(value).log(s<span style="color: #79a8ff;">"Literal value </span><span style="color: #00d3d0;">$value</span><span style="color: #79a8ff;">"</span>)
+</pre>
+</div>
+
+<p>
+What's going on here is simple and refreshingly free of type
+annotation. Firstly I construct a ZPure consisting of the literal
+value, and then add a log using ZPure's log method. 
+</p>
+
+<p>
+Now let's implement the symbol table lookup of variables.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span class="linenr"> 1: </span><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleVar</span>[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](s<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">String</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Result</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+<span class="linenr"> 2: </span>    <span style="color: #00bcff;">ZPure</span>.environment[<span style="color: #00bcff;">Any</span>, <span style="color: #00bcff;">Env</span>[<span style="color: #00bcff;">A</span>]].flatMap {
+<span class="linenr"> 3: </span>      env <span style="color: #b6a0ff;">=&gt;</span>
+<span class="linenr"> 4: </span>       <span style="color: #00bcff;">ZPure</span>.fromOption(env.get(s)).
+<span class="linenr"> 5: </span>       mapError(<span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">EvalZPure</span>.<span style="color: #00bcff;">SymbolNotFound</span>).
+<span class="linenr"> 6: </span>       flatMap{
+<span class="linenr"> 7: </span>        a <span style="color: #b6a0ff;">=&gt;</span>
+<span class="linenr"> 8: </span>          <span style="color: #00bcff;">ZPure</span>.log(s<span style="color: #79a8ff;">"Var </span><span style="color: #00d3d0;">$s</span><span style="color: #79a8ff;"> value </span><span style="color: #00d3d0;">$a</span><span style="color: #79a8ff;">"</span>).<span style="color: #b6a0ff;">as</span>(a)
+<span class="linenr"> 9: </span>       }      
+<span class="linenr">10: </span>    }
+<span class="linenr">11: </span>}
+</pre>
+</div>
+
+<p>
+First I use the ZPure.environment to summon the symbol table and
+flatMap over it so we can access it as a concrete value <code>env</code>.
+</p>
+
+<p>
+Remember that looking up the variable in the symbol table
+is going to return an Option since it is a normal map get. We can then
+use the ZPure.fromOption to convert that to a ZPure.
+</p>
+
+<p>
+We may be a ZPure at that point but we have the wrong error type. In
+ZPure and option is simulated by yielding a success value A for Some,
+or giving Unit in the error channel to indicate None. This reuse of
+the error channel is neat, but since I would like a homogenous error
+type for the program I need to convert that error channel from unit to
+my own custom Error type. 
+</p>
+
+<p>
+To do that I use mapError which takes a function to map the error from
+one type to another.
+</p>
+
+<p>
+The final step is to add a log. Since I would like the log to show
+both the variable name and the actual value I have to nest it inside a
+flatMap so we can access the success value. The last thing to note
+here is the <code>as</code> which helps the type system make a ZPure of the right
+type.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">numericZResult</span>[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>]<span style="color: #b6a0ff;">:</span> 
+  <span style="color: #00bcff;">Numeric</span>[<span style="color: #00bcff;">Result</span>[<span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">Result</span>[<span style="color: #00bcff;">A</span>]] {
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(x<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Result</span>[<span style="color: #00bcff;">A</span>], y<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Result</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Result</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+      x.zip(y).flatMap{<span style="color: #b6a0ff;">case</span> (<span style="color: #00d3d0;">a</span>,<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> 
+        <span style="color: #00bcff;">ZPure</span>.succeed(a + b).log(s<span style="color: #79a8ff;">"Add </span><span style="color: #00d3d0;">$a</span><span style="color: #79a8ff;"> and </span><span style="color: #00d3d0;">$b</span><span style="color: #79a8ff;">"</span>)}
+  }
+  <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">and so on</span>
+</pre>
+</div>
+
+<p>
+The final component is to make an instance of Numeric. Prelude takes
+the approach to naming that concepts should be plain English where
+possible, so it uses <code>succeed</code> instead of <code>pure</code> or <code>unit</code> and
+similarly <code>zip</code> instead of applicative terminology.
+</p>
+
+<p>
+That being the case, we use zip here to combine the left and right
+side effects and apply the appropriate arithmetic operator.
+</p>
+
+<p>
+So far so good, but we can't log the result of the computation. This
+is easily solved.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(x<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Result</span>[<span style="color: #00bcff;">A</span>], y<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Result</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Result</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
+    x.zip(y).flatMap{<span style="color: #b6a0ff;">case</span> (<span style="color: #00d3d0;">a</span>,<span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span>  {
+      <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">result</span> <span style="color: #b6a0ff;">=</span> a + b
+      <span style="color: #00bcff;">ZPure</span>.succeed(result).log(s<span style="color: #79a8ff;">"Add </span><span style="color: #00d3d0;">$a</span><span style="color: #79a8ff;"> and </span><span style="color: #00d3d0;">$b</span><span style="color: #79a8ff;"> (</span><span style="color: #00d3d0;">$result</span><span style="color: #79a8ff;">)"</span>)}
+    }
+  }
+</pre>
+</div>
+
+<p>
+The last part to note is the driver code to run the program.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">eval1</span> <span style="color: #b6a0ff;">=</span> eval(exp1).provide(env1).runAll()
+
+eval1._2 <span style="color: #b6a0ff;">match</span> {
+  <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Right</span>(<span style="color: #00d3d0;">value</span>) <span style="color: #b6a0ff;">=&gt;</span> 
+    println(s<span style="color: #79a8ff;">"Succeeded with value </span><span style="color: #00d3d0;">${value._2}</span><span style="color: #79a8ff;">"</span>)
+    eval1._1.foreach {
+      l <span style="color: #b6a0ff;">=&gt;</span> 
+        println(l)
+  }
+  <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Left</span>(<span style="color: #00d3d0;">err</span>) <span style="color: #b6a0ff;">=&gt;</span>
+    println(s<span style="color: #79a8ff;">"oops! </span><span style="color: #00d3d0;">$err</span><span style="color: #79a8ff;">"</span>)
+}
+</pre>
+</div>
+
+<p>
+Here I run eval to create the effect, provide to give it the runtime
+environment and runAll. To be clear what eval does is not run a
+program, but build a data structure of objects based on the ZPure
+operations, and that data structure is evaluated in Prelude using an
+efficient interpreter, that yields the result of the program, the log
+and any state changes.
+</p>
+
+<pre class="example">
+Succeeded with value 200
+Literal value 10
+Var x value 1
+Mul 10 with 1 (10)
+Var y value 10
+Mul 10 with 10 (100)
+Var z value 100
+Add 100 and 100 (200)
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org65b4994" class="outline-2">
+<h2 id="org65b4994">Conclusion</h2>
+<div class="outline-text-2" id="text-org65b4994">
+<p>
+In this post I implemented and motivated ReaderT and WriterT and
+transforming monads to combine effects. Even in Haskell where they
+originated, monad transformers come with caveats about performance and
+ergonomics. In Scala they are not used often.
+</p>
+
+<p>
+There are techniques and libraries to make their use more
+convient. Although I have not used it <a href="https://github.com/typelevel/cats-mtl">Cats MTL</a> offers solutions to
+some of the problems, but it is not widely used.
+</p>
+
+<p>
+Although ZIO Prelude's ZPure is still somewhat experimental it seems
+offer the benefits of monad transformers such as composability and a
+prinicipled type safe api. But it is also much easier to work with and
+anecdotally more performant on the JVM.
+</p>
+
+<p>
+(C)2021 Justin Heyes-Jones, All Rights Reserved.
+</p>
 </div>
 </div>

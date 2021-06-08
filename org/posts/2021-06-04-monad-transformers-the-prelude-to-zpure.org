@@ -15,25 +15,28 @@ tags: [scala, scala-3, dotty, monads, category-theory]
 #+END_EXPORT
 
 #+BEGIN_EXPORT html
-<img class="img" src="../../../images/monadtransformers.png" border="0" style="padding: 30px;" alt="Diagram of monad transformers with the ZPure type" width="600"/>
+<div style="padding: 30px;">
+  <img class="img" src="../../../images/monadtransformers.png" border="1" alt="Diagram of monad transformers with the ZPure type" width="600"/>
+</div>
 #+END_EXPORT
 
-** Introduction
-This is a companion blog to four episodes of "Functional Justin", my
-YouTube series on Scala and funtional programming which you can find
-here https://www.youtube.com/c/FunctionalJustin
+** Readers and Writers and Transformers
+BTW you can check out the video here instead: 
+[[https://youtu.be/tEnZZlOn-jI][Functional Justin - Another Angle on Monad Transformers]]
 
-The same ground is covered here as the video so it's up to you which
-you find more useful!
+There's 20 pages here or over an hour of videos, so let me help you decide if it's worth your time.
 
-All of the source code can be found in these two repositories.
+*** Who are you?
+You are a Scala programmer or interested in Scala and may have some Haskell or interest in pure functional programming.
 
-Functional Justin's live videos and Scala 3 category theory based
-library code for the first part of the blog can be found here.
-https://github.com/justinhj/evalexample/tree/video-13
+*** What do I cover?
+- Introduction to Monad transformers
+- Implement the WriterT monad in Scala 3 from scratch and used in a program
+- Implement the ReaderT monad in Scala 3, also from scratch, and use it
+- Why not both? Stack the Reader and Writer monads on top of each other
+- Effect rotation and ZIO Prelude's ZPure, another approach to combining effects
 
-And the Zio Prelude code, developed in the final video and later in this blog can be found here.
-https://github.com/justinhj/ZPurePlay/blob/video-13-a/src/main/scala/EvalZpureVideo.scala
+** Evaluating expressions
 
 In previous blogs and videos I've described a program that evaluates
 arithmetic expressions as this is a nice testbed for various
@@ -461,4 +464,452 @@ In summary, you can use WriterT to convert any effectful program into
 one with step-by-step logging.
 
 ** ReaderT
-Another 
+Another useful data type with a Monad instance is the Reader. As the
+name may imply, this is the conceptual opposite of Writer. i.e.,
+instead a computation writing its progress to a log, the Reader
+provides an environment of some type that the application can read
+from as it progresses.
+
+In the program so far I've been using Scala 3 context functions to
+pass around the symbol table. There are reasons you may want to do
+that with a Reader instead. Perhaps you want to take advantage of the
+compositionality and lawfulness of Reader. Perhaps you want the
+context function reserved for some other purpose. Of course you may be
+using Scala 2 and not have access to the context function feature at
+all.
+
+In one of my videos I show the process of replacing context functions
+with the ReaderT monad transformer. Let's walk through the process
+here.
+
+First of all let's look at the data type. Like the WriterT, the
+ReaderT wraps another higher kinded type F. As you can see, there is a
+second type parameter R, which is the type of the read-only
+environment. Also you can see from the signature is that what the
+ReaderT contains is a function from R to the F[A]. How that is used
+will become clear.
+
+#+BEGIN_SRC scala
+  case class ReaderT[F[_],R,A](run: R => F[A])
+#+END_SRC
+
+Just like with WriterT we also would benefit from a lift function that
+let's us take any instance of F and wrap it. Here I'm saying if you
+have some effect ~F[A]~ I will give you a ReaderT that wraps it. You
+can run it with some environment and it will yield that ~F[A]~ again.
+
+#+BEGIN_SRC scala
+  object ReaderT:
+    def lift[F[_],R,A](fa: F[A]): ReaderT[F,R,A] = ReaderT(_ => fa)
+#+END_SRC
+
+When rewriting the program above we can now lookup variables from the
+symbol table. We are returning a function that when given an
+environment can search it for the required symbol. 
+
+#+BEGIN_SRC scala
+ def handleVar[A](s: String): RResult[A] =
+    ReaderT((env: Env[A]) =>
+      env.get(s) match {
+        case Some(value) => Right(value)
+        case None => Left(EvalError.SymbolNotFound)
+      })
+#+END_SRC
+
+Literal values are also simple, just lift the Either from before.
+
+#+BEGIN_SRC scala
+case Val(value) => ReaderT.lift(Right(value))
+#+END_SRC
+
+The arithmetic operations don't change at all since ReaderT has an
+applicative instance we can just go ahead and use map2.
+
+#+BEGIN_SRC scala
+  def add(fa: EvalResult[A], fb: EvalResult[A]): EvalResult[A] = {
+      fa.map2(fb)((a,b) => a + b)
+    }
+#+END_SRC
+
+Here is what needs to be done to run the code. The main difference is
+that we build a chain of Reader effects then execute them by passing
+an environment to the run method.
+
+#+BEGIN_SRC scala
+   val env1: Env[Int] = Map("x" -> 1, "y" -> 10, "z" -> 100)
+   val exp1 = Add(Mul(Val(10), Var("y")),Var("z"))
+   println(eval(exp1).run(env1)) 
+
+   // Right(100))
+#+END_SRC
+
+** WriterT and ReaderT
+#+BEGIN_EXPORT html
+<div style="padding: 30px;">
+  <img class="img" src="../../../images/monadtransformer.png" border="1" alt="Diagram of monad transformers" width="600"/>
+</div>
+#+END_EXPORT
+
+One thing I find wonderful about functional programming is the
+compositionality. I've shown that you can stack WriterT and ReaderT on
+top of any effect to imbue that effect with more capabilities.
+
+Now given that WriterT can wrap a monadic effect to give that effect
+logging, and further that ReaderT itself is a monad, it follows that
+you can wrap WriterT around ReaderT to give some effect the powers of
+both! This would work the other way around, and of course you could
+also make an EitherT monad transformer, giving even more
+possibilities.
+
+The next step is to change the programs return type to be...
+
+#+BEGIN_SRC scala
+WriterT[
+  [RA] =>> ReaderT[[EA] =>> Either[EvalError, EA], Env[A],RA],
+  List[String],
+  A]
+#+END_SRC
+
+Next to modify the program to handle the new effect types.
+
+The implementation to get a value is easy enough. Starting from the
+inside out the value is put into an Either, lifted into ReaderT and
+lifted once more into WriterT.
+
+#+BEGIN_SRC scala
+     case Val(value) => WriterT.lift(
+          ReaderT.lift(
+            Right(value))).tell(List(s"Literal value $value"))
+#+END_SRC
+
+Handling variable lookup we take care of the lookup first then wrap
+that into a writer.
+
+#+BEGIN_SRC scala
+  def handleVar[A](s: String): WriterT[[RA] =>> ReaderT[[EA] =>> Either[EvalError, EA], Env[A],RA],List[String],A] =
+    WriterT(ReaderT((env: Env[A]) =>
+      env.get(s) match {
+        case Some(value) => Right(List(s"Looked up var $s ($value)"),value)
+        case None => Left(EvalError.SymbolNotFound)
+    }))
+#+END_SRC
+
+I'll skip the rest of the program since the theme is the same; wrap
+the reader code with the writer code and you're done. Let's take a
+look at how to run the program.
+
+#+BEGIN_SRC scala
+val envMap: Env[Int] = Map("x" -> 7, "y" -> 6, "z" -> 22)
+
+val eval1 = eval(exp1).unwrap().run(envMap)
+
+eval1.foreach {
+  (log, value) =>
+    println(s"Result is $value\n")
+    log.foreach {
+      println(_)
+    }
+}
+#+END_SRC
+
+Here you can see that our program has to be run sort of inside
+out. ~eval(exp1)~ gives us a ~WriterT~. By calling ~unwrwap~ I get the
+~ReaderT~ inside it, which I can then run by passing the environment.
+
+The response is either an error or a tuple of our log and result,
+which we can then iterate over to print it out.
+
+#+BEGIN_SRC 
+Result is 990
+
+Looked up var z (22)
+Literal value 10
+Literal value 2
+Divided 10 by 2 (5)
+Literal value 2
+Subtracted 2 from 5 (3)
+Looked up var x (7)
+Looked up var y (6)
+Multiplied 7 by 6 (42)
+Added 3 to 42 (45)
+Multiplied 22 by 45 (990)
+
+#+END_SRC
+
+** Monad Transformers - some takeaways
+
+You can see that monad transformers offer some expressive power since
+they allow us to manually combine different effect types to get the
+benefit of them all at once. 
+
+This comes at significant cost though. All this nesting creates
+additional JVM objects that take up heap space and may cause extra
+work for the garbage collector. 
+
+For the programmer the ergnomics are not great. You have to remember
+the level of nesting you're at at each point of your program and make
+sure to do the right amount of lifting.
+
+(Just realized I've missed out on a lot of "Do you even lift bro?"
+memery in this post, but it's too late now and perhaps that's for the
+best.)
+
+Just look at this single simple expression. So much space is taken up
+by the type signature, all the simplicity and elegance is lost.
+
+#+BEGIN_SRC scala
+def handleAdd[A : Numeric](l: Exp[A] , r: Exp[A] ): 
+  WriterT[[RA] =>> 
+    ReaderT[[EA] =>> 
+      Either[EvalError, EA], 
+      Env[A],RA],
+    List[String],
+    A] = eval(l) + eval(r)
+#+END_SRC
+
+Now there ways to help out the Scala compiler and reduce the amount of
+boilerplate, namely "kinda curried type parameters" which is a
+technique used heavily in Scalaz and Zio.
+
+https://tpolecat.github.io/2015/07/30/infer.html
+
+Thinking that maybe the poor type inference is maybe my fault I've
+also written this code using Scalaz and Cats and you can see that each
+implementation has its pros and cons. (BTW in these libraries ReaderT
+is called Kleisli)
+
+[[https://github.com/justinhj/ZPurePlay/blob/master/src/main/scala/EvalScalaz.scala][Reader Writer example in Scalaz]]
+
+[[https://github.com/justinhj/ZPurePlay/blob/master/src/main/scala/EvalCats.scala][Reader Writer example in Typelevel Cats]]
+
+Both implementations had the same problem as I did when not writing
+out the types in full. Scalaz had the same trouble inferring that my
+type was applicative so I had to summon the instance explicitly.
+
+#+BEGIN_SRC scala
+ implicit val rwApply = Apply[WriterT[List[String],Kleisli[Either[Error,?],Env[A],?],?]]
+ rwApply.apply2(x,y) {
+        case (a,b) => a + b
+ }
+#+END_SRC
+
+Cats was able to handle it resulting in less code and needed less type
+annotations in general.
+
+#+BEGIN_SRC scala
+   x.map2(y) {
+     case (a,b) => a + b
+   }
+#+END_SRC
+
+** Effect rotation with Zio Prelude's ZPure
+[[https://github.com/zio/zio-prelude][Zio Prelude]] is a new library that acts as a sort of add on library to
+[[https://github.com/zio/zio][ZIO]] (a zero-dependency Scala library for asynchronous and concurrent
+programming) which provides an alternative approach to functional
+abstractions in Scala.
+
+For the purposes of this blog I'm interested in particular
+experimental data type within the library called ~ZPure~. ZPure has 6
+type parameters and supports the operations of monads, applicatives
+and functors, albeit the names are changed and some of the
+abstractions too.
+
+From Prelude's own source code "~ZPure~ can be used to model a variety
+of effects including context, state, failure, and logging.", let's see
+how it compares to monad transformers to implement the program above.
+
+ZPure has six type parameters, which may seem like a lot, but bear in
+mind that every time you combine monads you get more type parameters,
+but they are stacked vertically not horizontally. With ZPure you start
+with all the different effect types one might need but you don't need
+to keep adding more and more, and you don't suffer from creating
+multiple objects per layer of effect.
+
+#+BEGIN_EXPORT html
+<div style="padding: 30px;">
+  <img class="img" src="../../../images/zpure.png" border="1" alt="ZPure type parameters" width="600"/>
+</div>
+#+END_EXPORT
+
+In the diagram the parameters are.
+
+- ~W~ Logging. The type of logs that this effect produces, analagous to Writer
+- ~S~ State. There are two S's because the type encodes an input and output state type
+- ~R~ Reader. The type of the read-only environment
+- ~E~ Error. The type of the error channel
+- ~A~ Value. The type of the happy path computed value
+
+Just as before all I need to do is change my programs effect type and
+modify the implementation accordingly. The code for this section can
+be found [[https://github.com/justinhj/ZPurePlay/blob/master/src/main/scala/EvalZpure.scala][here]].
+
+Although Prelude supports Scala 3 now I rewrote my program in Scala 2
+in order to do the Scalaz and Cats versions, so the following is also
+pre Scala 3 friendly code. First I made a sealed trait to represent
+the error types and an alias to indicate that my log will be
+strings. 
+
+Note that ZPure is opinionated about the logging type. In the more
+conventional approach the log has to be a monoid instance. With ZPure
+the log is handled using the ZIO ~Chunk~ data type which is a high
+performance data structure with a pure functional interface. What that
+means for us is that we can consider our log type as a single entity
+and not worry about how it is appended.
+
+#+BEGIN_SRC scala
+  sealed trait Error
+  object SymbolNotFound extends Error
+  object DivisionByZero extends Error
+
+  type Log = String
+#+END_SRC
+
+These types will represent the ~E~ or error, and ~W~ or log. We can
+also encode our symbol table using the ~R~ parameter.
+
+#+BEGIN_SRC scala
+type Env[A] = Map[String, A]
+#+END_SRC
+
+The final type looks like this.
+
+#+BEGIN_SRC scala
+type Result[A] = ZPure[Log, Any, Any, Env[A], Error, A]
+#+END_SRC
+
+Note that I am not using the initial or updated state here so I use
+Any for those parameters so as not to constrain them.
+
+Once again lets start with the implementation of literal values.
+
+#+BEGIN_SRC scala
+case Val(value) => 
+  ZPure.succeed(value).log(s"Literal value $value")
+#+END_SRC
+
+What's going on here is simple and refreshingly free of type
+annotation. Firstly I construct a ZPure consisting of the literal
+value, and then add a log using ZPure's log method. 
+
+Now let's implement the symbol table lookup of variables.
+
+#+BEGIN_SRC scala -n 
+  def handleVar[A: Numeric](s: String): Result[A] = {
+      ZPure.environment[Any, Env[A]].flatMap {
+        env =>
+         ZPure.fromOption(env.get(s)).
+         mapError(_ => EvalZPure.SymbolNotFound).
+         flatMap{
+          a =>
+            ZPure.log(s"Var $s value $a").as(a)
+         }      
+      }
+  }
+#+END_SRC
+
+First I use the ZPure.environment to summon the symbol table and
+flatMap over it so we can access it as a concrete value ~env~.
+
+Remember that looking up the variable in the symbol table
+is going to return an Option since it is a normal map get. We can then
+use the ZPure.fromOption to convert that to a ZPure.
+
+We may be a ZPure at that point but we have the wrong error type. In
+ZPure and option is simulated by yielding a success value A for Some,
+or giving Unit in the error channel to indicate None. This reuse of
+the error channel is neat, but since I would like a homogenous error
+type for the program I need to convert that error channel from unit to
+my own custom Error type. 
+
+To do that I use mapError which takes a function to map the error from
+one type to another.
+
+The final step is to add a log. Since I would like the log to show
+both the variable name and the actual value I have to nest it inside a
+flatMap so we can access the success value. The last thing to note
+here is the ~as~ which helps the type system make a ZPure of the right
+type.
+
+#+BEGIN_SRC scala
+  implicit def numericZResult[A: Numeric]: 
+    Numeric[Result[A]] = new Numeric[Result[A]] {
+      def add(x: Result[A], y: Result[A]): Result[A] = {
+        x.zip(y).flatMap{case (a,b) => 
+	  ZPure.succeed(a + b).log(s"Add $a and $b")}
+    }
+    // and so on
+#+END_SRC
+
+The final component is to make an instance of Numeric. Prelude takes
+the approach to naming that concepts should be plain English where
+possible, so it uses ~succeed~ instead of ~pure~ or ~unit~ and
+similarly ~zip~ instead of applicative terminology.
+
+That being the case, we use zip here to combine the left and right
+side effects and apply the appropriate arithmetic operator.
+
+So far so good, but we can't log the result of the computation. This
+is easily solved.
+
+#+BEGIN_SRC scala
+  def add(x: Result[A], y: Result[A]): Result[A] = {
+      x.zip(y).flatMap{case (a,b) =>  {
+        val result = a + b
+        ZPure.succeed(result).log(s"Add $a and $b ($result)")}
+      }
+    }
+#+END_SRC
+
+The last part to note is the driver code to run the program.
+
+#+BEGIN_SRC scala
+    val eval1 = eval(exp1).provide(env1).runAll()
+
+    eval1._2 match {
+      case Right(value) => 
+        println(s"Succeeded with value ${value._2}")
+        eval1._1.foreach {
+          l => 
+            println(l)
+      }
+      case Left(err) =>
+        println(s"oops! $err")
+    }
+#+END_SRC
+
+Here I run eval to create the effect, provide to give it the runtime
+environment and runAll. To be clear what eval does is not run a
+program, but build a data structure of objects based on the ZPure
+operations, and that data structure is evaluated in Prelude using an
+efficient interpreter, that yields the result of the program, the log
+and any state changes.
+
+#+BEGIN_SRC
+Succeeded with value 200
+Literal value 10
+Var x value 1
+Mul 10 with 1 (10)
+Var y value 10
+Mul 10 with 10 (100)
+Var z value 100
+Add 100 and 100 (200)
+#+END_SRC
+
+** Conclusion
+
+In this post I implemented and motivated ReaderT and WriterT and
+transforming monads to combine effects. Even in Haskell where they
+originated, monad transformers come with caveats about performance and
+ergonomics. In Scala they are not used often.
+
+There are techniques and libraries to make their use more
+convient. Although I have not used it [[https://github.com/typelevel/cats-mtl][Cats MTL]] offers solutions to
+some of the problems, but it is not widely used.
+
+Although ZIO Prelude's ZPure is still somewhat experimental it seems
+offer the benefits of monad transformers such as composability and a
+prinicipled type safe api. But it is also much easier to work with and
+anecdotally more performant on the JVM.
+
+(C)2021 Justin Heyes-Jones, All Rights Reserved.
+
