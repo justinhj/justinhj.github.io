@@ -24,7 +24,7 @@ tags: [scala, scala-3, dotty, monads, category-theory]
 BTW you can check out the video here instead: 
 [[https://youtu.be/tEnZZlOn-jI][Functional Justin - Another Angle on Monad Transformers]]
 
-There's 20 pages here or over an hour of videos, so let me help you decide if it's worth your time.
+There are twenty pages here or over an hour of videos, so let me help you decide if it's worth your time.
 
 *** Who are you?
 You are a Scala programmer or interested in Scala and may have some Haskell or interest in pure functional programming.
@@ -38,18 +38,18 @@ You are a Scala programmer or interested in Scala and may have some Haskell or i
 
 ** Evaluating expressions
 
-In previous blogs and videos I've described a program that evaluates
+In previous blogs and videos, I've described a program that evaluates
 arithmetic expressions as this is a nice testbed for various
 functional effects. So far I've demonstrated how by using different
 data types and type classes one can make the same program behave
 differently.
 
 This is important for a couple of reasons. It means that you can
-compose interesting programs from smaller, well understood components,
+compose interesting programs from smaller, well-understood components,
 and because we can understand and change the behaviour of our program
 by using different types.
 
-As a starting point lets begin with a version of the program that has
+As a starting point, lets begin with a version of the program that has
 error handling using the Either data type and Numeric which is a
 generic implementation of numbers.
 
@@ -106,7 +106,7 @@ The next things to look at are an ADT to represent the program steps a return ty
 The ~Env~ type is a simple map for strings to values that we will use
 as a symbol table so that variables can be looked up at runtime. The
 ~?->~ syntax indicates that the return type is a context function. An
-earlier blog discusses that, but in short it allows us to thread our
+earlier blog discusses that, but in short, it allows us to thread our
 Env symbol table through the computation easily.
 
 Here is the main body of the code.
@@ -172,7 +172,7 @@ Writers, sequencing them together using the Monad's flatMap operation
 for example, then the end result consists of a final value and a log
 for ~each step of the program~.
 
-But since I already comitted to using Either, if I change the type to
+But since I already committed to using Either, if I change the type to
 Writer then I would lose the ability to handle errors. Instead what I
 want is to keep the Either effect and ~wrap~ it with the capability of
 the Writer monad.
@@ -180,13 +180,13 @@ the Writer monad.
 Monad transformers are the answer. Now the trouble with monads is that
 they don't compose manually together. As I covered in a previous blog,
 applicatives do. You can take any two applicative effects such as
-Either and List and compose them with a simple compose functions. 
+Either and List and compose them with simple functions. 
 
 With Monads the composition of any particular monad has to be
 hand-crafted, so if I want to stack a Reader on top of an Either,
 which I do, then I need to implement a ReaderT (reader transformer).
 
-It only needs to be implented once and for all and can then be applied
+It only needs to be implemented once and for all and can then be applied
 to any other Monad (not just for Either). The idea is to make an
 implementation of Reader that wraps another Monadic data type.
 
@@ -203,15 +203,15 @@ Applicative or Monad depending on the use-case. Choosing the type
 bounds that constrain what the wrapped type must support based on the
 individual functions needs gives you more flexibility.
 
-For example if you have a data type that has a map operation but no
+For example, if you have a data type that has a map operation but no
 meaningful way to make a flatMap, you can still use the Monad
 transformer as long as you only use Functor level methods.
 
 *** Lifting
 
-In order to use WriterT there needs to be a mechanism to take your
-inner data type (Either in this case) and make an instance of WriterT.
-That can be done like this in my implementation by using the WriterT
+To use WriterT there needs to be a mechanism to take your inner data
+type (Either in this case) and make an instance of WriterT.  That can
+be done like this in my implementation by using the WriterT
 constructor. For example let's say we have an Either instance we can
 transform it to a WriterT like this.
 
@@ -250,7 +250,7 @@ is specialized for, and it must be able to join that type together.
 This gives the user the flexibility to use any data type for the log
 and not have to worry about providing an empty log or an append
 function. The example here is a monoid since it is a list of
-strings. We can obviously produce an empty list easily, and the append
+strings. Obviously we can produce an empty list, and the append
 function is also trivial, so if you look at my Monoid instance for
 lists you can see the implementation is trivial.
 
@@ -306,7 +306,7 @@ any prior ones.
 By this technique at the end of a computation we
 should see a log of entries.
 
-For example the expression ~Val(10)~ would be logged as ~"Val
+For example, the expression ~Val(10)~ would be logged as ~"Val
 10"~. Having a step-by-step log of your application has various uses
 including the following.
 
@@ -314,7 +314,7 @@ including the following.
 2. Auditing and statistics. Analyze the log of your computation for business information.
 3. Restore a failed computation. You can log at each step enough information to resume an expensive computation that may have been interrupted.
 
-These kind of benefits come with traditional logging, but building it
+These kinds of benefits come with traditional logging, but building it
 into your application in a pure and type rich way can amplify the
 benefits.
 
@@ -347,7 +347,7 @@ implementing an implicit implementation of Numeric for our new WriterT
 return type.
 
 Here I'm defining an implicit instance of Numeric that handles things
-are Writers around Eithers. In previous posts this is where I first
+are Writers around Eithers. In previous posts, this is where I first
 implemented addition for different types of number, and then added the
 ability to handle errors in a type safe and functional manner.
 
@@ -393,7 +393,7 @@ of the computation so we can put all of that into the tell call,
 resulting in a log like ~Added 22 and 23 giving 45~.
 
 There's nothing really wrong with this implementation, but it's
-important to always think about the priniciple of least power. Did I
+important to always think about the principle of least power. Did I
 really need a Monad here? Well in fact there is a great function for
 applying a computation across two different effects and that is
 ~map2~. It also requires only Applicative, so I can use that instead.
@@ -414,7 +414,7 @@ of the computation. One clean solution I found here was to write a
 helper method that is like a logging version of map2. Like map2 it
 takes a function of two arguments to map the effect values, but it
 takes a second function that takes the two values and their result and
-let's you build a log entry from them.
+lets you build a log entry from them.
 
 #+BEGIN_SRC scala
  def mapTell2[A,B,C,F[_],W](fa: WriterT[F,W,A],fb: WriterT[F,W,B],fabc: (A,B) => C,fabcw: (A,B,C) => W)
@@ -437,7 +437,7 @@ the log and the value of each effect.
 
 Once I've run the user function fabc on those values, I have the
 result value c and I can use that to build a log with the fabcw
-function. Finally we need to combine the prior logs with the new log
+function. Finally, we need to combine the prior logs with the new log
 and return the result.
 
 Here's the function in action.
@@ -466,7 +466,7 @@ one with step-by-step logging.
 ** ReaderT
 Another useful data type with a Monad instance is the Reader. As the
 name may imply, this is the conceptual opposite of Writer. i.e.,
-instead a computation writing its progress to a log, the Reader
+instead of a computation writing its progress to a log, the Reader
 provides an environment of some type that the application can read
 from as it progresses.
 
@@ -478,14 +478,14 @@ context function reserved for some other purpose. Of course you may be
 using Scala 2 and not have access to the context function feature at
 all.
 
-In one of my videos I show the process of replacing context functions
+In one of my videos, I show the process of replacing context functions
 with the ReaderT monad transformer. Let's walk through the process
 here.
 
 First of all let's look at the data type. Like the WriterT, the
 ReaderT wraps another higher kinded type F. As you can see, there is a
 second type parameter R, which is the type of the read-only
-environment. Also you can see from the signature is that what the
+environment. Also, you can see from the signature is that what the
 ReaderT contains is a function from R to the F[A]. How that is used
 will become clear.
 
@@ -494,7 +494,7 @@ will become clear.
 #+END_SRC
 
 Just like with WriterT we also would benefit from a lift function that
-let's us take any instance of F and wrap it. Here I'm saying if you
+lets us take any instance of F and wrap it. Here I'm saying if you
 have some effect ~F[A]~ I will give you a ReaderT that wraps it. You
 can run it with some environment and it will yield that ~F[A]~ again.
 
@@ -503,7 +503,7 @@ can run it with some environment and it will yield that ~F[A]~ again.
     def lift[F[_],R,A](fa: F[A]): ReaderT[F,R,A] = ReaderT(_ => fa)
 #+END_SRC
 
-When rewriting the program above we can now lookup variables from the
+When rewriting the program above we can now look up variables from the
 symbol table. We are returning a function that when given an
 environment can search it for the required symbol. 
 
@@ -550,14 +550,14 @@ an environment to the run method.
 </div>
 #+END_EXPORT
 
-One thing I find wonderful about functional programming is the
+One thing I find wonderful about functional programming is its
 compositionality. I've shown that you can stack WriterT and ReaderT on
 top of any effect to imbue that effect with more capabilities.
 
 Now given that WriterT can wrap a monadic effect to give that effect
 logging, and further that ReaderT itself is a monad, it follows that
 you can wrap WriterT around ReaderT to give some effect the powers of
-both! This would work the other way around, and of course you could
+both! This would work the other way around, and of course, you could
 also make an EitherT monad transformer, giving even more
 possibilities.
 
@@ -646,13 +646,9 @@ This comes at significant cost though. All this nesting creates
 additional JVM objects that take up heap space and may cause extra
 work for the garbage collector. 
 
-For the programmer the ergnomics are not great. You have to remember
+For the programmer, the ergonomics are not great. You have to remember
 the level of nesting you're at at each point of your program and make
 sure to do the right amount of lifting.
-
-(Just realized I've missed out on a lot of "Do you even lift bro?"
-memery in this post, but it's too late now and perhaps that's for the
-best.)
 
 Just look at this single simple expression. So much space is taken up
 by the type signature, all the simplicity and elegance is lost.
@@ -673,8 +669,8 @@ technique used heavily in Scalaz and Zio.
 
 https://tpolecat.github.io/2015/07/30/infer.html
 
-Thinking that maybe the poor type inference is maybe my fault I've
-also written this code using Scalaz and Cats and you can see that each
+Thinking that the poor type inference is maybe my fault I've also
+written this code using Scalaz and Cats and you can see that each
 implementation has its pros and cons. (BTW in these libraries ReaderT
 is called Kleisli)
 
@@ -733,7 +729,7 @@ multiple objects per layer of effect.
 
 In the diagram the parameters are.
 
-- ~W~ Logging. The type of logs that this effect produces, analagous to Writer
+- ~W~ Logging. The type of logs that this effect produces, analogous to Writer
 - ~S~ State. There are two S's because the type encodes an input and output state type
 - ~R~ Reader. The type of the read-only environment
 - ~E~ Error. The type of the error channel
@@ -750,11 +746,11 @@ the error types and an alias to indicate that my log will be
 strings. 
 
 Note that ZPure is opinionated about the logging type. In the more
-conventional approach the log has to be a monoid instance. With ZPure
-the log is handled using the ZIO ~Chunk~ data type which is a high
-performance data structure with a pure functional interface. What that
-means for us is that we can consider our log type as a single entity
-and not worry about how it is appended.
+conventional approach, the log has to be a monoid instance. With ZPure
+the log is handled using the ZIO ~Chunk~ data type which is a
+high-performance data structure with a pure functional interface. What
+that means for us is that we can consider our log type as a single
+entity and not worry about how it is appended.
 
 #+BEGIN_SRC scala
   sealed trait Error
@@ -765,7 +761,7 @@ and not worry about how it is appended.
 #+END_SRC
 
 These types will represent the ~E~ or error, and ~W~ or log. We can
-also encode our symbol table using the ~R~ parameter.
+encode our symbol table using the ~R~ parameter.
 
 #+BEGIN_SRC scala
 type Env[A] = Map[String, A]
@@ -780,7 +776,7 @@ type Result[A] = ZPure[Log, Any, Any, Env[A], Error, A]
 Note that I am not using the initial or updated state here so I use
 Any for those parameters so as not to constrain them.
 
-Once again lets start with the implementation of literal values.
+Once again let's start with the implementation of literal values.
 
 #+BEGIN_SRC scala
 case Val(value) => 
@@ -903,13 +899,20 @@ originated, monad transformers come with caveats about performance and
 ergonomics. In Scala they are not used often.
 
 There are techniques and libraries to make their use more
-convient. Although I have not used it [[https://github.com/typelevel/cats-mtl][Cats MTL]] offers solutions to
+convenient. Although I have not used it [[https://github.com/typelevel/cats-mtl][Cats MTL]] offers solutions to
 some of the problems, but it is not widely used.
 
 Although ZIO Prelude's ZPure is still somewhat experimental it seems
 offer the benefits of monad transformers such as composability and a
-prinicipled type safe api. But it is also much easier to work with and
-anecdotally more performant on the JVM.
+prinicipled type safe api. But, it is also much easier to work with
+and anecdotally more performant on the JVM.
+
+In the future I'm looking forward to exploring some traditional
+functional programming problems using Prelude and ZPure.
+
+Hope you enjoyed this post and got to the end. You can find my contact
+details at the top of the page; I always welcome feedback and
+questions.
 
 (C)2021 Justin Heyes-Jones, All Rights Reserved.
 
