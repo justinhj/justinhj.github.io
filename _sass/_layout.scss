@@ -178,6 +178,15 @@
     }
 }
 
+.circle {
+    border-radius: 50%;
+    display: inline-block;
+}
+.circle img {
+    border-radius: 50%;
+    display: block;
+}
+
 .talk-text {
     padding-bottom: 20px;
 }
