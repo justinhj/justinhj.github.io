@@ -6,6 +6,9 @@ How to use:
 
 https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/
 
+In emacs eval-buffer org/publish.el
+
+
 
 
 

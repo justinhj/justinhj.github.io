@@ -1,0 +1,141 @@
+#+TITLE: #+TITLE: The Magic of Lazy Lists
+#+AUTHOR: Justin Heyes-Jones
+#+DATE: 2022
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+HTML_HTML5_FANCY:
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: The Magic of Lazy Lists
+tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, kleisli, zio]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+#+END_EXPORT
+
+#+BEGIN_EXPORT html
+<style>
+.img {
+  width: 600px;
+  border:2px solid #fff;
+  box-shadow: 6px 6px 2px #ccc;
+  -moz-box-shadow: 6px 6px 2px #ccc;
+  -webkit-box-shadow: 6px 6px 2px #ccc;
+  -khtml-box-shadow: 6px 6px 2px #ccc;
+  margin-bottom: 40px;
+}
+</style>
+
+<figure>
+  <img class="img" src="../../../images/dollar-gill-0V7_N62zZcU-unsplash.jpg" border="0" alt="A mysterious book on a table with a glowing globe" width="600"/>
+  <figcaption>
+    Photo by <a href="https://unsplash.com/@dollargill?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Dollar Gill</a> on <a href="https://unsplash.com/s/photos/magic?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+  <figcaption>
+</figure>
+#+END_EXPORT
+
+** Introduction
+As the [[https://docs.scala-lang.org/scala3/book/taste-collections.html][Scala 3 - book]] points out, Scala has a rich set of collection
+classes. As well as ~List~ it also has a solid implementation of ~LazyList~. If you're not sure what that is, or what is used for, read on and find out, plus even better I will walk through a full implementation of LazyList that can do some magical things.
+
+Scala ~List~ can represent collections of ~zero or more~, stored as a linked list, with the details of the underlying data structure abstracted away. 
+In my video [[https://youtu.be/7A2xuRkCZBg][NonEmptyLists more or less]] I talked about how
+we can build a variant of ~List~ that can only be a collection with ~one or more~ items. 
+
+In this video I will present theory and practise of building a ~LazyList~ type, that adds the additional capability of controlling ~when elements are evaluated~.
+
+All the code written in this post, and accompanying video [[https://youtu.be/laB15gG5bjY][The Magic of Lazy Lists]] can be found in my new pedagogical Scala library [[https://github.com/justinhj/duct/][Duct]]. In order to produce this implementation I studied the code of the 
+Scala standard library (both the current version and history versions which are less sophisticated but also easier to read), as well as other implementations
+such as that of the ScalaZ Ephemeral list. The resulting code is a combination of these with some of the best parts of both.
+
+** Implementing Lazy Thing
+~LazyList~ is easier to understand if you have a good grasp for different evaluation models in Scala, so let's explore that with a custom class call ~LazyThing~.
+
+With this implementation LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager or strict evaluation. When I pass 
+the expression ~{println("evaluated"); 10~ is passed into the ~LazyThing~ constructor it is evaluated immediately and stored in the class. We see it prints evaluated
+and then when the user gets the value nothing is printed, we just get the result.
+
+#+BEGIN_SRC scala
+class LazyThing[A](a: A):
+   def get = a
+
+val lt = new LazyThing({println("evaluated"); 10})
+// evaluated
+lt.get
+// val res4: Int = 10
+#+END_SRC
+
+When working with a ~LazyList~ we want to be able to populate it with expressions but without having them evaluated until we are ready (what Haskell refers to
+as call by need). What else can we use in Scala that only evaluates when we want it to? Functions! If the argument was a function, we could simply
+call it when the user calls get, making it lazy.
+
+Now when we create the class nothing is evaluated until we call get, and then it is evaluated every time. This evaluation mode is called ~always~.
+
+#+BEGIN_SRC scala
+class LazyThing[A](a: () => A):
+   def get = a()
+
+val lt = new LazyThing(() => {println("evaluated"); 10})
+
+// scala> lt.get
+// evaluated
+// val res15: Int = 10
+                                                                                                                                       
+// scala> lt.get
+// evaluated
+// val res16: Int = 10
+#+END_SRC
+
+The ~LazyList~ structure is not about always evaluation though, it is about ~lazy~ or ~by need~ evaluation. We want to be able to remember the result 
+of evaluated list elements, and never evaluate them again. This ~memoization~ is the next step.
+
+#+BEGIN_SRC scala
+class LazyThing[A](a: () => A):
+   var evaluated = false
+   var value: A = _
+   def get = if evaluated then value
+     else
+	 evaluated = true
+	 value = a()
+
+val lt = new LazyThing(() => {println("evaluated"); 10})
+
+// scala> lt.get
+// evaluated
+// val res17: Any = ()
+                                                                                                                                       
+// scala> lt.get
+// val res18: Any = 10
+#+END_SRC
+
+Now you can see that the value is evaluated only once and we can retrieve it multiple times. Memoization is good because it saves us recomputing 
+values, but it also means we must be mindful of memory use and hanging on to references to the internal structure of our ~LazyList~ so as not 
+to consume memory that is no loger needed.
+
+Two final simplifications using Scala features make this much more succinct. The mechanism of passing an argument as a function executed only on first 
+reference is implemented within Scala and known as call by name. Rewriting like below uses that mechanism instead.
+
+Secondly, we can replace the manual memoization code that remembers the evaluated value with ~lazy val~ which does the same thing but, again, is built into the compiler.
+
+
+#+BEGIN_SRC scala
+class LazyThing[A](a: => A):
+  lazy val get = a
+
+val lt = new LazyThing({println("evaluated"); 10})
+// scala> lt.get
+// evaluated
+// val res24: Int = 10
+                                                                                                                                       
+// scala> lt.get
+// val res25: Int = 10
+#+END_SRC
+** Beginning LazyList
+
+
+
+
+
+
+

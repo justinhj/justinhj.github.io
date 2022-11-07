@@ -1,0 +1,92 @@
+---
+layout: post
+title: The Magic of Lazy Lists
+tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, kleisli, zio]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+
+<style>
+.img {
+  width: 600px;
+  border:2px solid #fff;
+  box-shadow: 6px 6px 2px #ccc;
+  -moz-box-shadow: 6px 6px 2px #ccc;
+  -webkit-box-shadow: 6px 6px 2px #ccc;
+  -khtml-box-shadow: 6px 6px 2px #ccc;
+  margin-bottom: 40px;
+}
+</style>
+
+<figure>
+  <img class="img" src="../../../images/dollar-gill-0V7_N62zZcU-unsplash.jpg" border="0" alt="A mysterious book on a table with a glowing globe" width="600"/>
+  <figcaption>
+    Photo by <a href="https://unsplash.com/@dollargill?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Dollar Gill</a> on <a href="https://unsplash.com/s/photos/magic?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+  <figcaption>
+</figure>
+
+<div id="outline-container-orgc153bc3" class="outline-2">
+<h2 id="orgc153bc3">Introduction</h2>
+<div class="outline-text-2" id="text-orgc153bc3">
+<p>
+As the <a href="https://docs.scala-lang.org/scala3/book/taste-collections.html">Scala 3 - book</a> points out, Scala has a rich set of collection
+classes. As well as List it also has a solid implementation of LazyList. If you're not sure what that is, or what is used for, read on and find out, plus even better I will walk through a full implementation of LazyList that can do some magical things.
+</p>
+
+<p>
+Scala <code>List</code> can represent collections of <code>zero or more</code>, stored as a linked list, with the details of the underlying data structure abstracted away. 
+In my video <a href="https://youtu.be/7A2xuRkCZBg">NonEmptyLists more or less</a> I talked about how
+we can build a variant of <code>List</code> that can only be a collection with <code>one or more</code> items. 
+</p>
+
+<p>
+In this video I will present theory and practise of building a <code>LazyList</code> type, that adds the additional capability of controlling <code>when elements are evaluated</code>.
+</p>
+
+<p>
+All the code written in this post, and accompanying video <a href="https://youtu.be/laB15gG5bjY">The Magic of Lazy Lists</a> can be found in my new pedagogical Scala library <a href="https://github.com/justinhj/duct/">Duct</a>. In order to produce this implementation I studied the code of the 
+Scala standard library (both the current version and history versions which are less sophisticated but also easier to read), as well as other implementations
+such as that of the ScalaZ Ephemeral list. The resulting code is a combination of these with some of the best parts of both.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org59f4441" class="outline-2">
+<h2 id="org59f4441">Implementing Lazy Thing</h2>
+<div class="outline-text-2" id="text-org59f4441">
+<p>
+To begin with let's review the different forms that evaluation can take in Scala.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Syntax</th>
+<th scope="col" class="org-left">Is memoized</th>
+<th scope="col" class="org-left">Is lazy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">val a = 1</td>
+<td class="org-left">Yes</td>
+<td class="org-left">No</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
