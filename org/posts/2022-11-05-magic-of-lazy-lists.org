@@ -132,10 +132,67 @@ val lt = new LazyThing({println("evaluated"); 10})
 // val res25: Int = 10
 #+END_SRC
 ** Beginning LazyList
+Let's begin by representing the ~LazyList~ as a sealed trait, which will be the object through which users interact with the collection.
 
+#+BEGIN_SRC scala
+sealed trait LazyList[+A]:
+   def head: A
+   def tail: LazyList[A]
+   def isEmpty: Boolean
+#+END_SRC
 
+Of note here is the ~+A~ variance notation. It's important to know about and understand variance when making libraries in Scala, slightly less
+important when writing application code. A short explanation of variance is that it is short for "variance under inheritance".
 
+Let's say we have a type ~Loan~ and two other sub types of Loan, ~Credit Card~ and ~Amortized Loan~. If you have some function that takes Loan 
+and prints the outstanding balance, you would expect through normal rules of inheritance to be able to pass in a Credit card or an amortized 
+loan in place of the Loan. You can use a subtype of loan whereever the compiler is expecting a loan. That is what is known as behavioural 
+subtyping. 
 
+What variance under inheritance refers to, is what should we do when we have some parameterized type with respect to subtyping? If I have a function 
+that takes a list of Loans, should it accept a list of subtypes? Credit cards for examples. Because the answer to this is, no not always, Scala 
+includes variance annotations so that you can choose the variance relationship you want as needed. I'll come back to this topic in more detail in a later 
+video.
 
+~LazyList~ will have a companion object containing all the static methods that will be used to create and manipulate lazy lists. The first thing 
+we need is a representation of empty list. We add that to a new companion object.
 
+#+BEGIN_SRC scala
+object LazyList:
+  val empty = new LazyList[Nothing]:
+      def head = throw new NoSuchElementException("Cannot get head of empty lazy list")
+      def tail = throw new UnsupportedOperationException("No tail of empty lazy list")
+      val isEmpty = true
+#+END_SRC
+
+Lazy list has the type Nothing. Nothing is at the bottom of Scala's type hierarchy meaning it is the subtype of everything. Now it's not a useful type
+in itself, because you can't do anything with it, but it is really useful in this context... our empty list is a singleton value shared by all lazy 
+lists, we only need one. Why does this work? Because of the variance annotation above. We said that a list of subtypes of ~A~ would be acceptable as 
+list of ~A~. 
+
+So now we are able to create lazy lists with nothing in them using ~LazyList.empty~. The next step is to be able to create lists with elements inside. We will call this the ~cons~ method, 
+as it will be used to construct lists one lazy element at a time.
+
+#+BEGIN_SRC scala
+// object LazyList continued:
+  def cons[A](hd: => A, tl: => LazyList[A]) = new LazyList[A]:
+    lazy val head = hd
+    lazy val tail = tl
+    val isEmpty = false
+#+END_SRC
+
+With this small amount of code we have a functional (no pun intended) lazy list.
+
+#+BEGIN_SRC scala
+val ll = LazyList.cons({println("evaluated!");10}, LazyList.empty)
+ll.head
+// evaluated!
+// val res9: Int = 10
+                                                                                                                                       
+ll.head
+// val res10: Int = 10
+#+END_SRC
+
+Here you can see that constructing the list did not evaluate the value we passed in to be the head of the collection. Once we retrieved the head we got the 
+evaluation happen, but subsequently we did not not. Nice.
 

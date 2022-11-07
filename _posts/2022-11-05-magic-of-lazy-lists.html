@@ -29,7 +29,7 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, 
 <div class="outline-text-2" id="text-orgc153bc3">
 <p>
 As the <a href="https://docs.scala-lang.org/scala3/book/taste-collections.html">Scala 3 - book</a> points out, Scala has a rich set of collection
-classes. As well as List it also has a solid implementation of LazyList. If you're not sure what that is, or what is used for, read on and find out, plus even better I will walk through a full implementation of LazyList that can do some magical things.
+classes. As well as <code>List</code> it also has a solid implementation of <code>LazyList</code>. If you're not sure what that is, or what is used for, read on and find out, plus even better I will walk through a full implementation of LazyList that can do some magical things.
 </p>
 
 <p>
@@ -54,39 +54,108 @@ such as that of the ScalaZ Ephemeral list. The resulting code is a combination o
 <h2 id="org59f4441">Implementing Lazy Thing</h2>
 <div class="outline-text-2" id="text-org59f4441">
 <p>
-To begin with let's review the different forms that evaluation can take in Scala.
+<code>LazyList</code> is easier to understand if you have a good grasp for different evaluation models in Scala, so let's explore that with a custom class call <code>LazyThing</code>.
 </p>
 
-<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<p>
+With this implementation LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager or strict evaluation. When I pass 
+the expression <code>{println("evaluated"); 10</code> is passed into the <code>LazyThing</code> constructor it is evaluated immediately and stored in the class. We see it prints evaluated
+and then when the user gets the value nothing is printed, we just get the result.
+</p>
 
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">LazyThing</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span>)<span style="color: #b6a0ff;">:</span>
+   <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">get</span> <span style="color: #b6a0ff;">=</span> a
 
-<colgroup>
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-</colgroup>
-<thead>
-<tr>
-<th scope="col" class="org-left">Syntax</th>
-<th scope="col" class="org-left">Is memoized</th>
-<th scope="col" class="org-left">Is lazy</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="org-left">val a = 1</td>
-<td class="org-left">Yes</td>
-<td class="org-left">No</td>
-</tr>
-
-<tr>
-<td class="org-left">&#xa0;</td>
-<td class="org-left">&#xa0;</td>
-<td class="org-left">&#xa0;</td>
-</tr>
-</tbody>
-</table>
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">lt</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">LazyThing</span>({println(<span style="color: #79a8ff;">"evaluated"</span>); <span style="color: #00bcff;">10</span>})
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">evaluated</span>
+lt.get
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res4: Int = 10</span>
+</pre>
 </div>
+
+<p>
+When working with a <code>LazyList</code> we want to be able to populate it with expressions but without having them evaluated until we are ready (what Haskell refers to
+as call by need). What else can we use in Scala that only evaluates when we want it to? Functions! If the argument was a function, we could simply
+call it when the user calls get, making it lazy.
+</p>
+
+<p>
+Now when we create the class nothing is evaluated until we call get, and then it is evaluated every time. This evaluation mode is called <code>always</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">LazyThing</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> () <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>)<span style="color: #b6a0ff;">:</span>
+   <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">get</span> <span style="color: #b6a0ff;">=</span> a()
+
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">lt</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">LazyThing</span>(() <span style="color: #b6a0ff;">=&gt;</span> {println(<span style="color: #79a8ff;">"evaluated"</span>); <span style="color: #00bcff;">10</span>})
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">scala&gt; lt.get</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">evaluated</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res15: Int = 10</span>
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">scala&gt; lt.get</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">evaluated</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res16: Int = 10</span>
+</pre>
+</div>
+
+<p>
+The <code>LazyList</code> structure is not about always evaluation though, it is about <code>lazy</code> or <code>by need</code> evaluation. We want to be able to remember the result 
+of evaluated list elements, and never evaluate them again. This <code>memoization</code> is the next step.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">LazyThing</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> () <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>)<span style="color: #b6a0ff;">:</span>
+   <span style="color: #b6a0ff;">var</span> <span style="color: #dbbe5f;">evaluated</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">false</span>
+   <span style="color: #b6a0ff;">var</span> <span style="color: #dbbe5f;">value</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">_</span>
+   <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">get</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> evaluated then value
+     <span style="color: #b6a0ff;">else</span>
+         evaluated <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">true</span>
+         value <span style="color: #b6a0ff;">=</span> a()
+
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">lt</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">LazyThing</span>(() <span style="color: #b6a0ff;">=&gt;</span> {println(<span style="color: #79a8ff;">"evaluated"</span>); <span style="color: #00bcff;">10</span>})
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">scala&gt; lt.get</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">evaluated</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res17: Any = ()</span>
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">scala&gt; lt.get</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res18: Any = 10</span>
+</pre>
+</div>
+
+<p>
+Now you can see that the value is evaluated only once and we can retrieve it multiple times. Memoization is good because it saves us recomputing 
+values, but it also means we must be mindful of memory use and hanging on to references to the internal structure of our <code>LazyList</code> so as not 
+to consume memory that is no loger needed.
+</p>
+
+<p>
+Two final simplifications using Scala features make this much more succinct. The mechanism of passing an argument as a function executed only on first 
+reference is implemented within Scala and known as call by name. Rewriting like below uses that mechanism instead.
+</p>
+
+<p>
+Secondly, we can replace the manual memoization code that remembers the evaluated value with <code>lazy val</code> which does the same thing but, again, is built into the compiler.
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">LazyThing</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>)<span style="color: #b6a0ff;">:</span>
+  <span style="color: #f78fe7;">lazy</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">get</span> <span style="color: #b6a0ff;">=</span> a
+
+<span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">lt</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">LazyThing</span>({println(<span style="color: #79a8ff;">"evaluated"</span>); <span style="color: #00bcff;">10</span>})
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">scala&gt; lt.get</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">evaluated</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res24: Int = 10</span>
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">scala&gt; lt.get</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res25: Int = 10</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgdbc13d7" class="outline-2">
+<h2 id="orgdbc13d7">Beginning LazyList</h2>
 </div>
