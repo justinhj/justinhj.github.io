@@ -16,7 +16,7 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, 
 
 #+BEGIN_EXPORT html
 <style>
-.img {
+.img.special {
   width: 600px;
   border:2px solid #fff;
   box-shadow: 6px 6px 2px #ccc;
@@ -28,7 +28,7 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, 
 </style>
 
 <figure>
-  <img class="img" src="../../../images/dollar-gill-0V7_N62zZcU-unsplash.jpg" border="0" alt="A mysterious book on a table with a glowing globe" width="600"/>
+  <img class="img special" src="../../../images/dollar-gill-0V7_N62zZcU-unsplash.jpg" border="0" alt="A mysterious book on a table with a glowing globe" width="600"/>
   <figcaption>
     Photo by <a href="https://unsplash.com/@dollargill?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Dollar Gill</a> on <a href="https://unsplash.com/s/photos/magic?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
   <figcaption>
@@ -41,7 +41,7 @@ classes. As well as ~List~ it also has a solid implementation of ~LazyList~. If 
 
 Scala ~List~ can represent collections of ~zero or more~, stored as a linked list, with the details of the underlying data structure abstracted away. 
 In my video [[https://youtu.be/7A2xuRkCZBg][NonEmptyLists more or less]] I talked about how
-we can build a variant of ~List~ that can only be a collection with ~one or more~ items. 
+you can build a variant of ~List~ that can only be a collection with ~one or more~ items. 
 
 In this video I will present theory and practise of building a ~LazyList~ type, that adds the additional capability of controlling ~when elements are evaluated~.
 
@@ -52,9 +52,9 @@ such as that of the ScalaZ Ephemeral list. The resulting code is a combination o
 ** Implementing Lazy Thing
 ~LazyList~ is easier to understand if you have a good grasp for different evaluation models in Scala, so let's explore that with a custom class call ~LazyThing~.
 
-With this implementation LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager or strict evaluation. When I pass 
-the expression ~{println("evaluated"); 10~ is passed into the ~LazyThing~ constructor it is evaluated immediately and stored in the class. We see it prints evaluated
-and then when the user gets the value nothing is printed, we just get the result.
+With this implementation LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager, or strict evaluation. When I pass 
+the expression ~{println("evaluated"); 10~ is passed into the ~LazyThing~ constructor it is evaluated immediately and stored in the class. Later when the user calls the get method 
+we find that we just get the value, nothing is evaluated again.
 
 #+BEGIN_SRC scala
 class LazyThing[A](a: A):
@@ -118,7 +118,6 @@ reference is implemented within Scala and known as call by name. Rewriting like 
 
 Secondly, we can replace the manual memoization code that remembers the evaluated value with ~lazy val~ which does the same thing but, again, is built into the compiler.
 
-
 #+BEGIN_SRC scala
 class LazyThing[A](a: => A):
   lazy val get = a
@@ -132,7 +131,7 @@ val lt = new LazyThing({println("evaluated"); 10})
 // val res25: Int = 10
 #+END_SRC
 ** Beginning LazyList
-Let's begin by representing the LazyList as a sealed trait, which will be the object through which users interact with the collection. To avoid confusion with the standard library lazy list, I will here use the name ~OurLazyList~.
+Let's begin by representing the ~LazyList~ as a ~sealed trait~, which will be the object through which users interact with the collection.
 
 #+BEGIN_SRC scala
 sealed trait OurLazyList[+A]:
@@ -154,12 +153,14 @@ that takes a list of Loans, should it accept a list of subtypes? Credit cards fo
 includes variance annotations so that you can choose the variance relationship you want as needed. I'll come back to this topic in more detail in a later 
 video.
 
+
+
 ~LazyList~ will have a companion object containing all the static methods that will be used to create and manipulate lazy lists. The first thing 
 we need is a representation of empty list. We add that to a new companion object.
 
 #+BEGIN_SRC scala
-object OurLazyList:
-  val empty = new OurLazyList[Nothing]:
+object LazyList:
+  val empty = new LazyList[Nothing]:
       def head = throw new NoSuchElementException("Cannot get head of empty lazy list")
       def tail = throw new UnsupportedOperationException("No tail of empty lazy list")
       val isEmpty = true
@@ -170,12 +171,12 @@ in itself, because you can't do anything with it, but it is really useful in thi
 lists, we only need one. Why does this work? Because of the variance annotation above. We said that a list of subtypes of ~A~ would be acceptable as 
 list of ~A~. 
 
-So now we are able to create lazy lists with nothing in them using ~OurLazyList.empty~. The next step is to be able to create lists with elements inside. We will call this the ~cons~ method, 
+So now we are able to create lazy lists with nothing in them using ~LazyList.empty~. The next step is to be able to create lists with elements inside. We will call this the ~cons~ method, 
 as it will be used to construct lists one lazy element at a time.
 
 #+BEGIN_SRC scala
-// object OurLazyList continued:
-def cons[A](hd: => A, tl: => OurLazyList[A]) = new OurLazyList[A]:
+// object LazyList continued:
+def cons[A](hd: => A, tl: => LazyList[A]) = new LazyList[A]:
   lazy val head = hd
   lazy val tail = tl
   val isEmpty = false
@@ -184,7 +185,7 @@ def cons[A](hd: => A, tl: => OurLazyList[A]) = new OurLazyList[A]:
 With this small amount of code we have a functional (no pun intended) lazy list.
 
 #+BEGIN_SRC scala
-val ll = OurLazyList.cons({println("evaluated!");10}, OurLazyList.empty)
+val ll = LazyList.cons({println("evaluated!");10}, LazyList.empty)
 // nothing is printed yet!
 ll.head
 // evaluated!
@@ -197,7 +198,7 @@ ll.head
 Here you can see that constructing the list did not evaluate the value we passed in to be the head of the collection. Once we retrieved the head we got the 
 evaluation happen, but subsequently we did not not. Nice.
 
-** #:: syntax
+** Pattern matching and "cons operators"
 In Scala you can construct lists using the so-called ~cons~ operator ~::~. For example:
 
 #+BEGIN_SRC scala
@@ -214,7 +215,7 @@ To append ~1~ to the list ~val ll = (2,3)~ we need to write ~1 #:: ll~ and we wa
 
 #+BEGIN_SRC scala
 ll.#::(1)
-// where the type of LL is OurLazyList[Int]
+// where the type of LL is LazyList[Int]
 #+END_SRC
 
 Note that in Scala, by convention, anything ending in a colon is right associative, which is what we want here. Also not that in Scala 3 we can write this as an extension method. In the standard library you'll see code like the following:
@@ -236,19 +237,19 @@ final class Deferrer[A] private[LazyList] (private val l: () => LazyList[A]) ext
 
 [[https://github.com/scala/scala/blob/39148e4ec34a5c53443dd1b25ceec2308cd097fe/src/library/scala/collection/immutable/LazyList.scala#L1136][scala.collection.immutable.LazyList.scala]]
 
-With Scala 3 we can simply implement this as an extension method on the ~OurLazyList~ trait. Much nicer.
+With Scala 3 we can simply implement this as an extension method on the ~LazyList~ trait. Much nicer.
 
 #+BEGIN_SRC scala
 extension [A](hd: => A)
-  def #::(tl: => OurLazyList[A]): OurLazyList[A] = 
-   OurLazyList.cons(hd, tl)
+  def #::(tl: => LazyList[A]): LazyList[A] = 
+   LazyList.cons(hd, tl)
 #+END_SRC
 
 Now we can create lazy lists more easily as follows:
 
 #+BEGIN_SRC scala
-val ll = 1 #:: 2 #:: OurLazyList.empty
-// val ll: OurLazyList[Int] = OurLazyList$$anon$2@687292c5
+val ll = 1 #:: 2 #:: LazyList.empty
+// val ll: LazyList[Int] = LazyList$$anon$2@687292c5
 #+END_SRC
 
 Creating a lazy list with the cons operators is one thing but users will expect to be able to deconstruct lists in a pattern match expression to. Let's add that functionality next.
@@ -257,7 +258,7 @@ In Scala you implement pattern matching on a particular type by implementing ~un
 
 #+BEGIN_SRC scala
 object #:: {
-    def unapply[A](s: OurLazyList[A]): Option[(A, OurLazyList[A])] =
+    def unapply[A](s: LazyList[A]): Option[(A, LazyList[A])] =
         if !s.isEmpty then Some((s.head, s.tail)) else None
 }
 #+END_SRC
@@ -267,21 +268,212 @@ The way unapply works is the opposite of a constructor. Given a constructed type
 Now we can write lazy code using pattern matching:
 
 #+BEGIN_SRC scala
-def ourMap[A, B](ll: OurLazyList[A], f: A => B): OurLazyList[B] =
+def ourMap[A, B](ll: LazyList[A], f: A => B): LazyList[B] =
   ll match {
     case hd #:: tl =>
-      OurLazyList.cons(f(hd), ourMap(tl, f))
+      LazyList.cons(f(hd), ourMap(tl, f))
     case _ =>
-      OurLazyList.empty
+      LazyList.empty
   }
 #+END_SRC
 
+** Iterating over Lazy List
+Note that destructuring lazy lists is often useful, in my final implementation for the Duct library I opted for the following more simple approach to the map function, shared here because I implemented many of the functions that iterate over lazy lists in the following way:
 
+#+BEGIN_SRC scala
+def map[B](f: A => B): LazyList[B] =
+  if isEmpty then LazyList.empty
+  else LazyList.cons(f(head), tail.map(f))
+#+END_SRC
 
+Another useful function is ~forEach~, which you can use to execute some action across the lazy list. This function highlights a couple of interesting things.
 
+1. When working with laziness always consider when you want preserve it versus lose it. The forEach function by definition must visit every element of the list and therefore does not preserve laziness.
+2. If possible you should make recursive functions tail recursive, otherwise they are limited by the stack. This implementation is tail recursive. We can tell the compiler to make sure that it is with the annoation.
 
+#+BEGIN_SRC scala
+@tailrec
+final def forEach(f: A => Unit): Unit =
+  if !isEmpty then
+    f(head)
+    tail.forEach(f)
+#+END_SRC
 
+And you can use it as follows. Note that I'm using the [[https://github.com/justinhj/duct/blob/2ebe7e3ea25edf4c668ca6e044959396ae3cb265/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala#L123][LazyList.apply]] method here is a convenience to create a lazy list from a variable argument list.
 
+#+BEGIN_SRC scala
+val list1: LazyList[Int] = LazyList(1,2,3)
+
+println("forEach list1")
+list1.forEach { a =>
+  println(a)
+}
+
+// forEach list1
+// 1
+// 2
+// 3
+#+END_SRC
+
+** Filtering
+Another part of the implementation worth looking at is dropping elements that pass or fail some filter, namely ~filter~ and ~dropWhile~. Let's first think about what the semantics are here in terms of laziness.
+
+1. Given a lazy list and a filter function we want the user to be able to iterate through them ~by need~.
+2. When the user calls head on a lazy list where many elements fail the filter before a good one comes, many elements are evaluated.
+3. We must stop evaluating the elements as soon as we find one that passes the filter, and return that as a lazy list to the caller.
+
+We have to be careful about laziness then. Let's first think about ~dropWhile~. This takes lazy list with all the failing elements dropped.
+
+#+BEGIN_SRC scala
+@tailrec
+final def dropWhile(f: A => Boolean): LazyList[A] =
+    if isEmpty then LazyList.empty
+    else if f(head) then tail.dropWhile(f)
+    else this
+#+END_SRC
+
+Now since we want this to work on many elements potentially, it is important to be tail recursive. With ~dropWhile~ we can take list such as ~LazyList(1,2,3,4,5)~ and drop all elements less than 3. What we get back is LazyList beginning with 3.
+
+Take a moment to think about which elements have been evaluated at this point.
+
+Whether you reason about it by looking at the code or thinking about it semantically, the answer is that the 3 is evaluated and the ~4,5~ elements are in a lazy tail. ~dropWhile~ then will evaluate elementes ~up to and including the first one that should not be dropped~.
+
+Once you implement ~dropWhile~ it can be used to implement ~filter~ with the requirements we came up with above.
+
+#+BEGIN_SRC scala
+def filter(f: A => Boolean): LazyList[A] =
+    val dropped = this.dropWhile(a => !f(a))
+    if dropped.isEmpty then LazyList.empty
+    else LazyList.cons(dropped.head, dropped.tail.filter(f))    
+#+END_SRC
+
+** Infinite lists
+Quite a few years ago I was working through a Haskell tutorial for beginners. Some of the examples worked with infinite lists; mapping them, filtering them and zipping them together. At the time my knowledge of evaluation and laziness was 
+not sophisticated. As they say, any sufficiently advanced technology is indistinguishable from magic. Since Haskell was doing things more advanced than I understood at the time, I thought of infinite lists as being a magic trick.
+
+As you've seen so far, I hope, the mechanisms of lazy evaluation make working with infinite lists possible, and don't require a lot of work. Let's look at how what we've done so far scales effortlessly from small lists to inifinite ones.
+
+#+BEGIN_SRC scala
+def repeat[A](a: A): LazyList[A] = a #:: repeat(a)
+def from(n: Int) : LazyList[Int] = n #:: from(n+1)
+def iterate[A](a: A)(next: A => A): LazyList[A] = a #:: iterate(next(a))(next)
+#+END_SRC
+
+Note how these functions build on what we did so far, and give us ways to declaratively create infinite lists.
+
+~repeat~ provides a lazy list with a head of type ~A~. When the use takes the tail they get the same thing and so on forever. This gives us a definition of an infinitely repeating constant.
+
+~from~ shows how we can incrementally generate numbers from some starting value n. Note that the tail is a function that takes input from the previous call; in this way we can pass information through an infinite chain of computation!
+
+~iterate~ is a generalisation of this allowing you take some function that creates a new A from the previous one, forever.
+
+Obviously we don't want to literally evaluate infinite lists because we don't have time for that, so you would use [[https://github.com/justinhj/duct/blob/2ebe7e3ea25edf4c668ca6e044959396ae3cb265/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala#L57][take]] and drop and other filtering mechanisms to work with only the values you are interested in. As we will see, there are times when you don't know how many of a thing you need and it may be expensive to generate them, so ~by need~ evaluation is what we want.
+
+** Operator fusion
+Imagine the following code.
+
+#+BEGIN_SRC scala
+val lotsOfThings = List.fill(1)(10000000)
+lotsOfThings.map(a => expensiveCalculation(a)).filter(a => a < 10).map(a => expensiveCalculation2(a)).take(10).sum
+#+END_SRC
+
+With a strictly evaluated list what happens here?
+
+1. ~map~ will iterate over the large list, doing expensiveCalculation 10m times and making a new list of 10m elements.
+2. ~filter~ will walk that new list and create a new list with up to 10m elements that pass the filter.
+3. ~map~ will take those elements and create a new list after calling expensiveCalculation2 on each element
+4. ~take~ will drop all elements after the 10th one
+5. ~sum~ iterates over the elements
+
+Whilst this kind of code is not typical, you are hopefully not working with lists this big, but if the use case requires it, then lazy lists provide a ~potentially~ much more efficient way of working.
+
+The same code as a lazy list would work this way.
+
+1. [@1] ~map~ takes the large list and returns a lazy list where, when evaluated, head will have expensiveCalculation applied to it. This is O(1).
+2. [@2] ~filter~ will internally call ~dropWhile~. Let's pretend the filter is true because a < 10 and we return a new lazy list with the filter but paused at the first element.
+3. [@3] ~map~ will take that list and again, return a new lazy list that is unevaluated and ready to run expensiveCalculation2 if anyone asks.
+
+Observation... we are turning our list of values into a ~list of delayed computations~. This takes up more memory than a list of values because each step is wrapped in a Function object.
+
+4. [@4] ~take~ will now return a lazy list that keeps track of a counter and stops (returns an empty tail) when it runs out, so we set a bound on our computation.
+5. [@5] ~sum~ okay now we're going to do a bit more work. sum calls ~foldLeft~ (see below), which by definition must evaluate all the items and combine them to a single result
+
+#+BEGIN_SRC scala
+@tailrec
+final def foldLeft[B](z: B)(f: (B, A) => B): B =
+    if isEmpty then z
+    else tail.foldLeft(f(z, head))(f)
+#+END_SRC
+
+6. [@6] Now more serious evaluation will happen. What we have at this point is a sort of stack of computations for each successive element. We will call expensiveCalculation1 and expensiveCalculation2 ~only as often as needed~ to evaluate the 10 elements.
+
+This is all rather hard to conceptualize, so here's a picture that may help. The call stack shown in the middle of the ~foldLeft~ shows that the lazy list we evaluate consists of a stack of function calls that are waiting to happen.
+
+#+BEGIN_EXPORT html
+<img class="img" src="../../../images/nestedlazylist.png" border="0" style="padding: 30px;" alt="A callstack snapshot" width="600"/>
+#+END_EXPORT
+
+Operator fusion means that a sequence of complex, expensive operations, can be limited to only the number of elements you are interested in. This is the essence of being able to control evaluation for your own needs.
+
+This gives us some insight on when to use a lazy list (or equivalent structures such as streams, iterators), rather than concrete immutable containers.
+
+Use lazy lists when you need to execute an expensive sequence of operations and you don't expect to consume the majority of the collection.
+
+Obviously you need to use some discretion here. If you can't guarantee that the whole list won't be executed, it's probably not a good use case. But this technique translates well to computation where we never see the whole list (streaming applications that work with Kafka and Kinesis for example).
+
+** Laziness for convenience
+Some algorithms require you to provide a list of thing but you don't know how many things you need in advance. Here's an example that appears in the paper [[https://www.staff.city.ac.uk/~ross/papers/Applicative.html][Applicative Programming with Effects]] that transposes a matrix.
+
+You can see this code also in my post about the paper at [[./2020/04/04/whats-ap.html][What's Ap?]], although the coverage there is more about how bit of code can be written in "the applicative style".
+
+First let's represent a 2-dimensional matrix as a lazy list of lazy lists.
+
+#+BEGIN_SRC scala
+val matrix = LazyList(
+  LazyList(11, 12, 13, 14, 15),
+  LazyList(21, 22, 23, 24, 25),
+  LazyList(31, 32, 33, 34, 35)
+)
+#+END_SRC
+
+The idea of transposing a matrix is you "rotate" it such that if you started with n rows and m columns, you would end up with a rotated matrix with m rows and n columns.
+
+Rotated by hand and represented in code, this 3 by 5 matrix should be transposed to the following.
+
+#+BEGIN_SRC scala
+val matrix = LazyList(
+  LazyList(11, 21, 31),
+  LazyList(12, 22, 32),
+  LazyList(13, 23, 33),
+  LazyList(14, 24, 34),
+  LazyList(15, 25, 35)
+)
+#+END_SRC
+
+In order to implement this a nicely functional, declarative way, we first need a helper function ~zipWith~ that takes two empty lists and lets us combine them with a function.
+
+#+BEGIN_SRC scala 
+def zipWith[A, B, C](as: LazyList[A], bs: LazyList[B])
+  (f: (A, B) => C): LazyList[C] = as.zip(bs).map { case (a, b) => f(a, b) }
+#+END_SRC
+
+An important property of zip is that given two lists it combines them together into a new list of tuples, the length of which is bounded by the shortest one. This means we can combine zip and lazy lists to 
+zip together two lists, one of which is infinite and the other is bounded. That's the technique used here.
+
+#+BEGIN_SRC scala
+def transpose[A](
+    matrix: LazyList[LazyList[A]]): LazyList[LazyList[A]] =
+  if matrix.isEmpty then LazyList.repeat(LazyList.empty) then
+  else zipWith(matrix.head, transpose(matrix.tail))(_ #:: _)
+#+END_SRC
+
+Is it easy to understand? No, it takes a bit of thinking about to understand what is going on (as an exercise I'd suggest adding some println to see how it works). What's more 
+interesting though, is that this is a much more functional, declarative version of matrix transpose. Imagine writing this in Go and you will do it as a for loop, taking care not to 
+make any mistakes. Even though matrix transpose is simple, functional programming ~scales up~ to bigger more complex programs, whereas the imperative version is more 
+of one off implementation.
+
+The "trick" in the code above is in the ~LazyList.repeat~. The iteration of the transpose works along each row of the matrix producing the new columns with cons, but at some point it runs out of rows and it needs another row of empty lists to finish the new rows off. How many empty lists does it need? Well we could work it out by counting, but why not just say 
+here is an infinite number, and let the zip figure out when to stop.
 
 
 

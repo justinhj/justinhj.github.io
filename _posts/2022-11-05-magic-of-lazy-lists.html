@@ -6,7 +6,7 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, 
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 
 <style>
-.img {
+.img.special {
   width: 600px;
   border:2px solid #fff;
   box-shadow: 6px 6px 2px #ccc;
@@ -18,7 +18,7 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, 
 </style>
 
 <figure>
-  <img class="img" src="../../../images/dollar-gill-0V7_N62zZcU-unsplash.jpg" border="0" alt="A mysterious book on a table with a glowing globe" width="600"/>
+  <img class="img special" src="../../../images/dollar-gill-0V7_N62zZcU-unsplash.jpg" border="0" alt="A mysterious book on a table with a glowing globe" width="600"/>
   <figcaption>
     Photo by <a href="https://unsplash.com/@dollargill?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Dollar Gill</a> on <a href="https://unsplash.com/s/photos/magic?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
   <figcaption>
@@ -35,7 +35,7 @@ classes. As well as <code>List</code> it also has a solid implementation of <cod
 <p>
 Scala <code>List</code> can represent collections of <code>zero or more</code>, stored as a linked list, with the details of the underlying data structure abstracted away. 
 In my video <a href="https://youtu.be/7A2xuRkCZBg">NonEmptyLists more or less</a> I talked about how
-we can build a variant of <code>List</code> that can only be a collection with <code>one or more</code> items. 
+you can build a variant of <code>List</code> that can only be a collection with <code>one or more</code> items. 
 </p>
 
 <p>
@@ -58,9 +58,9 @@ such as that of the ScalaZ Ephemeral list. The resulting code is a combination o
 </p>
 
 <p>
-With this implementation LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager or strict evaluation. When I pass 
-the expression <code>{println("evaluated"); 10</code> is passed into the <code>LazyThing</code> constructor it is evaluated immediately and stored in the class. We see it prints evaluated
-and then when the user gets the value nothing is printed, we just get the result.
+With this implementation LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager, or strict evaluation. When I pass 
+the expression <code>{println("evaluated"); 10</code> is passed into the <code>LazyThing</code> constructor it is evaluated immediately and stored in the class. Later when the user calls the get method 
+we find that we just get the value, nothing is evaluated again.
 </p>
 
 <div class="org-src-container">
@@ -140,7 +140,6 @@ reference is implemented within Scala and known as call by name. Rewriting like 
 Secondly, we can replace the manual memoization code that remembers the evaluated value with <code>lazy val</code> which does the same thing but, again, is built into the compiler.
 </p>
 
-
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">LazyThing</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>)<span style="color: #b6a0ff;">:</span>
   <span style="color: #f78fe7;">lazy</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">get</span> <span style="color: #b6a0ff;">=</span> a
@@ -160,13 +159,13 @@ Secondly, we can replace the manual memoization code that remembers the evaluate
 <h2 id="orgdbc13d7">Beginning LazyList</h2>
 <div class="outline-text-2" id="text-orgdbc13d7">
 <p>
-Let's begin by representing the <code>LazyList</code> as a sealed trait, which will be the object through which users interact with the collection.
+Let's begin by representing the <code>LazyList</code> as a <code>sealed trait</code>, which will be the object through which users interact with the collection.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #f78fe7;">sealed</span> <span style="color: #b6a0ff;">trait</span> <span style="color: #6ae4b9;">LazyList</span>[+<span style="color: #00bcff;">A</span>]<span style="color: #b6a0ff;">:</span>
+<pre class="src src-scala"><span style="color: #f78fe7;">sealed</span> <span style="color: #b6a0ff;">trait</span> <span style="color: #6ae4b9;">OurLazyList</span>[+<span style="color: #00bcff;">A</span>]<span style="color: #b6a0ff;">:</span>
    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">head</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span>
-   <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">tail</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>]
+   <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">tail</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">OurLazyList</span>[<span style="color: #00bcff;">A</span>]
    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isEmpty</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Boolean</span>
 </pre>
 </div>
@@ -189,6 +188,8 @@ that takes a list of Loans, should it accept a list of subtypes? Credit cards fo
 includes variance annotations so that you can choose the variance relationship you want as needed. I'll come back to this topic in more detail in a later 
 video.
 </p>
+
+
 
 <p>
 <code>LazyList</code> will have a companion object containing all the static methods that will be used to create and manipulate lazy lists. The first thing 
@@ -218,10 +219,10 @@ as it will be used to construct lists one lazy element at a time.
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">object LazyList continued:</span>
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">cons</span>[<span style="color: #00bcff;">A</span>](hd<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>, tl<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">LazyList</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>]<span style="color: #b6a0ff;">:</span>
-    <span style="color: #f78fe7;">lazy</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">head</span> <span style="color: #b6a0ff;">=</span> hd
-    <span style="color: #f78fe7;">lazy</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">tail</span> <span style="color: #b6a0ff;">=</span> tl
-    <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">isEmpty</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">false</span>
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">cons</span>[<span style="color: #00bcff;">A</span>](hd<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>, tl<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">LazyList</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>]<span style="color: #b6a0ff;">:</span>
+  <span style="color: #f78fe7;">lazy</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">head</span> <span style="color: #b6a0ff;">=</span> hd
+  <span style="color: #f78fe7;">lazy</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">tail</span> <span style="color: #b6a0ff;">=</span> tl
+  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">isEmpty</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">false</span>
 </pre>
 </div>
 
@@ -231,6 +232,7 @@ With this small amount of code we have a functional (no pun intended) lazy list.
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">ll</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">LazyList</span>.cons({println(<span style="color: #79a8ff;">"evaluated!"</span>);<span style="color: #00bcff;">10</span>}, <span style="color: #00bcff;">LazyList</span>.empty)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">nothing is printed yet!</span>
 ll.head
 <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">evaluated!</span>
 <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res9: Int = 10</span>
@@ -243,6 +245,430 @@ ll.head
 <p>
 Here you can see that constructing the list did not evaluate the value we passed in to be the head of the collection. Once we retrieved the head we got the 
 evaluation happen, but subsequently we did not not. Nice.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb797a44" class="outline-2">
+<h2 id="orgb797a44">Pattern matching and "cons operators"</h2>
+<div class="outline-text-2" id="text-orgb797a44">
+<p>
+In Scala you can construct lists using the so-called <code>cons</code> operator <code>::</code>. For example:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">l</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">1</span> :: <span style="color: #00bcff;">2</span> :: <span style="color: #00bcff;">3</span> :: <span style="color: #00bcff;">List</span>.empty
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Creates a List[Int] = List(1, 2, 3)</span>
+</pre>
+</div>
+
+<p>
+This is convenient so Scala's standard <code>LazyList</code> also implements this using the syntax <code>#::</code>. Let's do the same for Duct. There are two things to note here:
+</p>
+
+<ol class="org-ol">
+<li>To make this work we want #:: to be a right associative function that <code>cons</code>'s a new head for the list to the tail which is to the right</li>
+<li>The type of the operation should be a cons operation on a list.</li>
+</ol>
+
+<p>
+To append <code>1</code> to the list <code>val ll = (2,3)</code> we need to write <code>1 #:: ll</code> and we want the compiler to evaluate this as:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">ll.#::(<span style="color: #00bcff;">1</span>)
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">where the type of LL is LazyList[Int]</span>
+</pre>
+</div>
+
+<p>
+Note that in Scala, by convention, anything ending in a colon is right associative, which is what we want here. Also not that in Scala 3 we can write this as an extension method. In the standard library you'll see code like the following:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #f78fe7;">implicit</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">toDeferrer</span>[<span style="color: #00bcff;">A</span>](l<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">LazyList</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Deferrer</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">Deferrer</span>[<span style="color: #00bcff;">A</span>](() <span style="color: #b6a0ff;">=&gt;</span> l)
+
+<span style="color: #f78fe7;">final</span> <span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">Deferrer</span>[<span style="color: #00bcff;">A</span>] <span style="color: #f78fe7;">private</span>[<span style="color: #00bcff;">LazyList</span>] (<span style="color: #f78fe7;">private</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">l</span><span style="color: #b6a0ff;">:</span> () <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">LazyList</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">AnyVal</span> {
+  <span style="color: #b0d6f5;">/** Construct a LazyList consisting of a given first element followed by elements</span>
+<span style="color: #b0d6f5;">    *  from another LazyList.</span>
+<span style="color: #b0d6f5;">    */</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">#::</span> [<span style="color: #00bcff;">B</span> <span style="color: #b6a0ff;">&gt;:</span> <span style="color: #00bcff;">A</span>](elem<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> newLL(sCons(elem, newLL(l().state)))
+  <span style="color: #b0d6f5;">/** Construct a LazyList consisting of the concatenation of the given LazyList and</span>
+<span style="color: #b0d6f5;">    *  another LazyList.</span>
+<span style="color: #b0d6f5;">    */</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">#:::</span>[<span style="color: #00bcff;">B</span> <span style="color: #b6a0ff;">&gt;:</span> <span style="color: #00bcff;">A</span>](prefix<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">B</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span> prefix lazyAppendedAll l()
+}
+</pre>
+</div>
+
+<p>
+<a href="https://github.com/scala/scala/blob/39148e4ec34a5c53443dd1b25ceec2308cd097fe/src/library/scala/collection/immutable/LazyList.scala#L1136">scala.collection.immutable.LazyList.scala</a>
+</p>
+
+<p>
+With Scala 3 we can simply implement this as an extension method on the <code>LazyList</code> trait. Much nicer.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala">extension [<span style="color: #00bcff;">A</span>](hd<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>)
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">#::</span>(tl<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">LazyList</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> 
+   <span style="color: #00bcff;">LazyList</span>.cons(hd, tl)
+</pre>
+</div>
+
+<p>
+Now we can create lazy lists more easily as follows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">ll</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">1</span> #:: <span style="color: #00bcff;">2</span> #:: <span style="color: #00bcff;">LazyList</span>.empty
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val ll: LazyList[Int] = LazyList$$anon$2@687292c5</span>
+</pre>
+</div>
+
+<p>
+Creating a lazy list with the cons operators is one thing but users will expect to be able to deconstruct lists in a pattern match expression to. Let's add that functionality next.
+</p>
+
+<p>
+In Scala you implement pattern matching on a particular type by implementing <code>unapply</code> on an object with that types name, in our case <code>#::</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">#::</span> {
+    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">unapply</span>[<span style="color: #00bcff;">A</span>](s<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Option</span>[(<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">LazyList</span>[<span style="color: #00bcff;">A</span>])] <span style="color: #b6a0ff;">=</span>
+        <span style="color: #b6a0ff;">if</span> !s.isEmpty then <span style="color: #00bcff;">Some</span>((s.head, s.tail)) <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">None</span>
+}
+</pre>
+</div>
+
+<p>
+The way unapply works is the opposite of a constructor. Given a constructed type, unapply tries to extract the pieces. This is a partial function, it does not have to succeed, so it returns the pieces as an Option.
+</p>
+
+<p>
+Now we can write lazy code using pattern matching:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">ourMap</span>[<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>](ll<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>], f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span>
+  ll <span style="color: #b6a0ff;">match</span> {
+    <span style="color: #b6a0ff;">case</span> <span style="color: #00d3d0;">hd</span> <span style="color: #6ae4b9;">#::</span> <span style="color: #00d3d0;">tl</span> <span style="color: #b6a0ff;">=&gt;</span>
+      <span style="color: #00bcff;">LazyList</span>.cons(f(hd), ourMap(tl, f))
+    <span style="color: #b6a0ff;">case</span> <span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">=&gt;</span>
+      <span style="color: #00bcff;">LazyList</span>.empty
+  }
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org54fcd19" class="outline-2">
+<h2 id="org54fcd19">Iterating over Lazy List</h2>
+<div class="outline-text-2" id="text-org54fcd19">
+<p>
+Note that destructuring lazy lists is often useful, in my final implementation for the Duct library I opted for the following more simple approach to the map function, shared here because I implemented many of the functions that iterate over lazy lists in the following way:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">map</span>[<span style="color: #00bcff;">B</span>](f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">B</span>] <span style="color: #b6a0ff;">=</span>
+  <span style="color: #b6a0ff;">if</span> isEmpty then <span style="color: #00bcff;">LazyList</span>.empty
+  <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">LazyList</span>.cons(f(head), tail.map(f))
+</pre>
+</div>
+
+<p>
+Another useful function is <code>forEach</code>, which you can use to execute some action across the lazy list. This function highlights a couple of interesting things.
+</p>
+
+<ol class="org-ol">
+<li>When working with laziness always consider when you want preserve it versus lose it. The forEach function by definition must visit every element of the list and therefore does not preserve laziness.</li>
+<li>If possible you should make recursive functions tail recursive, otherwise they are limited by the stack. This implementation is tail recursive. We can tell the compiler to make sure that it is with the annoation.</li>
+</ol>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #ff9977;">@tailrec</span>
+<span style="color: #f78fe7;">final</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">forEach</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Unit</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Unit</span> <span style="color: #b6a0ff;">=</span>
+  <span style="color: #b6a0ff;">if</span> !isEmpty then
+    f(head)
+    tail.forEach(f)
+</pre>
+</div>
+
+<p>
+And you can use it as follows. Note that I'm using the <a href="https://github.com/justinhj/duct/blob/2ebe7e3ea25edf4c668ca6e044959396ae3cb265/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala#L123">LazyList.apply</a> method here is a convenience to create a lazy list from a variable argument list.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">list1</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">LazyList</span>(<span style="color: #00bcff;">1</span>,<span style="color: #00bcff;">2</span>,<span style="color: #00bcff;">3</span>)
+
+println(<span style="color: #79a8ff;">"forEach list1"</span>)
+list1.forEach { a <span style="color: #b6a0ff;">=&gt;</span>
+  println(a)
+}
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">forEach list1</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">1</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">2</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">3</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgda7ca03" class="outline-2">
+<h2 id="orgda7ca03">Filtering</h2>
+<div class="outline-text-2" id="text-orgda7ca03">
+<p>
+Another part of the implementation worth looking at is dropping elements that pass or fail some filter, namely <code>filter</code> and <code>dropWhile</code>. Let's first think about what the semantics are here in terms of laziness.
+</p>
+
+<ol class="org-ol">
+<li>Given a lazy list and a filter function we want the user to be able to iterate through them <code>by need</code>.</li>
+<li>When the user calls head on a lazy list where many elements fail the filter before a good one comes, many elements are evaluated.</li>
+<li>We must stop evaluating the elements as soon as we find one that passes the filter, and return that as a lazy list to the caller.</li>
+</ol>
+
+<p>
+We have to be careful about laziness then. Let's first think about <code>dropWhile</code>. This takes lazy list with all the failing elements dropped.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #ff9977;">@tailrec</span>
+<span style="color: #f78fe7;">final</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">dropWhile</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Boolean</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+    <span style="color: #b6a0ff;">if</span> isEmpty then <span style="color: #00bcff;">LazyList</span>.empty
+    <span style="color: #b6a0ff;">else</span> <span style="color: #b6a0ff;">if</span> f(head) then tail.dropWhile(f)
+    <span style="color: #b6a0ff;">else</span> <span style="color: #b6a0ff;">this</span>
+</pre>
+</div>
+
+<p>
+Now since we want this to work on many elements potentially, it is important to be tail recursive. With <code>dropWhile</code> we can take list such as <code>LazyList(1,2,3,4,5)</code> and drop all elements less than 3. What we get back is LazyList beginning with 3.
+</p>
+
+<p>
+Take a moment to think about which elements have been evaluated at this point.
+</p>
+
+<p>
+Whether you reason about it by looking at the code or thinking about it semantically, the answer is that the 3 is evaluated and the <code>4,5</code> elements are in a lazy tail. <code>dropWhile</code> then will evaluate elementes <code>up to and including the first one that should not be dropped</code>.
+</p>
+
+<p>
+Once you implement <code>dropWhile</code> it can be used to implement <code>filter</code> with the requirements we came up with above.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">filter</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Boolean</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+    <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">dropped</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">this</span>.dropWhile(a <span style="color: #b6a0ff;">=&gt;</span> !f(a))
+    <span style="color: #b6a0ff;">if</span> dropped.isEmpty then <span style="color: #00bcff;">LazyList</span>.empty
+    <span style="color: #b6a0ff;">else</span> <span style="color: #00bcff;">LazyList</span>.cons(dropped.head, dropped.tail.filter(f))    
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org6584d34" class="outline-2">
+<h2 id="org6584d34">Infinite lists</h2>
+<div class="outline-text-2" id="text-org6584d34">
+<p>
+Quite a few years ago I was working through a Haskell tutorial for beginners. Some of the examples worked with infinite lists; mapping them, filtering them and zipping them together. At the time my knowledge of evaluation and laziness was 
+not sophisticated. As they say, any sufficiently advanced technology is indistinguishable from magic. Since Haskell was doing things more advanced than I understood at the time, I thought of infinite lists as being a magic trick.
+</p>
+
+<p>
+As you've seen so far, I hope, the mechanisms of lazy evaluation make working with infinite lists possible, and don't require a lot of work. Let's look at how what we've done so far scales effortlessly from small lists to inifinite ones.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">repeat</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> a #:: repeat(a)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">from</span>(n<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span>) <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> n #:: from(n+<span style="color: #00bcff;">1</span>)
+<span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">iterate</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span>)(next<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> a #:: iterate(next(a))(next)
+</pre>
+</div>
+
+<p>
+Note how these functions build on what we did so far, and give us ways to declaratively create infinite lists.
+</p>
+
+<p>
+<code>repeat</code> provides a lazy list with a head of type <code>A</code>. When the use takes the tail they get the same thing and so on forever. This gives us a definition of an infinitely repeating constant.
+</p>
+
+<p>
+<code>from</code> shows how we can incrementally generate numbers from some starting value n. Note that the tail is a function that takes input from the previous call; in this way we can pass information through an infinite chain of computation!
+</p>
+
+<p>
+<code>iterate</code> is a generalisation of this allowing you take some function that creates a new A from the previous one, forever.
+</p>
+
+<p>
+Obviously we don't want to literally evaluate infinite lists because we don't have time for that, so you would use <a href="https://github.com/justinhj/duct/blob/2ebe7e3ea25edf4c668ca6e044959396ae3cb265/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala#L57">take</a> and drop and other filtering mechanisms to work with only the values you are interested in. As we will see, there are times when you don't know how many of a thing you need and it may be expensive to generate them, so <code>by need</code> evaluation is what we want.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org0789d34" class="outline-2">
+<h2 id="org0789d34">Operator fusion</h2>
+<div class="outline-text-2" id="text-org0789d34">
+<p>
+Imagine the following code.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">lotsOfThings</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">List</span>.fill(<span style="color: #00bcff;">1</span>)(<span style="color: #00bcff;">10000000</span>)
+lotsOfThings.map(a <span style="color: #b6a0ff;">=&gt;</span> expensiveCalculation(a)).filter(a <span style="color: #b6a0ff;">=&gt;</span> a &lt; <span style="color: #00bcff;">10</span>).map(a <span style="color: #b6a0ff;">=&gt;</span> expensiveCalculation2(a)).take(<span style="color: #00bcff;">10</span>).sum
+</pre>
+</div>
+
+<p>
+With a strictly evaluated list what happens here?
+</p>
+
+<ol class="org-ol">
+<li><code>map</code> will iterate over the large list, doing expensiveCalculation 10m times and making a new list of 10m elements.</li>
+<li><code>filter</code> will walk that new list and create a new list with up to 10m elements that pass the filter.</li>
+<li><code>map</code> will take those elements and create a new list after calling expensiveCalculation2 on each element</li>
+<li><code>take</code> will drop all elements after the 10th one</li>
+<li><code>sum</code> iterates over the elements</li>
+</ol>
+
+<p>
+Whilst this kind of code is not typical, you are hopefully not working with lists this big, but if the use case requires it, then lazy lists provide a <code>potentially</code> much more efficient way of working.
+</p>
+
+<p>
+The same code as a lazy list would work this way.
+</p>
+
+<ol class="org-ol">
+<li value="1"><code>map</code> takes the large list and returns a lazy list where, when evaluated, head will have expensiveCalculation applied to it. This is O(1).</li>
+<li value="2"><code>filter</code> will internally call <code>dropWhile</code>. Let's pretend the filter is true because a &lt; 10 and we return a new lazy list with the filter but paused at the first element.</li>
+<li value="3"><code>map</code> will take that list and again, return a new lazy list that is unevaluated and ready to run expensiveCalculation2 if anyone asks.</li>
+</ol>
+
+<p>
+Observation&#x2026; we are turning our list of values into a <code>list of delayed computations</code>. This takes up more memory than a list of values because each step is wrapped in a Function object.
+</p>
+
+<ol class="org-ol">
+<li value="4"><code>take</code> will now return a lazy list that keeps track of a counter and stops (returns an empty tail) when it runs out, so we set a bound on our computation.</li>
+<li value="5"><code>sum</code> okay now we're going to do a bit more work. sum calls <code>foldLeft</code> (see below), which by definition must evaluate all the items and combine them to a single result</li>
+</ol>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #ff9977;">@tailrec</span>
+<span style="color: #f78fe7;">final</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">foldLeft</span>[<span style="color: #00bcff;">B</span>](z<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span>)(f<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">B</span>, <span style="color: #00bcff;">A</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span> <span style="color: #b6a0ff;">=</span>
+    <span style="color: #b6a0ff;">if</span> isEmpty then z
+    <span style="color: #b6a0ff;">else</span> tail.foldLeft(f(z, head))(f)
+</pre>
+</div>
+
+<ol class="org-ol">
+<li value="6">Now more serious evaluation will happen. What we have at this point is a sort of stack of computations for each successive element. We will call expensiveCalculation1 and expensiveCalculation2 <code>only as often as needed</code> to evaluate the 10 elements.</li>
+</ol>
+
+<p>
+This is all rather hard to conceptualize, so here's a picture that may help. The call stack shown in the middle of the <code>foldLeft</code> shows that the lazy list we evaluate consists of a stack of function calls that are waiting to happen.
+</p>
+
+<img class="img" src="../../../images/nestedlazylist.png" border="0" style="padding: 30px;" alt="A callstack snapshot" width="600"/>
+
+<p>
+Operator fusion means that a sequence of complex, expensive operations, can be limited to only the number of elements you are interested in. This is the essence of being able to control evaluation for your own needs.
+</p>
+
+<p>
+This gives us some insight on when to use a lazy list (or equivalent structures such as streams, iterators), rather than concrete immutable containers.
+</p>
+
+<p>
+Use lazy lists when you need to execute an expensive sequence of operations and you don't expect to consume the majority of the collection.
+</p>
+
+<p>
+Obviously you need to use some discretion here. If you can't guarantee that the whole list won't be executed, it's probably not a good use case. But this technique translates well to computation where we never see the whole list (streaming applications that work with Kafka and Kinesis for example).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org72f881b" class="outline-2">
+<h2 id="org72f881b">Laziness for convenience</h2>
+<div class="outline-text-2" id="text-org72f881b">
+<p>
+Some algorithms require you to provide a list of thing but you don't know how many things you need in advance. Here's an example that appears in the paper <a href="https://www.staff.city.ac.uk/~ross/papers/Applicative.html">Applicative Programming with Effects</a> that transposes a matrix.
+</p>
+
+<p>
+You can see this code also in my post about the paper at <a href="./2020/04/04/whats-ap.html">What's Ap?</a>, although the coverage there is more about how bit of code can be written in "the applicative style".
+</p>
+
+<p>
+First let's represent a 2-dimensional matrix as a lazy list of lazy lists.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">matrix</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">LazyList</span>(
+  <span style="color: #00bcff;">LazyList</span>(<span style="color: #00bcff;">11</span>, <span style="color: #00bcff;">12</span>, <span style="color: #00bcff;">13</span>, <span style="color: #00bcff;">14</span>, <span style="color: #00bcff;">15</span>),
+  <span style="color: #00bcff;">LazyList</span>(<span style="color: #00bcff;">21</span>, <span style="color: #00bcff;">22</span>, <span style="color: #00bcff;">23</span>, <span style="color: #00bcff;">24</span>, <span style="color: #00bcff;">25</span>),
+  <span style="color: #00bcff;">LazyList</span>(<span style="color: #00bcff;">31</span>, <span style="color: #00bcff;">32</span>, <span style="color: #00bcff;">33</span>, <span style="color: #00bcff;">34</span>, <span style="color: #00bcff;">35</span>)
+)
+</pre>
+</div>
+
+<p>
+The idea of transposing a matrix is you "rotate" it such that if you started with n rows and m columns, you would end up with a rotated matrix with m rows and n columns.
+</p>
+
+<p>
+Rotated by hand and represented in code, this 3 by 5 matrix should be transposed to the following.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">matrix</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">LazyList</span>(
+  <span style="color: #00bcff;">LazyList</span>(<span style="color: #00bcff;">11</span>, <span style="color: #00bcff;">21</span>, <span style="color: #00bcff;">31</span>),
+  <span style="color: #00bcff;">LazyList</span>(<span style="color: #00bcff;">12</span>, <span style="color: #00bcff;">22</span>, <span style="color: #00bcff;">32</span>),
+  <span style="color: #00bcff;">LazyList</span>(<span style="color: #00bcff;">13</span>, <span style="color: #00bcff;">23</span>, <span style="color: #00bcff;">33</span>),
+  <span style="color: #00bcff;">LazyList</span>(<span style="color: #00bcff;">14</span>, <span style="color: #00bcff;">24</span>, <span style="color: #00bcff;">34</span>),
+  <span style="color: #00bcff;">LazyList</span>(<span style="color: #00bcff;">15</span>, <span style="color: #00bcff;">25</span>, <span style="color: #00bcff;">35</span>)
+)
+</pre>
+</div>
+
+<p>
+In order to implement this a nicely functional, declarative way, we first need a helper function <code>zipWith</code> that takes two empty lists and lets us combine them with a function.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">zipWith</span>[<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>, <span style="color: #00bcff;">C</span>](as<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>], bs<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">B</span>])
+  (f<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">C</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> as.zip(bs).map { <span style="color: #b6a0ff;">case</span> (<span style="color: #00d3d0;">a</span>, <span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">=&gt;</span> f(a, b) }
+</pre>
+</div>
+
+<p>
+An important property of zip is that given two lists it combines them together into a new list of tuples, the length of which is bounded by the shortest one. This means we can combine zip and lazy lists to 
+zip together two lists, one of which is infinite and the other is bounded. That's the technique used here.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">transpose</span>[<span style="color: #00bcff;">A</span>](
+    matrix<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">LazyList</span>[<span style="color: #00bcff;">A</span>]])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">LazyList</span>[<span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">=</span>
+  <span style="color: #b6a0ff;">if</span> matrix.isEmpty then <span style="color: #00bcff;">LazyList</span>.repeat(<span style="color: #00bcff;">LazyList</span>.empty) then
+  <span style="color: #b6a0ff;">else</span> zipWith(matrix.head, transpose(matrix.tail))(<span style="color: #b6a0ff;">_</span> #:: <span style="color: #b6a0ff;">_</span>)
+</pre>
+</div>
+
+<p>
+Is it easy to understand? No, it takes a bit of thinking about to understand what is going on (as an exercise I'd suggest adding some println to see how it works). What's more 
+interesting though, is that this is a much more functional, declarative version of matrix transpose. Imagine writing this in Go and you will do it as a for loop, taking care not to 
+make any mistakes. Even though matrix transpose is simple, functional programming <code>scales up</code> to bigger more complex programs, whereas the imperative version is more 
+of one off implementation.
+</p>
+
+<p>
+The "trick" in the code above is in the <code>LazyList.repeat</code>. The iteration of the transpose works along each row of the matrix producing the new columns with cons, but at some point it runs out of rows and it needs another row of empty lists to finish the new rows off. How many empty lists does it need? Well we could work it out by counting, but why not just say 
+here is an infinite number, and let the zip figure out when to stop.
 </p>
 </div>
 </div>
