@@ -29,7 +29,7 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, 
 <div class="outline-text-2" id="text-orgc153bc3">
 <p>
 As the <a href="https://docs.scala-lang.org/scala3/book/taste-collections.html">Scala 3 - book</a> points out, Scala has a rich set of collection
-classes. As well as <code>List</code> it also has a solid implementation of <code>LazyList</code>. If you're not sure what that is, or what is used for, read on and find out, plus even better I will walk through a full implementation of LazyList that can do some magical things.
+classes. As well as <code>List</code>, of course, it also has a solid implementation of <code>LazyList</code>. If you're not sure what that is, or what is used for, read on and find out, plus even better I will walk through a full implementation of LazyList that can do some magical things.
 </p>
 
 <p>
@@ -39,11 +39,11 @@ you can build a variant of <code>List</code> that can only be a collection with 
 </p>
 
 <p>
-In this video I will present theory and practise of building a <code>LazyList</code> type, that adds the additional capability of controlling <code>when elements are evaluated</code>.
+In this video, I will present the theory and practice of building a <code>LazyList</code> type, that adds the additional capability of controlling <code>when elements are evaluated</code>.
 </p>
 
 <p>
-All the code written in this post, and accompanying video <a href="https://youtu.be/laB15gG5bjY">The Magic of Lazy Lists</a> can be found in my new educational Scala library <a href="https://github.com/justinhj/duct/">Duct</a>. In order to produce this implementation I studied the code of the 
+All the code written in this post, and the accompanying video <a href="https://youtu.be/laB15gG5bjY">The Magic of Lazy Lists</a> can be found in my new educational Scala library <a href="https://github.com/justinhj/duct/">Duct</a>. In order to produce this implementation I studied the code of the 
 Scala standard library (both the current version and history versions which are less sophisticated but also easier to read), as well as other implementations
 such as that of the ScalaZ Ephemeral list. The resulting code is a combination of these with some of the best parts of both, as well as taking some advantage of Scala 3 features along the way.
 </p>
@@ -56,13 +56,13 @@ such as that of the ScalaZ Ephemeral list. The resulting code is a combination o
 <h2 id="org59f4441">Implementing Lazy Thing</h2>
 <div class="outline-text-2" id="text-org59f4441">
 <p>
-<code>LazyList</code> is easier to understand if you have a good grasp for different evaluation models in Scala, so let's explore that with a custom class call <code>LazyThing</code>.
+<code>LazyList</code> is easier to understand if you have a good grasp of different evaluation models in Scala, so let's explore that with a custom class called <code>LazyThing</code>.
 </p>
 
 <p>
-With this implementation LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager, or strict evaluation. When I pass 
+With this implementation, LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager, or strict evaluation. When I pass 
 the expression <code>{println("evaluated"); 10</code> is passed into the <code>LazyThing</code> constructor it is evaluated immediately and stored in the class. Later when the user calls the get method 
-we find that we just get the value, nothing is evaluated again.
+we find that we just get the value; nothing is evaluated again.
 </p>
 
 <div class="org-src-container">
@@ -103,7 +103,7 @@ Now when we create the class nothing is evaluated until we call get, and then it
 </div>
 
 <p>
-The <code>LazyList</code> structure is not about always evaluation though, it is about <code>lazy</code> or <code>by need</code> evaluation. We want to be able to remember the result 
+The <code>LazyList</code> structure is not about always evaluation though, it is about <code>lazy</code> or <code>call by need</code> evaluation. We want to be able to remember the result 
 of evaluated list elements, and never evaluate them again. This <code>memoization</code> is the next step.
 </p>
 
@@ -128,9 +128,9 @@ of evaluated list elements, and never evaluate them again. This <code>memoizatio
 </div>
 
 <p>
-Now you can see that the value is evaluated only once and we can retrieve it multiple times. Memoization is good because it saves us recomputing 
+Now you can see that the value is evaluated only once and we can retrieve it multiple times. Memoization is good because it saves us from recomputing 
 values, but it also means we must be mindful of memory use and hanging on to references to the internal structure of our <code>LazyList</code> so as not 
-to consume memory that is no loger needed.
+to consume memory that is no longer needed.
 </p>
 
 <p>
@@ -178,15 +178,15 @@ important when writing application code. A short explanation of variance is that
 </p>
 
 <p>
-Let's say we have a type <code>Loan</code> and two other sub types of Loan, <code>Credit Card</code> and <code>Amortized Loan</code>. If you have some function that takes Loan 
+Let's say we have a type <code>Loan</code> and two other subtypes of Loan, <code>Credit Card</code> and <code>Amortized Loan</code>. If you have some function that takes Loan 
 and prints the outstanding balance, you would expect through normal rules of inheritance to be able to pass in a Credit card or an amortized 
-loan in place of the Loan. You can use a subtype of loan whereever the compiler is expecting a loan. That is what is known as behavioural 
+loan in place of the Loan. You can use a subtype of loan wherever the compiler is expecting a loan. That is what is known as behavioural 
 subtyping. 
 </p>
 
 <p>
-What variance under inheritance refers to, is what should we do when we have some parameterized type with respect to subtyping? If I have a function 
-that takes a list of Loans, should it accept a list of subtypes? Credit cards for examples. Because the answer to this is, no not always, Scala 
+What variance under inheritance refers to, is what inheritance means when we have some parameterized type such as a collection. If I have a function 
+that takes a list of Loans, should it accept a list of subtypes? Credit cards for example. Because the answer to this is, no not always, Scala 
 includes variance annotations so that you can choose the variance relationship you want as needed. I'll come back to this topic in more detail in a later 
 video.
 </p>
@@ -369,7 +369,7 @@ Now we can write lazy code using pattern matching:
 <h2 id="org54fcd19">Iterating over Lazy List</h2>
 <div class="outline-text-2" id="text-org54fcd19">
 <p>
-Note that destructuring lazy lists is often useful, in my final implementation for the Duct library I opted for the following more simple approach to the map function, shared here because I implemented many of the functions that iterate over lazy lists in the following way:
+Note that although the destructuring (pattern matching) of lazy lists is often useful, in my final implementation for the Duct library I opted for the following more simple approach to the map function, shared here because I implemented many of the functions that iterate over lazy lists in the following way:
 </p>
 
 <div class="org-src-container">
@@ -453,7 +453,7 @@ Take a moment to think about which elements have been evaluated at this point.
 </p>
 
 <p>
-Whether you reason about it by looking at the code or thinking about it semantically, the answer is that the 3 is evaluated and the <code>4,5</code> elements are in a lazy tail. <code>dropWhile</code> then will evaluate elementes <code>up to and including the first one that should not be dropped</code>.
+Whether you reason about it by looking at the code or thinking about it semantically, the answer is that the 3 is evaluated and the <code>4,5</code> elements are in a lazy tail. <code>dropWhile</code> then will evaluate elements <code>up to and including the first one that should not be dropped</code>.
 </p>
 
 <p>
@@ -474,12 +474,12 @@ Once you implement <code>dropWhile</code> it can be used to implement <code>filt
 <h2 id="org6584d34">Infinite lists</h2>
 <div class="outline-text-2" id="text-org6584d34">
 <p>
-Quite a few years ago I was working through a Haskell tutorial for beginners. Some of the examples worked with infinite lists; mapping them, filtering them and zipping them together. At the time my knowledge of evaluation and laziness was 
+Quite a few years ago I was working through a Haskell tutorial for beginners. Some of the examples worked with infinite lists; mapping them, filtering them, and zipping them together. At the time my knowledge of evaluation and laziness was 
 not sophisticated. As they say, any sufficiently advanced technology is indistinguishable from magic. Since Haskell was doing things more advanced than I understood at the time, I thought of infinite lists as being a magic trick.
 </p>
 
 <p>
-As you've seen so far, I hope, the mechanisms of lazy evaluation make working with infinite lists possible, and don't require a lot of work. Let's look at how what we've done so far scales effortlessly from small lists to inifinite ones.
+As you've seen so far, I hope, the mechanisms of lazy evaluation make working with infinite lists possible and don't require a lot of work. Let's look at how what we've done so far scales effortlessly from small lists to infinite ones.
 </p>
 
 <div class="org-src-container">
@@ -502,11 +502,11 @@ Note how these functions build on what we did so far, and give us ways to declar
 </p>
 
 <p>
-<code>iterate</code> is a generalisation of this allowing you take some function that creates a new A from the previous one, forever.
+<code>iterate</code> is a generalisation of this allowing you to take some function that creates a new A from the previous one, forever.
 </p>
 
 <p>
-Obviously we don't want to literally evaluate infinite lists because we don't have time for that, so you would use <a href="https://github.com/justinhj/duct/blob/2ebe7e3ea25edf4c668ca6e044959396ae3cb265/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala#L57">take</a> and drop and other filtering mechanisms to work with only the values you are interested in. As we will see, there are times when you don't know how many of a thing you need and it may be expensive to generate them, so <code>by need</code> evaluation is what we want.
+Of course, we don't want to actually evaluate infinite lists because we don't have time for that, so you would use <a href="https://github.com/justinhj/duct/blob/2ebe7e3ea25edf4c668ca6e044959396ae3cb265/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala#L57">take</a> and drop and other filtering mechanisms to work with only the values you are interested in. As we will see, there are times when you don't know how many of a thing you need and it may be expensive to generate them, so <code>call by need</code> evaluation is what we want.
 </p>
 </div>
 </div>
@@ -578,7 +578,7 @@ This is all rather hard to conceptualize, so here's a picture that may help. The
 <img class="img" src="../../../images/nestedlazylist.png" border="0" style="padding: 30px;" alt="A callstack snapshot" width="600"/>
 
 <p>
-Fusion of operations means that a sequence of complex, expensive operations, can be limited to only the number of elements you are interested in and performed per-element, not across the whole collection. This is the essence of being able to control evaluation for your own needs.
+Fusion of operations means that a sequence of complex, expensive operations, can be limited to only the number of elements you are interested in and performed per element, not across the whole collection. This is the essence of being able to control evaluation for your own needs.
 </p>
 
 <p>
@@ -590,7 +590,7 @@ Use lazy lists when you need to execute an expensive sequence of operations and 
 </p>
 
 <p>
-Obviously you need to use some discretion here. If you can't guarantee that the whole list won't be executed, it's probably not a good use case. But this technique translates well to computation where we never see the whole list (streaming applications that work with Kafka and Kinesis for example).
+You need to use some discretion here. If you can't guarantee that the whole list won't be executed, it's probably not a good use case. But this technique translates well to a computation where we never see the whole list (streaming applications that work with Kafka and Kinesis for example).
 </p>
 </div>
 </div>
@@ -599,15 +599,15 @@ Obviously you need to use some discretion here. If you can't guarantee that the 
 <h2 id="org72f881b">Laziness for convenience</h2>
 <div class="outline-text-2" id="text-org72f881b">
 <p>
-Some algorithms require you to provide a list of thing but you don't know how many things you need in advance. Here's an example that appears in the paper <a href="https://www.staff.city.ac.uk/~ross/papers/Applicative.html">Applicative Programming with Effects</a> that transposes a matrix.
+Some algorithms require you to provide a list of things but you don't know how many things you need in advance. Here's an example that appears in the paper <a href="https://www.staff.city.ac.uk/~ross/papers/Applicative.html">Applicative Programming with Effects</a> that transposes a matrix.
 </p>
 
 <p>
-You can see this code also in my post about the paper at <a href="./2020/04/04/whats-ap.html">What's Ap?</a>, although the coverage there is more about how bit of code can be written in "the applicative style".
+You can see this code also in my post about the paper at <a href="./2020/04/04/whats-ap.html">What's Ap?</a>, although the coverage there is more about how this operation can be written in "the applicative style".
 </p>
 
 <p>
-First let's represent a 2-dimensional matrix as a lazy list of lazy lists.
+First, let's represent a 2-dimensional matrix as a lazy list of lazy lists.
 </p>
 
 <div class="org-src-container">
@@ -665,12 +665,12 @@ zip together two lists, one of which is infinite and the other is bounded. That'
 Is it easy to understand? No, it takes a bit of thinking about to understand what is going on (as an exercise I'd suggest adding some println to see how it works). What's more 
 interesting though, is that this is a much more functional, declarative version of matrix transpose. Imagine writing this in Go and you will do it as a for loop, taking care not to 
 make any mistakes. Even though matrix transpose is simple, functional programming <code>scales up</code> to bigger more complex programs, whereas the imperative version is more 
-of one off implementation.
+of a one-off implementation.
 </p>
 
 <p>
-The "trick" in the code above is in the <code>LazyList.repeat</code>. The iteration of the transpose works along each row of the matrix producing the new columns with cons, but at some point it runs out of rows and it needs another row of empty lists to finish the new rows off. How many empty lists does it need? Well we could work it out by counting, but why not just say 
-here is an infinite number, and let the zip figure out when to stop.
+The "trick" in the code above is in the <code>LazyList.repeat</code>. The iteration of the transpose works along each row of the matrix producing the new columns with cons, but at some point it runs out of rows and it needs another row of empty lists to finish the new rows off. How many empty lists does it need? Well, we could work it out by counting, but why not just say 
+here is an infinite number, and let the zip figure out when to stop?
 </p>
 </div>
 </div>
@@ -686,7 +686,7 @@ There are a couple of interesting things to say about folding lazy lists. Firstl
 As we saw earlier the amount of memory used by a lazy list can be
 higher than with a regular list since with fusion between operations
 we can end up with a stack of function objects before it is
-evaluted. For that reason and just in general we may want to operate
+evaluated. For that reason and just in general we may want to operate
 on large lists, it's important to consider which operations are stack
 safe and which are not.
 </p>
@@ -705,7 +705,7 @@ For a stack safe function I present <code>foldLeft</code>.
 
 <p>
 This is a so-called aggregate function that takes a collection, in this case, iterates over it and produces some aggregate value. The supplied function
-from the user is applied to each element along with some accumulating value. In the case of this implementation the foldLeft recursive call is in <code>tail position</code> 
+from the user is applied to each element along with some accumulating value. In the case of this implementation, the foldLeft recursive call is in <code>tail position</code> 
 which means we can assume it uses tail call optimization. We add the annotation to tell the compiler we think so, and it will both complain if it is not eligible.
 </p>
 
@@ -724,7 +724,7 @@ This function adds up 10m integers and as such takes up a lot of stack space and
 </p>
 
 <p>
-Now it will in fact take a good few seconds on modern hardware, which is a long time, and it may in fact crash with out of memory or be pathologically slow. Why? Because we are creating a lot of garbage here, in the order of gigabytes, and that takes a lot of work to clear up.
+Now it will, in fact, take a good few seconds on modern hardware, which is a long time, and it may in fact crash with out of memory or be pathologically slow. Why? Because we are creating a lot of garbage here, in the order of gigabytes, and that takes a lot of work to clear up.
 </p>
 
 <p>
@@ -749,7 +749,7 @@ So foldLeft is stack safe, how about foldRight?
 
 <p>
 Note that the problem here is that the recursive call is not a tail
-call position, in this case the user function <code>f</code> is. That means we
+call position, in this case, the user function <code>f</code> is. That means we
 can't use the tailrec annotation and it will not be tail call
 optimized.
 </p>
@@ -760,7 +760,7 @@ the early termination of <code>foldRight</code> can be used to save us work, and
 </p>
 
 <p>
-How does that work? The "trick" here is that the second argument of the user function, the accumulator, is a call by name value. It's lazy! That means we don't have to evaluate it.
+How does that work? The "trick" here is that the second argument of the user function, the accumulator, is a call by-name value. It's lazy! That means we don't have to evaluate it.
 </p>
 
 <p>
@@ -787,12 +787,12 @@ hasTuna(<span style="color: #00bcff;">LazyList</span>(<span style="color: #79a8f
 </div>
 
 <p>
-This is simply not possible with foldLeft, nor is it possible if you don't use a call by name argument for the accumulator in foldRight. If you're not sure why it is not possible for 
+This is simply not possible with foldLeft, nor is it possible if you don't use a call by-name argument for the accumulator in foldRight. If you're not sure why it is not possible for 
 foldLeft, try putting some println statements into things that you foldLeft and foldRight and see the order in which things are done.
 </p>
 
 <p>
-By the way if you try this with the standard library you'll find it does not work the same way. The signature of foldRight is as follows:
+By the way, if you try this with the standard library you'll find it does not work the same way. The signature of foldRight is as follows:
 </p>
 
 <div class="org-src-container">
@@ -801,7 +801,7 @@ By the way if you try this with the standard library you'll find it does not wor
 </div>
 
 <p>
-Withough even trying it we know that it must expand the whole collection, although feel free to try it if you need to prove it to yourself. There has been some
+Without even trying it we know that it must expand the whole collection, although feel free to try it if you need to prove it to yourself. There has been some
 discussion on this, for example. 
 </p>
 
@@ -831,7 +831,7 @@ lazy lists in some depth will hopefully help your way of thinking in your day to
 </p>
 
 <p>
-Thanks for reading, if you enjoyed this content please share with a friend. If not, drop me a note and tell me what I can do better.
+Thanks for reading, if you enjoyed this content please share with a friend. If not, drop me a note and tell me what I can do better next time.
 </p>
 </div>
 </div>
@@ -857,6 +857,12 @@ Stream from Scala standard library 2.7 - older and simpler version which I found
 <p>
 Scalaz Ephemeral Stream - did some things I liked too
 <a href="https://github.com/scalaz/scalaz/blob/ea81ca782a634d4cd93c56529c082567a207c9f6/core/src/main/scala/scalaz/EphemeralStream.scala">https://github.com/scalaz/scalaz/blob/ea81ca782a634d4cd93c56529c082567a207c9f6/core/src/main/scala/scalaz/EphemeralStream.scala</a>
+</p>
+
+<p>
+All of the code for the Lazy List class can be found in the Duct library here
+<a href="https://github.com/justinhj/duct/blob/video17/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala">https://github.com/justinhj/duct/blob/video17/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala</a>
+If you dig around in the code, or find in files for LazyList, you will see there is also a test suite and a few examples.
 </p>
 </div>
 </div>

@@ -37,15 +37,15 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, 
 
 ** Introduction
 As the [[https://docs.scala-lang.org/scala3/book/taste-collections.html][Scala 3 - book]] points out, Scala has a rich set of collection
-classes. As well as ~List~ it also has a solid implementation of ~LazyList~. If you're not sure what that is, or what is used for, read on and find out, plus even better I will walk through a full implementation of LazyList that can do some magical things.
+classes. As well as ~List~, of course, it also has a solid implementation of ~LazyList~. If you're not sure what that is, or what is used for, read on and find out, plus even better I will walk through a full implementation of LazyList that can do some magical things.
 
 Scala ~List~ can represent collections of ~zero or more~, stored as a linked list, with the details of the underlying data structure abstracted away. 
 In my video [[https://youtu.be/7A2xuRkCZBg][NonEmptyLists more or less]] I talked about how
 you can build a variant of ~List~ that can only be a collection with ~one or more~ items. 
 
-In this video I will present theory and practise of building a ~LazyList~ type, that adds the additional capability of controlling ~when elements are evaluated~.
+In this video, I will present the theory and practice of building a ~LazyList~ type, that adds the additional capability of controlling ~when elements are evaluated~.
 
-All the code written in this post, and accompanying video [[https://youtu.be/laB15gG5bjY][The Magic of Lazy Lists]] can be found in my new educational Scala library [[https://github.com/justinhj/duct/][Duct]]. In order to produce this implementation I studied the code of the 
+All the code written in this post, and the accompanying video [[https://youtu.be/laB15gG5bjY][The Magic of Lazy Lists]] can be found in my new educational Scala library [[https://github.com/justinhj/duct/][Duct]]. In order to produce this implementation I studied the code of the 
 Scala standard library (both the current version and history versions which are less sophisticated but also easier to read), as well as other implementations
 such as that of the ScalaZ Ephemeral list. The resulting code is a combination of these with some of the best parts of both, as well as taking some advantage of Scala 3 features along the way.
 
@@ -54,11 +54,11 @@ such as that of the ScalaZ Ephemeral list. The resulting code is a combination o
 #+END_EXPORT
 
 ** Implementing Lazy Thing
-~LazyList~ is easier to understand if you have a good grasp for different evaluation models in Scala, so let's explore that with a custom class call ~LazyThing~.
+~LazyList~ is easier to understand if you have a good grasp of different evaluation models in Scala, so let's explore that with a custom class called ~LazyThing~.
 
-With this implementation LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager, or strict evaluation. When I pass 
+With this implementation, LazyThing is just a wrapper of values, with a get function that returns the value. This is what we call eager, or strict evaluation. When I pass 
 the expression ~{println("evaluated"); 10~ is passed into the ~LazyThing~ constructor it is evaluated immediately and stored in the class. Later when the user calls the get method 
-we find that we just get the value, nothing is evaluated again.
+we find that we just get the value; nothing is evaluated again.
 
 #+BEGIN_SRC scala
 class LazyThing[A](a: A):
@@ -91,7 +91,7 @@ val lt = new LazyThing(() => {println("evaluated"); 10})
 // val res16: Int = 10
 #+END_SRC
 
-The ~LazyList~ structure is not about always evaluation though, it is about ~lazy~ or ~by need~ evaluation. We want to be able to remember the result 
+The ~LazyList~ structure is not about always evaluation though, it is about ~lazy~ or ~call by need~ evaluation. We want to be able to remember the result 
 of evaluated list elements, and never evaluate them again. This ~memoization~ is the next step.
 
 #+BEGIN_SRC scala
@@ -113,9 +113,9 @@ val lt = new LazyThing(() => {println("evaluated"); 10})
 // val res18: Any = 10
 #+END_SRC
 
-Now you can see that the value is evaluated only once and we can retrieve it multiple times. Memoization is good because it saves us recomputing 
+Now you can see that the value is evaluated only once and we can retrieve it multiple times. Memoization is good because it saves us from recomputing 
 values, but it also means we must be mindful of memory use and hanging on to references to the internal structure of our ~LazyList~ so as not 
-to consume memory that is no loger needed.
+to consume memory that is no longer needed.
 
 Two final simplifications using Scala features make this much more succinct. The mechanism of passing an argument as a function executed only on first 
 reference is implemented within Scala and known as call by name. Rewriting like below uses that mechanism instead.
@@ -147,13 +147,13 @@ sealed trait OurLazyList[+A]:
 Of note here is the ~+A~ variance notation. It's important to know about and understand variance when making libraries in Scala, slightly less
 important when writing application code. A short explanation of variance is that it is short for "variance under inheritance".
 
-Let's say we have a type ~Loan~ and two other sub types of Loan, ~Credit Card~ and ~Amortized Loan~. If you have some function that takes Loan 
+Let's say we have a type ~Loan~ and two other subtypes of Loan, ~Credit Card~ and ~Amortized Loan~. If you have some function that takes Loan 
 and prints the outstanding balance, you would expect through normal rules of inheritance to be able to pass in a Credit card or an amortized 
-loan in place of the Loan. You can use a subtype of loan whereever the compiler is expecting a loan. That is what is known as behavioural 
+loan in place of the Loan. You can use a subtype of loan wherever the compiler is expecting a loan. That is what is known as behavioural 
 subtyping. 
 
-What variance under inheritance refers to, is what should we do when we have some parameterized type with respect to subtyping? If I have a function 
-that takes a list of Loans, should it accept a list of subtypes? Credit cards for examples. Because the answer to this is, no not always, Scala 
+What variance under inheritance refers to, is what inheritance means when we have some parameterized type such as a collection. If I have a function 
+that takes a list of Loans, should it accept a list of subtypes? Credit cards for example. Because the answer to this is, no not always, Scala 
 includes variance annotations so that you can choose the variance relationship you want as needed. I'll come back to this topic in more detail in a later 
 video.
 
@@ -282,7 +282,7 @@ def ourMap[A, B](ll: LazyList[A], f: A => B): LazyList[B] =
 #+END_SRC
 
 ** Iterating over Lazy List
-Note that destructuring lazy lists is often useful, in my final implementation for the Duct library I opted for the following more simple approach to the map function, shared here because I implemented many of the functions that iterate over lazy lists in the following way:
+Note that although the destructuring (pattern matching) of lazy lists is often useful, in my final implementation for the Duct library I opted for the following more simple approach to the map function, shared here because I implemented many of the functions that iterate over lazy lists in the following way:
 
 #+BEGIN_SRC scala
 def map[B](f: A => B): LazyList[B] =
@@ -340,7 +340,7 @@ Now since we want this to work on many elements potentially, it is important to 
 
 Take a moment to think about which elements have been evaluated at this point.
 
-Whether you reason about it by looking at the code or thinking about it semantically, the answer is that the 3 is evaluated and the ~4,5~ elements are in a lazy tail. ~dropWhile~ then will evaluate elementes ~up to and including the first one that should not be dropped~.
+Whether you reason about it by looking at the code or thinking about it semantically, the answer is that the 3 is evaluated and the ~4,5~ elements are in a lazy tail. ~dropWhile~ then will evaluate elements ~up to and including the first one that should not be dropped~.
 
 Once you implement ~dropWhile~ it can be used to implement ~filter~ with the requirements we came up with above.
 
@@ -352,10 +352,10 @@ def filter(f: A => Boolean): LazyList[A] =
 #+END_SRC
 
 ** Infinite lists
-Quite a few years ago I was working through a Haskell tutorial for beginners. Some of the examples worked with infinite lists; mapping them, filtering them and zipping them together. At the time my knowledge of evaluation and laziness was 
+Quite a few years ago I was working through a Haskell tutorial for beginners. Some of the examples worked with infinite lists; mapping them, filtering them, and zipping them together. At the time my knowledge of evaluation and laziness was 
 not sophisticated. As they say, any sufficiently advanced technology is indistinguishable from magic. Since Haskell was doing things more advanced than I understood at the time, I thought of infinite lists as being a magic trick.
 
-As you've seen so far, I hope, the mechanisms of lazy evaluation make working with infinite lists possible, and don't require a lot of work. Let's look at how what we've done so far scales effortlessly from small lists to inifinite ones.
+As you've seen so far, I hope, the mechanisms of lazy evaluation make working with infinite lists possible and don't require a lot of work. Let's look at how what we've done so far scales effortlessly from small lists to infinite ones.
 
 #+BEGIN_SRC scala
 def repeat[A](a: A): LazyList[A] = a #:: repeat(a)
@@ -369,9 +369,9 @@ Note how these functions build on what we did so far, and give us ways to declar
 
 ~from~ shows how we can incrementally generate numbers from some starting value n. Note that the tail is a function that takes input from the previous call; in this way we can pass information through an infinite chain of computation!
 
-~iterate~ is a generalisation of this allowing you take some function that creates a new A from the previous one, forever.
+~iterate~ is a generalisation of this allowing you to take some function that creates a new A from the previous one, forever.
 
-Obviously we don't want to literally evaluate infinite lists because we don't have time for that, so you would use [[https://github.com/justinhj/duct/blob/2ebe7e3ea25edf4c668ca6e044959396ae3cb265/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala#L57][take]] and drop and other filtering mechanisms to work with only the values you are interested in. As we will see, there are times when you don't know how many of a thing you need and it may be expensive to generate them, so ~by need~ evaluation is what we want.
+Of course, we don't want to actually evaluate infinite lists because we don't have time for that, so you would use [[https://github.com/justinhj/duct/blob/2ebe7e3ea25edf4c668ca6e044959396ae3cb265/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala#L57][take]] and drop and other filtering mechanisms to work with only the values you are interested in. As we will see, there are times when you don't know how many of a thing you need and it may be expensive to generate them, so ~call by need~ evaluation is what we want.
 
 ** Fusion of operations
 Imagine the following code.
@@ -417,20 +417,20 @@ This is all rather hard to conceptualize, so here's a picture that may help. The
 <img class="img" src="../../../images/nestedlazylist.png" border="0" style="padding: 30px;" alt="A callstack snapshot" width="600"/>
 #+END_EXPORT
 
-Fusion of operations means that a sequence of complex, expensive operations, can be limited to only the number of elements you are interested in and performed per-element, not across the whole collection. This is the essence of being able to control evaluation for your own needs.
+Fusion of operations means that a sequence of complex, expensive operations, can be limited to only the number of elements you are interested in and performed per element, not across the whole collection. This is the essence of being able to control evaluation for your own needs.
 
 This gives us some insight on when to use a lazy list (or equivalent structures such as streams, iterators), rather than concrete immutable containers.
 
 Use lazy lists when you need to execute an expensive sequence of operations and you don't expect to consume the majority of the collection.
 
-Obviously you need to use some discretion here. If you can't guarantee that the whole list won't be executed, it's probably not a good use case. But this technique translates well to computation where we never see the whole list (streaming applications that work with Kafka and Kinesis for example).
+You need to use some discretion here. If you can't guarantee that the whole list won't be executed, it's probably not a good use case. But this technique translates well to a computation where we never see the whole list (streaming applications that work with Kafka and Kinesis for example).
 
 ** Laziness for convenience
-Some algorithms require you to provide a list of thing but you don't know how many things you need in advance. Here's an example that appears in the paper [[https://www.staff.city.ac.uk/~ross/papers/Applicative.html][Applicative Programming with Effects]] that transposes a matrix.
+Some algorithms require you to provide a list of things but you don't know how many things you need in advance. Here's an example that appears in the paper [[https://www.staff.city.ac.uk/~ross/papers/Applicative.html][Applicative Programming with Effects]] that transposes a matrix.
 
-You can see this code also in my post about the paper at [[./2020/04/04/whats-ap.html][What's Ap?]], although the coverage there is more about how bit of code can be written in "the applicative style".
+You can see this code also in my post about the paper at [[./2020/04/04/whats-ap.html][What's Ap?]], although the coverage there is more about how this operation can be written in "the applicative style".
 
-First let's represent a 2-dimensional matrix as a lazy list of lazy lists.
+First, let's represent a 2-dimensional matrix as a lazy list of lazy lists.
 
 #+BEGIN_SRC scala
 val matrix = LazyList(
@@ -474,10 +474,10 @@ def transpose[A](
 Is it easy to understand? No, it takes a bit of thinking about to understand what is going on (as an exercise I'd suggest adding some println to see how it works). What's more 
 interesting though, is that this is a much more functional, declarative version of matrix transpose. Imagine writing this in Go and you will do it as a for loop, taking care not to 
 make any mistakes. Even though matrix transpose is simple, functional programming ~scales up~ to bigger more complex programs, whereas the imperative version is more 
-of one off implementation.
+of a one-off implementation.
 
-The "trick" in the code above is in the ~LazyList.repeat~. The iteration of the transpose works along each row of the matrix producing the new columns with cons, but at some point it runs out of rows and it needs another row of empty lists to finish the new rows off. How many empty lists does it need? Well we could work it out by counting, but why not just say 
-here is an infinite number, and let the zip figure out when to stop.
+The "trick" in the code above is in the ~LazyList.repeat~. The iteration of the transpose works along each row of the matrix producing the new columns with cons, but at some point it runs out of rows and it needs another row of empty lists to finish the new rows off. How many empty lists does it need? Well, we could work it out by counting, but why not just say 
+here is an infinite number, and let the zip figure out when to stop?
 
 ** Folding left and right
 There are a couple of interesting things to say about folding lazy lists. Firstly let's look at stack safety.
@@ -485,7 +485,7 @@ There are a couple of interesting things to say about folding lazy lists. Firstl
 As we saw earlier the amount of memory used by a lazy list can be
 higher than with a regular list since with fusion between operations
 we can end up with a stack of function objects before it is
-evaluted. For that reason and just in general we may want to operate
+evaluated. For that reason and just in general we may want to operate
 on large lists, it's important to consider which operations are stack
 safe and which are not.
 
@@ -499,7 +499,7 @@ For a stack safe function I present ~foldLeft~.
 #+END_SRC
 
 This is a so-called aggregate function that takes a collection, in this case, iterates over it and produces some aggregate value. The supplied function
-from the user is applied to each element along with some accumulating value. In the case of this implementation the foldLeft recursive call is in ~tail position~ 
+from the user is applied to each element along with some accumulating value. In the case of this implementation, the foldLeft recursive call is in ~tail position~ 
 which means we can assume it uses tail call optimization. We add the annotation to tell the compiler we think so, and it will both complain if it is not eligible.
 
 #+BEGIN_SRC scala
@@ -513,7 +513,7 @@ println(
 
 This function adds up 10m integers and as such takes up a lot of stack space and crashes. Except it doesn't! Why? Because of the tail call optimization.
 
-Now it will in fact take a good few seconds on modern hardware, which is a long time, and it may in fact crash with out of memory or be pathologically slow. Why? Because we are creating a lot of garbage here, in the order of gigabytes, and that takes a lot of work to clear up.
+Now it will, in fact, take a good few seconds on modern hardware, which is a long time, and it may in fact crash with out of memory or be pathologically slow. Why? Because we are creating a lot of garbage here, in the order of gigabytes, and that takes a lot of work to clear up.
 
 Make sure you have a decent amount of heap and use the G1 garbage collector via these settings (this is for running sbt, you can set the same JAVA_OPTS for IDE's and so on).
 
@@ -530,14 +530,14 @@ def foldRight[B](z: => B)(f: (A, => B) => B): B =
 #+END_SRC
 
 Note that the problem here is that the recursive call is not a tail
-call position, in this case the user function ~f~ is. That means we
+call position, in this case, the user function ~f~ is. That means we
 can't use the tailrec annotation and it will not be tail call
 optimized.
 
 Can we infer from this situation that ~foldRight~ is useless? No actually. It has a property that foldLeft does not, that of being able to ~terminate early~. Just like with fusion of operations, 
 the early termination of ~foldRight~ can be used to save us work, and make code more efficient.
 
-How does that work? The "trick" here is that the second argument of the user function, the accumulator, is a call by name value. It's lazy! That means we don't have to evaluate it.
+How does that work? The "trick" here is that the second argument of the user function, the accumulator, is a call by-name value. It's lazy! That means we don't have to evaluate it.
 
 This example code uses ~foldRight~ to find "tuna" in a list of fish. 
 
@@ -559,16 +559,16 @@ hasTuna(LazyList("salmon", "shark", "tuna", "moray", "goldfish", "eel"))
 //   tuna
 #+END_SRC
 
-This is simply not possible with foldLeft, nor is it possible if you don't use a call by name argument for the accumulator in foldRight. If you're not sure why it is not possible for 
+This is simply not possible with foldLeft, nor is it possible if you don't use a call by-name argument for the accumulator in foldRight. If you're not sure why it is not possible for 
 foldLeft, try putting some println statements into things that you foldLeft and foldRight and see the order in which things are done.
 
-By the way if you try this with the standard library you'll find it does not work the same way. The signature of foldRight is as follows:
+By the way, if you try this with the standard library you'll find it does not work the same way. The signature of foldRight is as follows:
 
 #+BEGIN_SRC scala
 def foldRight[B](z: B)(op: (A, B) => B): B
 #+END_SRC
 
-Withough even trying it we know that it must expand the whole collection, although feel free to try it if you need to prove it to yourself. There has been some
+Without even trying it we know that it must expand the whole collection, although feel free to try it if you need to prove it to yourself. There has been some
 discussion on this, for example. 
 
 https://stackoverflow.com/questions/7830471/foldright-on-infinite-lazy-structure
@@ -585,7 +585,7 @@ Maybe LazyList is not something you will use very often but I think some of the 
 with streaming libraries like fs2, or effect libraries like Zio, this idea of building up some structure first, then evaluating it, is very powerful, and understanding 
 lazy lists in some depth will hopefully help your way of thinking in your day to day Scala code!
 
-Thanks for reading, if you enjoyed this content please share with a friend. If not, drop me a note and tell me what I can do better.
+Thanks for reading, if you enjoyed this content please share with a friend. If not, drop me a note and tell me what I can do better next time.
 
 ** References
 Functional Programming in Scala (aka the red book) - has a great chapter on lazy lists
@@ -599,3 +599,7 @@ https://github.com/scala/scala/blob/v2.7.7/src/library/scala/Stream.scala
 
 Scalaz Ephemeral Stream - did some things I liked too
 https://github.com/scalaz/scalaz/blob/ea81ca782a634d4cd93c56529c082567a207c9f6/core/src/main/scala/scalaz/EphemeralStream.scala
+
+All of the code for the Lazy List class can be found in the Duct library here
+https://github.com/justinhj/duct/blob/video17/core/src/main/scala/org/justinhj/duct/datatypes/LazyList.scala
+If you dig around in the code, or find in files for LazyList, you will see there is also a test suite and a few examples.
