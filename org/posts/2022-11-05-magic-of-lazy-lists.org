@@ -132,12 +132,12 @@ val lt = new LazyThing({println("evaluated"); 10})
 // val res25: Int = 10
 #+END_SRC
 ** Beginning LazyList
-Let's begin by representing the ~LazyList~ as a sealed trait, which will be the object through which users interact with the collection.
+Let's begin by representing the LazyList as a sealed trait, which will be the object through which users interact with the collection. To avoid confusion with the standard library lazy list, I will here use the name ~OurLazyList~.
 
 #+BEGIN_SRC scala
-sealed trait LazyList[+A]:
+sealed trait OurLazyList[+A]:
    def head: A
-   def tail: LazyList[A]
+   def tail: OurLazyList[A]
    def isEmpty: Boolean
 #+END_SRC
 
@@ -158,8 +158,8 @@ video.
 we need is a representation of empty list. We add that to a new companion object.
 
 #+BEGIN_SRC scala
-object LazyList:
-  val empty = new LazyList[Nothing]:
+object OurLazyList:
+  val empty = new OurLazyList[Nothing]:
       def head = throw new NoSuchElementException("Cannot get head of empty lazy list")
       def tail = throw new UnsupportedOperationException("No tail of empty lazy list")
       val isEmpty = true
@@ -170,21 +170,22 @@ in itself, because you can't do anything with it, but it is really useful in thi
 lists, we only need one. Why does this work? Because of the variance annotation above. We said that a list of subtypes of ~A~ would be acceptable as 
 list of ~A~. 
 
-So now we are able to create lazy lists with nothing in them using ~LazyList.empty~. The next step is to be able to create lists with elements inside. We will call this the ~cons~ method, 
+So now we are able to create lazy lists with nothing in them using ~OurLazyList.empty~. The next step is to be able to create lists with elements inside. We will call this the ~cons~ method, 
 as it will be used to construct lists one lazy element at a time.
 
 #+BEGIN_SRC scala
-// object LazyList continued:
-  def cons[A](hd: => A, tl: => LazyList[A]) = new LazyList[A]:
-    lazy val head = hd
-    lazy val tail = tl
-    val isEmpty = false
+// object OurLazyList continued:
+def cons[A](hd: => A, tl: => OurLazyList[A]) = new OurLazyList[A]:
+  lazy val head = hd
+  lazy val tail = tl
+  val isEmpty = false
 #+END_SRC
 
 With this small amount of code we have a functional (no pun intended) lazy list.
 
 #+BEGIN_SRC scala
-val ll = LazyList.cons({println("evaluated!");10}, LazyList.empty)
+val ll = OurLazyList.cons({println("evaluated!");10}, OurLazyList.empty)
+// nothing is printed yet!
 ll.head
 // evaluated!
 // val res9: Int = 10
@@ -195,4 +196,92 @@ ll.head
 
 Here you can see that constructing the list did not evaluate the value we passed in to be the head of the collection. Once we retrieved the head we got the 
 evaluation happen, but subsequently we did not not. Nice.
+
+** #:: syntax
+In Scala you can construct lists using the so-called ~cons~ operator ~::~. For example:
+
+#+BEGIN_SRC scala
+val l = 1 :: 2 :: 3 :: List.empty
+// Creates a List[Int] = List(1, 2, 3)
+#+END_SRC
+
+This is convenient so Scala's standard ~LazyList~ also implements this using the syntax ~#::~. Let's do the same for Duct. There are two things to note here:
+
+1. To make this work we want #:: to be a right associative function that ~cons~'s a new head for the list to the tail which is to the right
+2. The type of the operation should be a cons operation on a list.
+
+To append ~1~ to the list ~val ll = (2,3)~ we need to write ~1 #:: ll~ and we want the compiler to evaluate this as:
+
+#+BEGIN_SRC scala
+ll.#::(1)
+// where the type of LL is OurLazyList[Int]
+#+END_SRC
+
+Note that in Scala, by convention, anything ending in a colon is right associative, which is what we want here. Also not that in Scala 3 we can write this as an extension method. In the standard library you'll see code like the following:
+
+#+BEGIN_SRC scala
+implicit def toDeferrer[A](l: => LazyList[A]): Deferrer[A] = new Deferrer[A](() => l)
+
+final class Deferrer[A] private[LazyList] (private val l: () => LazyList[A]) extends AnyVal {
+  /** Construct a LazyList consisting of a given first element followed by elements
+    *  from another LazyList.
+    */
+  def #:: [B >: A](elem: => B): LazyList[B] = newLL(sCons(elem, newLL(l().state)))
+  /** Construct a LazyList consisting of the concatenation of the given LazyList and
+    *  another LazyList.
+    */
+  def #:::[B >: A](prefix: LazyList[B]): LazyList[B] = prefix lazyAppendedAll l()
+}
+#+END_SRC
+
+[[https://github.com/scala/scala/blob/39148e4ec34a5c53443dd1b25ceec2308cd097fe/src/library/scala/collection/immutable/LazyList.scala#L1136][scala.collection.immutable.LazyList.scala]]
+
+With Scala 3 we can simply implement this as an extension method on the ~OurLazyList~ trait. Much nicer.
+
+#+BEGIN_SRC scala
+extension [A](hd: => A)
+  def #::(tl: => OurLazyList[A]): OurLazyList[A] = 
+   OurLazyList.cons(hd, tl)
+#+END_SRC
+
+Now we can create lazy lists more easily as follows:
+
+#+BEGIN_SRC scala
+val ll = 1 #:: 2 #:: OurLazyList.empty
+// val ll: OurLazyList[Int] = OurLazyList$$anon$2@687292c5
+#+END_SRC
+
+Creating a lazy list with the cons operators is one thing but users will expect to be able to deconstruct lists in a pattern match expression to. Let's add that functionality next.
+
+In Scala you implement pattern matching on a particular type by implementing ~unapply~ on an object with that types name, in our case ~#::~.
+
+#+BEGIN_SRC scala
+object #:: {
+    def unapply[A](s: OurLazyList[A]): Option[(A, OurLazyList[A])] =
+        if !s.isEmpty then Some((s.head, s.tail)) else None
+}
+#+END_SRC
+
+The way unapply works is the opposite of a constructor. Given a constructed type, unapply tries to extract the pieces. This is a partial function, it does not have to succeed, so it returns the pieces as an Option.
+
+Now we can write lazy code using pattern matching:
+
+#+BEGIN_SRC scala
+def ourMap[A, B](ll: OurLazyList[A], f: A => B): OurLazyList[B] =
+  ll match {
+    case hd #:: tl =>
+      OurLazyList.cons(f(hd), ourMap(tl, f))
+    case _ =>
+      OurLazyList.empty
+  }
+#+END_SRC
+
+
+
+
+
+
+
+
+
 

@@ -158,4 +158,91 @@ Secondly, we can replace the manual memoization code that remembers the evaluate
 </div>
 <div id="outline-container-orgdbc13d7" class="outline-2">
 <h2 id="orgdbc13d7">Beginning LazyList</h2>
+<div class="outline-text-2" id="text-orgdbc13d7">
+<p>
+Let's begin by representing the <code>LazyList</code> as a sealed trait, which will be the object through which users interact with the collection.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #f78fe7;">sealed</span> <span style="color: #b6a0ff;">trait</span> <span style="color: #6ae4b9;">LazyList</span>[+<span style="color: #00bcff;">A</span>]<span style="color: #b6a0ff;">:</span>
+   <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">head</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span>
+   <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">tail</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>]
+   <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">isEmpty</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Boolean</span>
+</pre>
+</div>
+
+<p>
+Of note here is the <code>+A</code> variance notation. It's important to know about and understand variance when making libraries in Scala, slightly less
+important when writing application code. A short explanation of variance is that it is short for "variance under inheritance".
+</p>
+
+<p>
+Let's say we have a type <code>Loan</code> and two other sub types of Loan, <code>Credit Card</code> and <code>Amortized Loan</code>. If you have some function that takes Loan 
+and prints the outstanding balance, you would expect through normal rules of inheritance to be able to pass in a Credit card or an amortized 
+loan in place of the Loan. You can use a subtype of loan whereever the compiler is expecting a loan. That is what is known as behavioural 
+subtyping. 
+</p>
+
+<p>
+What variance under inheritance refers to, is what should we do when we have some parameterized type with respect to subtyping? If I have a function 
+that takes a list of Loans, should it accept a list of subtypes? Credit cards for examples. Because the answer to this is, no not always, Scala 
+includes variance annotations so that you can choose the variance relationship you want as needed. I'll come back to this topic in more detail in a later 
+video.
+</p>
+
+<p>
+<code>LazyList</code> will have a companion object containing all the static methods that will be used to create and manipulate lazy lists. The first thing 
+we need is a representation of empty list. We add that to a new companion object.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">LazyList</span><span style="color: #b6a0ff;">:</span>
+  <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">empty</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">Nothing</span>]<span style="color: #b6a0ff;">:</span>
+      <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">head</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">throw</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">NoSuchElementException</span>(<span style="color: #79a8ff;">"Cannot get head of empty lazy list"</span>)
+      <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">tail</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">throw</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">UnsupportedOperationException</span>(<span style="color: #79a8ff;">"No tail of empty lazy list"</span>)
+      <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">isEmpty</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">true</span>
+</pre>
+</div>
+
+<p>
+Lazy list has the type Nothing. Nothing is at the bottom of Scala's type hierarchy meaning it is the subtype of everything. Now it's not a useful type
+in itself, because you can't do anything with it, but it is really useful in this context&#x2026; our empty list is a singleton value shared by all lazy 
+lists, we only need one. Why does this work? Because of the variance annotation above. We said that a list of subtypes of <code>A</code> would be acceptable as 
+list of <code>A</code>. 
+</p>
+
+<p>
+So now we are able to create lazy lists with nothing in them using <code>LazyList.empty</code>. The next step is to be able to create lists with elements inside. We will call this the <code>cons</code> method, 
+as it will be used to construct lists one lazy element at a time.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">object LazyList continued:</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">cons</span>[<span style="color: #00bcff;">A</span>](hd<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>, tl<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">LazyList</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">new</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>]<span style="color: #b6a0ff;">:</span>
+    <span style="color: #f78fe7;">lazy</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">head</span> <span style="color: #b6a0ff;">=</span> hd
+    <span style="color: #f78fe7;">lazy</span> <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">tail</span> <span style="color: #b6a0ff;">=</span> tl
+    <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">isEmpty</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">false</span>
+</pre>
+</div>
+
+<p>
+With this small amount of code we have a functional (no pun intended) lazy list.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">ll</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">LazyList</span>.cons({println(<span style="color: #79a8ff;">"evaluated!"</span>);<span style="color: #00bcff;">10</span>}, <span style="color: #00bcff;">LazyList</span>.empty)
+ll.head
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">evaluated!</span>
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res9: Int = 10</span>
+
+ll.head
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">val res10: Int = 10</span>
+</pre>
+</div>
+
+<p>
+Here you can see that constructing the list did not evaluate the value we passed in to be the head of the collection. Once we retrieved the head we got the 
+evaluation happen, but subsequently we did not not. Nice.
+</p>
+</div>
 </div>
