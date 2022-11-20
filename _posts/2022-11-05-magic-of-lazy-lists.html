@@ -47,6 +47,8 @@ All the code written in this post, and accompanying video <a href="https://youtu
 Scala standard library (both the current version and history versions which are less sophisticated but also easier to read), as well as other implementations
 such as that of the ScalaZ Ephemeral list. The resulting code is a combination of these with some of the best parts of both.
 </p>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/laB15gG5bjY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
 </div>
 
@@ -669,6 +671,192 @@ of one off implementation.
 <p>
 The "trick" in the code above is in the <code>LazyList.repeat</code>. The iteration of the transpose works along each row of the matrix producing the new columns with cons, but at some point it runs out of rows and it needs another row of empty lists to finish the new rows off. How many empty lists does it need? Well we could work it out by counting, but why not just say 
 here is an infinite number, and let the zip figure out when to stop.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc4de63d" class="outline-2">
+<h2 id="orgc4de63d">Folding left and right</h2>
+<div class="outline-text-2" id="text-orgc4de63d">
+<p>
+There are a couple of interesting things to say about folding lazy lists. Firstly let's look at stack safety.
+</p>
+
+<p>
+As we saw earlier the amount of memory used by a lazy list can be
+higher than with a regular list since with fusion between operations
+we can end up with a stack of function objects before it is
+evaluted. For that reason and just in general we may want to operate
+on large lists, it's important to consider which operations are stack
+safe and which are not.
+</p>
+
+<p>
+For a stack safe function I present <code>foldLeft</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #ff9977;">@tailrec</span>
+<span style="color: #f78fe7;">final</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">foldLeft</span>[<span style="color: #00bcff;">B</span>](z<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span>)(f<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">B</span>, <span style="color: #00bcff;">A</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span> <span style="color: #b6a0ff;">=</span>
+  <span style="color: #b6a0ff;">if</span> isEmpty then z
+  <span style="color: #b6a0ff;">else</span> tail.foldLeft(f(z, head))(f)
+</pre>
+</div>
+
+<p>
+This is a so-called aggregate function that takes a collection, in this case, iterates over it and produces some aggregate value. The supplied function
+from the user is applied to each element along with some accumulating value. In the case of this implementation the foldLeft recursive call is in <code>tail position</code> 
+which means we can assume it uses tail call optimization. We add the annotation to tell the compiler we think so, and it will both complain if it is not eligible.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">incN</span>(n<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span>, inc<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Int</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span>
+  <span style="color: #00bcff;">LazyList</span>.cons(n, incN(n + inc, inc))
+
+println(
+  incN(<span style="color: #00bcff;">1</span>, <span style="color: #00bcff;">1</span>).take(<span style="color: #00bcff;">10000000</span>).foldLeft(<span style="color: #00bcff;">BigInt</span>(<span style="color: #00bcff;">0</span>)) { <span style="color: #b6a0ff;">case</span> (<span style="color: #00d3d0;">acc</span>, <span style="color: #00d3d0;">a</span>) <span style="color: #b6a0ff;">=&gt;</span> acc + a }
+)
+</pre>
+</div>
+
+<p>
+This function adds up 10m integers and as such takes up a lot of stack space and crashes. Except it doesn't! Why? Because of the tail call optimization.
+</p>
+
+<p>
+Now it will in fact take a good few seconds on modern hardware, which is a long time, and it may in fact crash with out of memory or be pathologically slow. Why? Because we are creating a lot of garbage here, in the order of gigabytes, and that takes a lot of work to clear up.
+</p>
+
+<p>
+Make sure you have a decent amount of heap and use the G1 garbage collector via these settings (this is for running sbt, you can set the same JAVA<sub>OPTS</sub> for IDE's and so on).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #00d3d0;">SBT_OPTS</span>=<span style="color: #79a8ff;">"-XX:+UseG1GC -Xmx4G"</span> sbt
+</pre>
+</div>
+
+<p>
+So foldLeft is stack safe, how about foldRight?
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">foldRight</span>[<span style="color: #00bcff;">B</span>](z<span style="color: #b6a0ff;">:</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)(f<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">A</span>, <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span> <span style="color: #b6a0ff;">=</span>
+  <span style="color: #b6a0ff;">if</span> isEmpty then z
+  <span style="color: #b6a0ff;">else</span> f(head, tail.foldRight(z)(f))
+</pre>
+</div>
+
+<p>
+Note that the problem here is that the recursive call is not a tail
+call position, in this case the user function <code>f</code> is. That means we
+can't use the tailrec annotation and it will not be tail call
+optimized.
+</p>
+
+<p>
+Can we infer from this situation that <code>foldRight</code> is useless? No actually. It has a property that foldLeft does not, that of being able to <code>terminate early</code>. Just like with fusion of operations, 
+the early termination of <code>foldRight</code> can be used to save us work, and make code more efficient.
+</p>
+
+<p>
+How does that work? The "trick" here is that the second argument of the user function, the accumulator, is a call by name value. It's lazy! That means we don't have to evaluate it.
+</p>
+
+<p>
+This example code uses <code>foldRight</code> to find "tuna" in a list of fish. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">hasTuna</span>(ll<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">String</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Boolean</span> <span style="color: #b6a0ff;">=</span>
+  ll.foldRight(<span style="color: #00bcff;">false</span>){
+    (next, z) <span style="color: #b6a0ff;">=&gt;</span> 
+      println(next)
+      <span style="color: #b6a0ff;">if</span> next == <span style="color: #79a8ff;">"tuna"</span> then
+        <span style="color: #00bcff;">true</span>
+      <span style="color: #b6a0ff;">else</span>
+        z
+  }
+
+hasTuna(<span style="color: #00bcff;">LazyList</span>(<span style="color: #79a8ff;">"salmon"</span>, <span style="color: #79a8ff;">"shark"</span>, <span style="color: #79a8ff;">"tuna"</span>, <span style="color: #79a8ff;">"moray"</span>, <span style="color: #79a8ff;">"goldfish"</span>, <span style="color: #79a8ff;">"eel"</span>))
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">prints:</span>
+<span style="color: #a8a8a8;">//   </span><span style="color: #a8a8a8;">salmon</span>
+<span style="color: #a8a8a8;">//   </span><span style="color: #a8a8a8;">shark</span>
+<span style="color: #a8a8a8;">//   </span><span style="color: #a8a8a8;">tuna</span>
+</pre>
+</div>
+
+<p>
+This is simply not possible with foldLeft, nor is it possible if you don't use a call by name argument for the accumulator in foldRight. If you're not sure why it is not possible for 
+foldLeft, try putting some println statements into things that you foldLeft and foldRight and see the order in which things are done.
+</p>
+
+<p>
+By the way if you try this with the standard library you'll find it does not work the same way. The signature of foldRight is as follows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">foldRight</span>[<span style="color: #00bcff;">B</span>](z<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span>)(op<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">A</span>, <span style="color: #00bcff;">B</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span>
+</pre>
+</div>
+
+<p>
+Withough even trying it we know that it must expand the whole collection, although feel free to try it if you need to prove it to yourself. There has been some
+discussion on this, for example. 
+</p>
+
+<p>
+<a href="https://stackoverflow.com/questions/7830471/foldright-on-infinite-lazy-structure">https://stackoverflow.com/questions/7830471/foldright-on-infinite-lazy-structure</a>
+<a href="http://voidmainargs.blogspot.com/2011/08/folding-stream-with-scala.html">http://voidmainargs.blogspot.com/2011/08/folding-stream-with-scala.html</a>
+</p>
+
+<p>
+As noted in the second example the following code will work with a lazy aware foldRight only.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-scala"><span style="color: #00bcff;">LazyList</span>.repeat(<span style="color: #00bcff;">true</span>).foldRight(<span style="color: #00bcff;">false</span>){<span style="color: #b6a0ff;">_</span> || <span style="color: #b6a0ff;">_</span>}
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgb8113be" class="outline-2">
+<h2 id="orgb8113be">Last words</h2>
+<div class="outline-text-2" id="text-orgb8113be">
+<p>
+Maybe LazyList is not something you will use very often but I think some of the ideas here are central to functional programming. When you are working 
+with streaming libraries like fs2, or effect libraries like Zio, this idea of building up some structure first, then evaluating it, is very powerful, and understanding 
+lazy lists in some depth will hopefully help your way of thinking in your day to day Scala code!
+</p>
+
+<p>
+Thanks for reading, if you enjoyed this content please share with a friend. If not, drop me a note and tell me what I can do better.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgff72fb0" class="outline-2">
+<h2 id="orgff72fb0">References</h2>
+<div class="outline-text-2" id="text-orgff72fb0">
+<p>
+Functional Programming in Scala (aka the red book) - has a great chapter on lazy lists
+<a href="https://www.manning.com/books/functional-programming-in-scala">Functional Programming in Scala - Manning Press</a>
+</p>
+
+<p>
+LazyList Scala standard library 2.13 - modern day production ready code
+<a href="https://www.scala-lang.org/api/2.13.x/scala/collection/immutable/LazyList.html">https://www.scala-lang.org/api/2.13.x/scala/collection/immutable/LazyList.html</a>
+</p>
+
+<p>
+Stream from Scala standard library 2.7 - older and simpler version which I found easier to understand
+<a href="https://github.com/scala/scala/blob/v2.7.7/src/library/scala/Stream.scala">https://github.com/scala/scala/blob/v2.7.7/src/library/scala/Stream.scala</a>
+</p>
+
+<p>
+Scalaz Ephemeral Stream - did some things I liked too
+<a href="https://github.com/scalaz/scalaz/blob/ea81ca782a634d4cd93c56529c082567a207c9f6/core/src/main/scala/scalaz/EphemeralStream.scala">https://github.com/scalaz/scalaz/blob/ea81ca782a634d4cd93c56529c082567a207c9f6/core/src/main/scala/scalaz/EphemeralStream.scala</a>
 </p>
 </div>
 </div>

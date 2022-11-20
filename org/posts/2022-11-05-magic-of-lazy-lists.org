@@ -49,6 +49,10 @@ All the code written in this post, and accompanying video [[https://youtu.be/laB
 Scala standard library (both the current version and history versions which are less sophisticated but also easier to read), as well as other implementations
 such as that of the ScalaZ Ephemeral list. The resulting code is a combination of these with some of the best parts of both.
 
+#+BEGIN_EXPORT html
+<iframe width="560" height="315" src="https://www.youtube.com/embed/laB15gG5bjY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+#+END_EXPORT
+
 ** Implementing Lazy Thing
 ~LazyList~ is easier to understand if you have a good grasp for different evaluation models in Scala, so let's explore that with a custom class call ~LazyThing~.
 
@@ -475,5 +479,123 @@ of one off implementation.
 The "trick" in the code above is in the ~LazyList.repeat~. The iteration of the transpose works along each row of the matrix producing the new columns with cons, but at some point it runs out of rows and it needs another row of empty lists to finish the new rows off. How many empty lists does it need? Well we could work it out by counting, but why not just say 
 here is an infinite number, and let the zip figure out when to stop.
 
+** Folding left and right
+There are a couple of interesting things to say about folding lazy lists. Firstly let's look at stack safety.
 
+As we saw earlier the amount of memory used by a lazy list can be
+higher than with a regular list since with fusion between operations
+we can end up with a stack of function objects before it is
+evaluted. For that reason and just in general we may want to operate
+on large lists, it's important to consider which operations are stack
+safe and which are not.
 
+For a stack safe function I present ~foldLeft~.
+
+#+BEGIN_SRC scala
+  @tailrec
+  final def foldLeft[B](z: B)(f: (B, A) => B): B =
+    if isEmpty then z
+    else tail.foldLeft(f(z, head))(f)
+#+END_SRC
+
+This is a so-called aggregate function that takes a collection, in this case, iterates over it and produces some aggregate value. The supplied function
+from the user is applied to each element along with some accumulating value. In the case of this implementation the foldLeft recursive call is in ~tail position~ 
+which means we can assume it uses tail call optimization. We add the annotation to tell the compiler we think so, and it will both complain if it is not eligible.
+
+#+BEGIN_SRC scala
+def incN(n: Int, inc: Int): LazyList[Int] =
+  LazyList.cons(n, incN(n + inc, inc))
+
+println(
+  incN(1, 1).take(10000000).foldLeft(BigInt(0)) { case (acc, a) => acc + a }
+)
+#+END_SRC
+
+This function adds up 10m integers and as such takes up a lot of stack space and crashes. Except it doesn't! Why? Because of the tail call optimization.
+
+Now it will in fact take a good few seconds on modern hardware, which is a long time, and it may in fact crash with out of memory or be pathologically slow. Why? Because we are creating a lot of garbage here, in the order of gigabytes, and that takes a lot of work to clear up.
+
+Make sure you have a decent amount of heap and use the G1 garbage collector via these settings (this is for running sbt, you can set the same JAVA_OPTS for IDE's and so on).
+
+#+BEGIN_SRC bash
+SBT_OPTS="-XX:+UseG1GC -Xmx4G" sbt
+#+END_SRC
+
+So foldLeft is stack safe, how about foldRight?
+
+#+BEGIN_SRC scala
+def foldRight[B](z: => B)(f: (A, => B) => B): B =
+  if isEmpty then z
+  else f(head, tail.foldRight(z)(f))
+#+END_SRC
+
+Note that the problem here is that the recursive call is not a tail
+call position, in this case the user function ~f~ is. That means we
+can't use the tailrec annotation and it will not be tail call
+optimized.
+
+Can we infer from this situation that ~foldRight~ is useless? No actually. It has a property that foldLeft does not, that of being able to ~terminate early~. Just like with fusion of operations, 
+the early termination of ~foldRight~ can be used to save us work, and make code more efficient.
+
+How does that work? The "trick" here is that the second argument of the user function, the accumulator, is a call by name value. It's lazy! That means we don't have to evaluate it.
+
+This example code uses ~foldRight~ to find "tuna" in a list of fish. 
+
+#+BEGIN_SRC scala
+def hasTuna(ll: LazyList[String]): Boolean =
+  ll.foldRight(false){
+    (next, z) => 
+      println(next)
+      if next == "tuna" then
+        true
+      else
+        z
+  }
+
+hasTuna(LazyList("salmon", "shark", "tuna", "moray", "goldfish", "eel"))
+// prints:
+//   salmon
+//   shark
+//   tuna
+#+END_SRC
+
+This is simply not possible with foldLeft, nor is it possible if you don't use a call by name argument for the accumulator in foldRight. If you're not sure why it is not possible for 
+foldLeft, try putting some println statements into things that you foldLeft and foldRight and see the order in which things are done.
+
+By the way if you try this with the standard library you'll find it does not work the same way. The signature of foldRight is as follows:
+
+#+BEGIN_SRC scala
+def foldRight[B](z: B)(op: (A, B) => B): B
+#+END_SRC
+
+Withough even trying it we know that it must expand the whole collection, although feel free to try it if you need to prove it to yourself. There has been some
+discussion on this, for example. 
+
+https://stackoverflow.com/questions/7830471/foldright-on-infinite-lazy-structure
+http://voidmainargs.blogspot.com/2011/08/folding-stream-with-scala.html
+
+As noted in the second example the following code will work with a lazy aware foldRight only.
+
+#+BEGIN_SRC scala
+LazyList.repeat(true).foldRight(false){_ || _}
+#+END_SRC
+
+** Last words
+Maybe LazyList is not something you will use very often but I think some of the ideas here are central to functional programming. When you are working 
+with streaming libraries like fs2, or effect libraries like Zio, this idea of building up some structure first, then evaluating it, is very powerful, and understanding 
+lazy lists in some depth will hopefully help your way of thinking in your day to day Scala code!
+
+Thanks for reading, if you enjoyed this content please share with a friend. If not, drop me a note and tell me what I can do better.
+
+** References
+Functional Programming in Scala (aka the red book) - has a great chapter on lazy lists
+[[https://www.manning.com/books/functional-programming-in-scala][Functional Programming in Scala - Manning Press]]
+
+LazyList Scala standard library 2.13 - modern day production ready code
+https://www.scala-lang.org/api/2.13.x/scala/collection/immutable/LazyList.html
+
+Stream from Scala standard library 2.7 - older and simpler version which I found easier to understand
+https://github.com/scala/scala/blob/v2.7.7/src/library/scala/Stream.scala
+
+Scalaz Ephemeral Stream - did some things I liked too
+https://github.com/scalaz/scalaz/blob/ea81ca782a634d4cd93c56529c082567a207c9f6/core/src/main/scala/scalaz/EphemeralStream.scala
