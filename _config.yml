@@ -9,22 +9,22 @@
 title: Functional[Justin]
 email: justinhj+blog@gmail.com
 email_display: justinhj@gmail.com
-description: "Justin is a British/Canadian software engineer at Treasure Data, functional programming, polyglot, Neovim and Emacs."
+description: "Justin is a British/Canadian software engineer at Treasure Data, generative AI, AI assisted coding, functional programming, distributed computing, Neovim and Emacs."
 url: "http://justinhj.github.io"
 twitter_username: justinhj
 github_username:  justinhj
-gitter_username: justinhj
 
 # Build settings
 markdown: kramdown
 
-exclude: ["README.md", "org", "run.sh", ".git", "Gemfile", ".gitignore", ".DS_Store", "tags.txt"]
+exclude: ["README.md", "org", "run.sh", ".git", "Gemfile", ".gitignore", ".DS_Store", "tags.txt", "GEMINI.md"]
 include: ["images","css","_orgcss"]
 
 plugins_dir:
   - jekyll-mentions
 
 top_posts:
+  - 2022-11-05-magic-of-lazy-lists.html
   - 2019/06/20/comonads-for-life.html
   - 2009/01/12/finding-writable-files-in-directory-in.html
   - 2017/07/16/future-with-timeout.html

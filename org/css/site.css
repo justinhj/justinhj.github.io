@@ -14,12 +14,12 @@ pre.src.src-c {
     background-color: #000;
     color: #fff;
     font-size: 16px;
-    font-family: monaco, Consolas, "Lucida Console", monospace;
+    font-family: 'Sora', sans-serif;
 }
 
 pre.src.src-scala {
     background-color: #000;
     color: #fff;
     font-size: 16px;
-    font-family: monaco, Consolas, "Lucida Console", monospace;
+    font-family: 'JetBrains Mono', monospace;
 }

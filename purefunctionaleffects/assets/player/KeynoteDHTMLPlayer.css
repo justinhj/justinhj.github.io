@@ -637,7 +637,7 @@ div#waitingIndicator
     visibility: visible;
     width: 110px;
     height: 110px;
-    background-image: url('waiting_bezel.png');
+    /* background-image: url('waiting_bezel.png'); */
 }
 
 div#waitingSpinner
