@@ -13,15 +13,19 @@
 
   <body class=antialiased>
 
-    {% include header.html %}
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
 
-    <div class="page-content">
-      <div class="wrapper">
-        {{ content }}
+      {% include header.html %}
+
+      <div class="page-content">
+        <div class="wrapper">
+          {{ content }}
+        </div>
       </div>
-    </div>
 
-    {% include footer.html %}
+      {% include footer.html %}
+
+      </div>
 
   </body>
 
