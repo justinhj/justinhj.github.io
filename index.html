@@ -25,7 +25,11 @@ comments: true
 
               {% for post_tag in post.tags %}
                 {% if post_tag %}
-                  <span class="tag">{{ post_tag }}</span>
+                <span class="tag">
+                  <a href="{{ "/tag/" | append: post_tag }}">
+                    {{ post_tag }}
+                  </a>
+                </span>
                 {% endif %}
               {% endfor %}
 
