@@ -5,16 +5,33 @@ comments: true
 
 <div class="home">
 
-  <h1 class="page-heading">Posts</h1>
+  <h2 class="text-2xl font-bold mb-8">Posts</h2>
+  <div class="space-y-8">
 
   <ul class="post-list">
     {% for post in site.posts %}
       <li>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+        <article class="post-card">
+            <header class="mb-2">
+              <p class="font-mono text-sm text-[var(--secondary-text-color)]">{{ post.date | date: "%b %-d, %Y" }}</p>
+                <h3 class="text-2xl font-bold mt-1">
+                    <a href="{{ post.url | prepend: site.baseurl }}" class="hover:text-[var(--accent-color)] transition-colors duration-200">{{ post.title }}</a>
+                </h3>
+            </header>
+            <p class="text-base mb-4">
+                An in-depth look at how lazy evaluation in data structures like lists can lead to more efficient and elegant code, especially when dealing with infinite sequences or large datasets.
+            </p>
+            <footer class="flex items-center gap-2">
 
-        <h2>
-          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-        </h2>
+              {% for post_tag in post.tags %}
+                {% if post_tag %}
+                  <span class="tag">{{ post_tag }}</span>
+                {% endif %}
+              {% endfor %}
+
+            </footer>
+        </article>
+
       </li>
     {% endfor %}
   </ul>
