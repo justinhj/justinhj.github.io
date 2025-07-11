@@ -24,7 +24,7 @@ plugins_dir:
   - jekyll-mentions
 
 top_posts:
-  - 2022-11-05-magic-of-lazy-lists.html
+  - 2022/11/05/magic-of-lazy-lists.html
   - 2019/06/20/comonads-for-life.html
   - 2009/01/12/finding-writable-files-in-directory-in.html
   - 2017/07/16/future-with-timeout.html
