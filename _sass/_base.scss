@@ -170,12 +170,13 @@ body {
 }
 
 /* Custom accent color variables for easy theme changes */
+/* Custom accent color variables for easy theme changes */
 :root {
-    --accent-color: #7aa2f7; /* A vibrant, "technical" blue */
-    --accent-hover-color: #9eceff;
-    --secondary-text-color: #5c6370; /* Muted gray for metadata */
-    --border-color: #2c2e3b;
-    --card-bg-color: #24283b;
+    --accent-color: #{$accent-color};
+    --accent-hover-color: #{$accent-hover-color};
+    --secondary-text-color: #{$secondary-text-color};
+    --border-color: #{$border-color};
+    --card-bg-color: #{$card-bg-color};
 }
 
 /* Applying the monospaced font for a "coder" feel on specific elements */
@@ -189,18 +190,18 @@ h1, h2, h3, .accent-text {
 }
 
 a {
-    color: var(--accent-color);
+    color: $accent-color;
     transition: color 0.2s ease-in-out;
 }
 
 a:hover {
-    color: var(--accent-hover-color);
+    color: $accent-hover-color;
 }
 
 /* Glassmorphism-inspired card effect for post previews */
 .post-card {
-    background-color: var(--card-bg-color);
-    border: 1px solid var(--border-color);
+    background-color: $card-bg-color;
+    border: 1px solid $border-color;
     border-radius: 12px;
     padding: 1.5rem;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -215,7 +216,7 @@ a:hover {
 .tag {
     display: inline-block;
     background-color: rgba(122, 162, 247, 0.1); /* Accent color with low opacity */
-    color: var(--accent-color);
+    color: $accent-color;
     padding: 0.25rem 0.75rem;
     border-radius: 9999px; /* Pill shape */
     font-size: 0.75rem;
