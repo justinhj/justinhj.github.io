@@ -8,21 +8,6 @@ dl, dd, ol, ul, figure {
     padding: 0;
 }
 
-
-
-/**
- * Basic styling
- */
-body {
-    font: $base-font-weight #{$base-font-size}/#{$base-line-height} $base-font-family;
-    color: $text-color;
-    background-color: $background-color;
-    -webkit-text-size-adjust: 100%;
-    font-kerning: auto;
-}
-
-
-
 /**
  * Set `margin-bottom` to maintain vertical rhythm
  */
@@ -33,8 +18,6 @@ ul, ol, dl, figure,
     margin-bottom: $spacing-unit / 2;
 }
 
-
-
 /**
  * Images
  */
@@ -42,8 +25,6 @@ img {
     max-width: 100%;
     vertical-align: middle;
 }
-
-
 
 /**
  * Figures
@@ -55,8 +36,6 @@ figure > img {
 figcaption {
     font-size: $small-font-size;
 }
-
-
 
 /**
  * Lists
@@ -72,16 +51,12 @@ li {
     }
 }
 
-
-
 /**
  * Headings
  */
 h1, h2, h3, h4, h5, h6 {
     font-weight: $base-font-weight;
 }
-
-
 
 /**
  * Links
@@ -118,36 +93,13 @@ blockquote {
     }
 }
 
-
-
 /**
  * Code formatting
  */
 pre,
 code {
-    // font-size: 15px;
-    // border: 1px solid $grey-color-light;
-    // border-radius: 3px;
-    // background-color: #f5f5f5;
     font-weight: bold;
 }
-
-// code {
-//     padding: 1px 5px;
-// }
-
-// pre {
-//     padding: 8px 12px;
-//     overflow-x: auto;
-
-//     > code {
-//         border: 0;
-//         padding-right: 0;
-//         padding-left: 0;
-//     }
-// }
-
-
 
 /**
  * Wrapper
@@ -169,8 +121,6 @@ code {
     }
 }
 
-
-
 /**
  * Clearfix
  */
@@ -182,8 +132,6 @@ code {
         clear: both;
     }
 }
-
-
 
 /**
  * Icons
@@ -214,9 +162,11 @@ code {
 /* Custom styles to extend Tailwind */
 body {
     /* Using a deep, modern dark color palette */
-    background-color: #1a1b26; 
-    color: #a9b1d6; /* Soft off-white for body text */
-    font-family: 'Sora', sans-serif; /* Default modern sans-serif font */
+    background-color: $background-color; /* A deep, modern dark background */
+    color: $text-color; /* Soft off-white for body text */
+    font-family: $base-font-family;
+    -webkit-text-size-adjust: 100%;
+    font-kerning: auto;
 }
 
 /* Custom accent color variables for easy theme changes */
