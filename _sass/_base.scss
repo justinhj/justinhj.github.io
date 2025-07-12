@@ -17,13 +17,8 @@ body {
     font: $base-font-weight #{$base-font-size}/#{$base-line-height} $base-font-family;
     color: $text-color;
     background-color: $background-color;
-    // background-image: $background-image;
     -webkit-text-size-adjust: 100%;
-    -webkit-font-feature-settings: "kern" 1;
-    -moz-font-feature-settings: "kern" 1;
-    -o-font-feature-settings: "kern" 1;
-    font-feature-settings: "kern" 1;
-    font-kerning: normal;
+    font-kerning: auto;
 }
 
 
@@ -214,4 +209,65 @@ code {
             fill: $grey-color;
         }
     }
+}
+
+/* Custom styles to extend Tailwind */
+body {
+    /* Using a deep, modern dark color palette */
+    background-color: #1a1b26; 
+    color: #a9b1d6; /* Soft off-white for body text */
+    font-family: 'Sora', sans-serif; /* Default modern sans-serif font */
+}
+
+/* Custom accent color variables for easy theme changes */
+:root {
+    --accent-color: #7aa2f7; /* A vibrant, "technical" blue */
+    --accent-hover-color: #9eceff;
+    --secondary-text-color: #5c6370; /* Muted gray for metadata */
+    --border-color: #2c2e3b;
+    --card-bg-color: #24283b;
+}
+
+/* Applying the monospaced font for a "coder" feel on specific elements */
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Styling for headings and links with the accent color */
+h1, h2, h3, .accent-text {
+    color: #c0caf5; /* A slightly brighter white for important text */
+}
+
+a {
+    color: var(--accent-color);
+    transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+    color: var(--accent-hover-color);
+}
+
+/* Glassmorphism-inspired card effect for post previews */
+.post-card {
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.post-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* Styling for the topic tags */
+.tag {
+    display: inline-block;
+    background-color: rgba(122, 162, 247, 0.1); /* Accent color with low opacity */
+    color: var(--accent-color);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px; /* Pill shape */
+    font-size: 0.75rem;
+    font-weight: 500;
 }
