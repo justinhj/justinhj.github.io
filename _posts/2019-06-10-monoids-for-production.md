@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  Monoids for Production
-tags: [scala, functional-programming, monoids, pure-functional-programming, scalaz, typelevel, cats]
+tags: [scala, functional-programming, monoids, pure-functional-programming, scalaz, typelevel, cats, popular]
 ---
 
 What's in this post?

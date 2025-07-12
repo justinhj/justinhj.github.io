@@ -9,7 +9,7 @@
 ---
 layout: post
 title: How to blog with Org-mode
-tags: [emacs, org-mode, blogging, github-pages, jekyll]
+tags: [emacs, org-mode, blogging, github-pages, jekyll, popular]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT

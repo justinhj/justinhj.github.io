@@ -4,6 +4,7 @@ When editing the main layout look in _layouts/
 
 ## Bugs and improvements
 1. In the pre src org-mode code blocks the text goes off to the right out of the dark background.
+  + Fixed
 2. The popular posts screen does not use the same card layout as the posts screen.
 
 

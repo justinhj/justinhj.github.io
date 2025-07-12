@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  Comonads for Life
-tags: [scala, functional-programming, comonads, pure-functional-programming, typelevel, cats, zio]
+tags: [scala, functional-programming, comonads, pure-functional-programming, typelevel, cats, zio, popular]
 ---
 
 ![Comonads](/../images/comonads.jpg "Comonads")

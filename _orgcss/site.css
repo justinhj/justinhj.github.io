@@ -1,6 +1,6 @@
 .footpara {
     width: 99%;
-    text-align: left;
+    text-alignt: left;
     float: right;
     padding: 0;
     margin: 0;
@@ -24,6 +24,3 @@ pre.src.src-scala {
     font-family: 'JetBrains Mono', monospace;
 }
 
-pre.src {
-    white-space: pre-wrap;
-}

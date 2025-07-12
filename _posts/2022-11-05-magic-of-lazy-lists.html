@@ -1,7 +1,7 @@
 ---
 layout: post
 title: The Magic of Lazy Lists
-tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, kleisli, zio]
+tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, kleisli, zio, popular]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 
@@ -24,9 +24,9 @@ tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, 
   <figcaption>
 </figure>
 
-<div id="outline-container-orgc153bc3" class="outline-2">
-<h2 id="orgc153bc3">Introduction</h2>
-<div class="outline-text-2" id="text-orgc153bc3">
+<div id="outline-container-orgb7894ea" class="outline-2">
+<h2 id="orgb7894ea">Introduction</h2>
+<div class="outline-text-2" id="text-orgb7894ea">
 <p>
 As the <a href="https://docs.scala-lang.org/scala3/book/taste-collections.html">Scala 3 - book</a> points out, Scala has a rich set of collection
 classes. As well as <code>List</code>, of course, it also has a solid implementation of <code>LazyList</code>. If you're not sure what that is, or what is used for, read on and find out, plus even better I will walk through a full implementation of LazyList that can do some magical things.
@@ -52,9 +52,9 @@ such as that of the ScalaZ Ephemeral list. The resulting code is a combination o
 </div>
 </div>
 
-<div id="outline-container-org59f4441" class="outline-2">
-<h2 id="org59f4441">Implementing Lazy Thing</h2>
-<div class="outline-text-2" id="text-org59f4441">
+<div id="outline-container-org283ea86" class="outline-2">
+<h2 id="org283ea86">Implementing Lazy Thing</h2>
+<div class="outline-text-2" id="text-org283ea86">
 <p>
 <code>LazyList</code> is easier to understand if you have a good grasp of different evaluation models in Scala, so let's explore that with a custom class called <code>LazyThing</code>.
 </p>
@@ -109,8 +109,8 @@ of evaluated list elements, and never evaluate them again. This <code>memoizatio
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">LazyThing</span>[<span style="color: #00bcff;">A</span>](a<span style="color: #b6a0ff;">:</span> () <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">A</span>)<span style="color: #b6a0ff;">:</span>
-   <span style="color: #b6a0ff;">var</span> <span style="color: #dbbe5f;">evaluated</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">false</span>
-   <span style="color: #b6a0ff;">var</span> <span style="color: #dbbe5f;">value</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">_</span>
+   <span style="color: #b6a0ff;">var</span> <span style="color: #d0bc00;">evaluated</span> <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">false</span>
+   <span style="color: #b6a0ff;">var</span> <span style="color: #d0bc00;">value</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">_</span>
    <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">get</span> <span style="color: #b6a0ff;">=</span> <span style="color: #b6a0ff;">if</span> evaluated then value
      <span style="color: #b6a0ff;">else</span>
          evaluated <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">true</span>
@@ -157,9 +157,9 @@ Secondly, we can replace the manual memoization code that remembers the evaluate
 </div>
 </div>
 </div>
-<div id="outline-container-orgdbc13d7" class="outline-2">
-<h2 id="orgdbc13d7">Beginning LazyList</h2>
-<div class="outline-text-2" id="text-orgdbc13d7">
+<div id="outline-container-org462128a" class="outline-2">
+<h2 id="org462128a">Beginning LazyList</h2>
+<div class="outline-text-2" id="text-org462128a">
 <p>
 Let's begin by representing the <code>LazyList</code> as a <code>sealed trait</code>, which will be the object through which users interact with the collection.
 </p>
@@ -251,9 +251,9 @@ evaluation happen, but subsequently we did not not. Nice.
 </div>
 </div>
 
-<div id="outline-container-org43e2ce4" class="outline-2">
-<h2 id="org43e2ce4">Pattern matching and the "cons operator"</h2>
-<div class="outline-text-2" id="text-org43e2ce4">
+<div id="outline-container-org06dcc57" class="outline-2">
+<h2 id="org06dcc57">Pattern matching and the "cons operator"</h2>
+<div class="outline-text-2" id="text-org06dcc57">
 <p>
 In Scala you can construct lists using the so-called <code>cons</code> operator <code>::</code>. For example:
 </p>
@@ -365,9 +365,9 @@ Now we can write lazy code using pattern matching:
 </div>
 </div>
 
-<div id="outline-container-org54fcd19" class="outline-2">
-<h2 id="org54fcd19">Iterating over Lazy List</h2>
-<div class="outline-text-2" id="text-org54fcd19">
+<div id="outline-container-org026cfab" class="outline-2">
+<h2 id="org026cfab">Iterating over Lazy List</h2>
+<div class="outline-text-2" id="text-org026cfab">
 <p>
 Note that although the destructuring (pattern matching) of lazy lists is often useful, in my final implementation for the Duct library I opted for the following more simple approach to the map function, shared here because I implemented many of the functions that iterate over lazy lists in the following way:
 </p>
@@ -389,7 +389,7 @@ Another useful function is <code>forEach</code>, which you can use to execute so
 </ol>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #ff9977;">@tailrec</span>
+<pre class="src src-scala"><span style="color: #ff9077;">@tailrec</span>
 <span style="color: #f78fe7;">final</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">forEach</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Unit</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Unit</span> <span style="color: #b6a0ff;">=</span>
   <span style="color: #b6a0ff;">if</span> !isEmpty then
     f(head)
@@ -418,9 +418,9 @@ list1.forEach { a <span style="color: #b6a0ff;">=&gt;</span>
 </div>
 </div>
 
-<div id="outline-container-orgda7ca03" class="outline-2">
-<h2 id="orgda7ca03">Filtering</h2>
-<div class="outline-text-2" id="text-orgda7ca03">
+<div id="outline-container-org21af617" class="outline-2">
+<h2 id="org21af617">Filtering</h2>
+<div class="outline-text-2" id="text-org21af617">
 <p>
 Another part of the implementation worth looking at is dropping elements that pass or fail some filter, namely <code>filter</code> and <code>dropWhile</code>. Let's first think about what the semantics are here in terms of laziness.
 </p>
@@ -436,7 +436,7 @@ We have to be careful about laziness then. Let's first think about <code>dropWhi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #ff9977;">@tailrec</span>
+<pre class="src src-scala"><span style="color: #ff9077;">@tailrec</span>
 <span style="color: #f78fe7;">final</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">dropWhile</span>(f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">Boolean</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">LazyList</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
     <span style="color: #b6a0ff;">if</span> isEmpty then <span style="color: #00bcff;">LazyList</span>.empty
     <span style="color: #b6a0ff;">else</span> <span style="color: #b6a0ff;">if</span> f(head) then tail.dropWhile(f)
@@ -470,9 +470,9 @@ Once you implement <code>dropWhile</code> it can be used to implement <code>filt
 </div>
 </div>
 
-<div id="outline-container-org6584d34" class="outline-2">
-<h2 id="org6584d34">Infinite lists</h2>
-<div class="outline-text-2" id="text-org6584d34">
+<div id="outline-container-org2f8dc3f" class="outline-2">
+<h2 id="org2f8dc3f">Infinite lists</h2>
+<div class="outline-text-2" id="text-org2f8dc3f">
 <p>
 Quite a few years ago I was working through a Haskell tutorial for beginners. Some of the examples worked with infinite lists; mapping them, filtering them, and zipping them together. At the time my knowledge of evaluation and laziness was 
 not sophisticated. As they say, any sufficiently advanced technology is indistinguishable from magic. Since Haskell was doing things more advanced than I understood at the time, I thought of infinite lists as being a magic trick.
@@ -511,9 +511,9 @@ Of course, we don't want to actually evaluate infinite lists because we don't ha
 </div>
 </div>
 
-<div id="outline-container-orgbdcb1b7" class="outline-2">
-<h2 id="orgbdcb1b7">Fusion of operations</h2>
-<div class="outline-text-2" id="text-orgbdcb1b7">
+<div id="outline-container-orga762366" class="outline-2">
+<h2 id="orga762366">Fusion of operations</h2>
+<div class="outline-text-2" id="text-orga762366">
 <p>
 Imagine the following code.
 </p>
@@ -560,7 +560,7 @@ Observation&#x2026; we are turning our list of values into a <code>list of delay
 </ol>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #ff9977;">@tailrec</span>
+<pre class="src src-scala"><span style="color: #ff9077;">@tailrec</span>
 <span style="color: #f78fe7;">final</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">foldLeft</span>[<span style="color: #00bcff;">B</span>](z<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span>)(f<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">B</span>, <span style="color: #00bcff;">A</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span> <span style="color: #b6a0ff;">=</span>
     <span style="color: #b6a0ff;">if</span> isEmpty then z
     <span style="color: #b6a0ff;">else</span> tail.foldLeft(f(z, head))(f)
@@ -595,9 +595,9 @@ You need to use some discretion here. If you can't guarantee that the whole list
 </div>
 </div>
 
-<div id="outline-container-org72f881b" class="outline-2">
-<h2 id="org72f881b">Laziness for convenience</h2>
-<div class="outline-text-2" id="text-org72f881b">
+<div id="outline-container-orgf4d244e" class="outline-2">
+<h2 id="orgf4d244e">Laziness for convenience</h2>
+<div class="outline-text-2" id="text-orgf4d244e">
 <p>
 Some algorithms require you to provide a list of things but you don't know how many things you need in advance. Here's an example that appears in the paper <a href="https://www.staff.city.ac.uk/~ross/papers/Applicative.html">Applicative Programming with Effects</a> that transposes a matrix.
 </p>
@@ -675,9 +675,9 @@ here is an infinite number, and let the zip figure out when to stop?
 </div>
 </div>
 
-<div id="outline-container-orgc4de63d" class="outline-2">
-<h2 id="orgc4de63d">Folding left and right</h2>
-<div class="outline-text-2" id="text-orgc4de63d">
+<div id="outline-container-org946c355" class="outline-2">
+<h2 id="org946c355">Folding left and right</h2>
+<div class="outline-text-2" id="text-org946c355">
 <p>
 There are a couple of interesting things to say about folding lazy lists. Firstly let's look at stack safety.
 </p>
@@ -696,7 +696,7 @@ For a stack safe function I present <code>foldLeft</code>.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #ff9977;">@tailrec</span>
+<pre class="src src-scala"><span style="color: #ff9077;">@tailrec</span>
 <span style="color: #f78fe7;">final</span> <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">foldLeft</span>[<span style="color: #00bcff;">B</span>](z<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span>)(f<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">B</span>, <span style="color: #00bcff;">A</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">B</span>)<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">B</span> <span style="color: #b6a0ff;">=</span>
   <span style="color: #b6a0ff;">if</span> isEmpty then z
   <span style="color: #b6a0ff;">else</span> tail.foldLeft(f(z, head))(f)
@@ -821,9 +821,9 @@ As noted in the second example the following code will work with a lazy aware fo
 </div>
 </div>
 
-<div id="outline-container-orgb8113be" class="outline-2">
-<h2 id="orgb8113be">Last words</h2>
-<div class="outline-text-2" id="text-orgb8113be">
+<div id="outline-container-orge975925" class="outline-2">
+<h2 id="orge975925">Last words</h2>
+<div class="outline-text-2" id="text-orge975925">
 <p>
 Maybe LazyList is not something you will use very often but I think some of the ideas here are central to functional programming. When you are working 
 with streaming libraries like fs2, or effect libraries like Zio, this idea of building up some structure first, then evaluating it, is very powerful, and understanding 
@@ -836,9 +836,9 @@ Thanks for reading, if you enjoyed this content please share with a friend. If n
 </div>
 </div>
 
-<div id="outline-container-orgff72fb0" class="outline-2">
-<h2 id="orgff72fb0">References</h2>
-<div class="outline-text-2" id="text-orgff72fb0">
+<div id="outline-container-org9f10093" class="outline-2">
+<h2 id="org9f10093">References</h2>
+<div class="outline-text-2" id="text-org9f10093">
 <p>
 Functional Programming in Scala (aka the red book) - has a great chapter on lazy lists
 <a href="https://www.manning.com/books/functional-programming-in-scala">Functional Programming in Scala - Manning Press</a>

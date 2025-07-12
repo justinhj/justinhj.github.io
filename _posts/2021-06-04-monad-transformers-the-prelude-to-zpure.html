@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Monad Transformers - the prelude to ZPure
-tags: [scala, scala-3, dotty, monads, category-theory]
+tags: [scala, scala-3, dotty, monads, category-theory, popular]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 
@@ -9,9 +9,9 @@ tags: [scala, scala-3, dotty, monads, category-theory]
   <img class="img" src="../../../images/monadtransformers.png" border="1" alt="Diagram of monad transformers with the ZPure type" width="600"/>
 </div>
 
-<div id="outline-container-orga590fd5" class="outline-2">
-<h2 id="orga590fd5">Readers and Writers and Transformers</h2>
-<div class="outline-text-2" id="text-orga590fd5">
+<div id="outline-container-orga6db714" class="outline-2">
+<h2 id="orga6db714">Readers and Writers and Transformers</h2>
+<div class="outline-text-2" id="text-orga6db714">
 <p>
 BTW you can check out the video here instead: 
 <a href="https://youtu.be/tEnZZlOn-jI">Functional Justin - Another Angle on Monad Transformers</a>
@@ -22,18 +22,18 @@ There are twenty pages here or over an hour of videos, so let me help you decide
 </p>
 </div>
 
-<div id="outline-container-org2fb6705" class="outline-3">
-<h3 id="org2fb6705">Who are you?</h3>
-<div class="outline-text-3" id="text-org2fb6705">
+<div id="outline-container-org9365b75" class="outline-3">
+<h3 id="org9365b75">Who are you?</h3>
+<div class="outline-text-3" id="text-org9365b75">
 <p>
 You are a Scala programmer or interested in Scala and may have some Haskell or interest in pure functional programming.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org9288ae6" class="outline-3">
-<h3 id="org9288ae6">What do I cover?</h3>
-<div class="outline-text-3" id="text-org9288ae6">
+<div id="outline-container-org027dc19" class="outline-3">
+<h3 id="org027dc19">What do I cover?</h3>
+<div class="outline-text-3" id="text-org027dc19">
 <ul class="org-ul">
 <li>Introduction to Monad transformers</li>
 <li>Implement the WriterT monad in Scala 3 from scratch and used in a program</li>
@@ -45,9 +45,9 @@ You are a Scala programmer or interested in Scala and may have some Haskell or i
 </div>
 </div>
 
-<div id="outline-container-org36b4052" class="outline-2">
-<h2 id="org36b4052">Evaluating expressions</h2>
-<div class="outline-text-2" id="text-org36b4052">
+<div id="outline-container-org5369a1f" class="outline-2">
+<h2 id="org5369a1f">Evaluating expressions</h2>
+<div class="outline-text-2" id="text-org5369a1f">
 <p>
 In previous blogs and videos, I've described a program that evaluates
 arithmetic expressions as this is a nice testbed for various
@@ -78,7 +78,7 @@ since I'm using Either as the result effect type.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala">  <span style="color: #b6a0ff;">given</span> envMap<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Env</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">7</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">6</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">22</span>)
+<pre class="src src-scala">  given envMap<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Env</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Map</span>(<span style="color: #79a8ff;">"x"</span> -&gt; <span style="color: #00bcff;">7</span>, <span style="color: #79a8ff;">"y"</span> -&gt; <span style="color: #00bcff;">6</span>, <span style="color: #79a8ff;">"z"</span> -&gt; <span style="color: #00bcff;">22</span>)
 
   <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">exp1</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">Int</span>] <span style="color: #b6a0ff;">=</span> <span style="color: #00bcff;">Mul</span>(<span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"z"</span>), <span style="color: #00bcff;">Add</span>(<span style="color: #00bcff;">Val</span>(<span style="color: #00bcff;">10</span>), <span style="color: #00bcff;">Sub</span>(<span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"x"</span>), <span style="color: #00bcff;">Var</span>(<span style="color: #79a8ff;">"y"</span>))))
 
@@ -98,7 +98,7 @@ ADT's (algebraic data types), similar to how you would do it in Rust.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">enum</span> <span style="color: #00bcff;">EvalError</span> {
+<pre class="src src-scala">enum <span style="color: #00bcff;">EvalError</span> {
   <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">InvalidSymboName</span>
   <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">SymbolNotFound</span>
   <span style="color: #b6a0ff;">case</span> <span style="color: #00bcff;">DivisionByZero</span>
@@ -112,7 +112,7 @@ The next things to look at are an ADT to represent the program steps a return ty
 
 <div class="org-src-container">
 <pre class="src src-scala">
-<span style="color: #b6a0ff;">enum</span> <span style="color: #00bcff;">Exp</span>[<span style="color: #00bcff;">A</span>]<span style="color: #b6a0ff;">:</span>
+enum <span style="color: #00bcff;">Exp</span>[<span style="color: #00bcff;">A</span>]<span style="color: #b6a0ff;">:</span>
   <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Val</span>(<span style="color: #00d3d0;">value</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">A</span>) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]
   <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Add</span>(<span style="color: #00d3d0;">left</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>], <span style="color: #00d3d0;">right</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]
   <span style="color: #b6a0ff;">case</span> <span style="color: #6ae4b9;">Sub</span>(<span style="color: #00d3d0;">left</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>], <span style="color: #00d3d0;">right</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]) <span style="color: #b6a0ff;">extends</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>]
@@ -173,7 +173,7 @@ Numeric for the type <code>Numeric[Either[EvalError,A]]</code>.
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Implement Numeric for EvalResult</span>
-<span style="color: #b6a0ff;">given</span> evalResultNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span> {
+given evalResultNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span> {
 
   <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">add</span>(fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>], fb<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">EvalResult</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> {
     fa.map2(fb)((a,b) <span style="color: #b6a0ff;">=&gt;</span> a + b)
@@ -197,9 +197,9 @@ integrate it with the program above.
 </div>
 </div>
 
-<div id="outline-container-orge92bcca" class="outline-2">
-<h2 id="orge92bcca">WriterT</h2>
-<div class="outline-text-2" id="text-orge92bcca">
+<div id="outline-container-org1d9e441" class="outline-2">
+<h2 id="org1d9e441">WriterT</h2>
+<div class="outline-text-2" id="text-org1d9e441">
 <p>
 Let's say we want to take an existing effectful program and add a new
 effect to it. The effect I will demonstrate is logging. There is a
@@ -267,9 +267,9 @@ transformer as long as you only use Functor level methods.
 </p>
 </div>
 
-<div id="outline-container-org70ad577" class="outline-3">
-<h3 id="org70ad577">Lifting</h3>
-<div class="outline-text-3" id="text-org70ad577">
+<div id="outline-container-org24d8b6c" class="outline-3">
+<h3 id="org24d8b6c">Lifting</h3>
+<div class="outline-text-3" id="text-org24d8b6c">
 <p>
 To use WriterT there needs to be a mechanism to take your inner data
 type (Either in this case) and make an instance of WriterT.  That can
@@ -299,7 +299,7 @@ care of creating an empty log message and mapping it for us.
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">object</span> <span style="color: #00bcff;">WriterT</span><span style="color: #b6a0ff;">:</span>
-  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">lift</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">W</span>, <span style="color: #00bcff;">A</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>])(<span style="color: #b6a0ff;">using</span> m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], <span style="color: #00bcff;">F</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Functor</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+  <span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">lift</span>[<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">W</span>, <span style="color: #00bcff;">A</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">F</span>[<span style="color: #00bcff;">A</span>])(using m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], <span style="color: #00bcff;">F</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Functor</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
     <span style="color: #00bcff;">WriterT</span>(<span style="color: #00bcff;">F</span>.map(fa)(a <span style="color: #b6a0ff;">=&gt;</span> (m.zero, a)))
 
 <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">... </span>
@@ -336,9 +336,9 @@ only needs map, it needs only the Functor type constraint.
 </div>
 </div>
 
-<div id="outline-container-org9d03e19" class="outline-3">
-<h3 id="org9d03e19">Evaluating expressions with a log</h3>
-<div class="outline-text-3" id="text-org9d03e19">
+<div id="outline-container-org3132388" class="outline-3">
+<h3 id="org3132388">Evaluating expressions with a log</h3>
+<div class="outline-text-3" id="text-org3132388">
 <p>
 Now I'll walk through the changes needed to convert the expression
 evaluator from having the return type Either, to being one of
@@ -385,7 +385,7 @@ any prior ones.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">tell</span>(l1<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">W</span>)(<span style="color: #b6a0ff;">using</span> m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Functor</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
+<pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">tell</span>(l1<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">W</span>)(using m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Functor</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span>
   <span style="color: #00bcff;">WriterT</span>(wrapped.map{
     (l2,a) <span style="color: #b6a0ff;">=&gt;</span>
       (m.combine(l2, l1), a)
@@ -440,9 +440,9 @@ written as <code>Var x (7)</code> where 7 is its value in the symbol table.
 </div>
 </div>
 
-<div id="outline-container-org6c7d993" class="outline-3">
-<h3 id="org6c7d993">Extending numeric</h3>
-<div class="outline-text-3" id="text-org6c7d993">
+<div id="outline-container-org44604ed" class="outline-3">
+<h3 id="org44604ed">Extending numeric</h3>
+<div class="outline-text-3" id="text-org44604ed">
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">handleAdd</span>[<span style="color: #00bcff;">A</span> <span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>](l<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] , r<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Exp</span>[<span style="color: #00bcff;">A</span>] )<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WithEnv</span>[<span style="color: #00bcff;">A</span>] <span style="color: #b6a0ff;">=</span> eval(l) + eval(r)
 </pre>
@@ -468,7 +468,7 @@ I'm just extending that technique to handle a more complicated type.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-scala"><span style="color: #b6a0ff;">given</span> evalResultWNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">WriterT</span>[[<span style="color: #00bcff;">A1</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A1</span>], <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>], <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span>
+<pre class="src src-scala">given evalResultWNumeric[<span style="color: #00bcff;">A</span><span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>]<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Numeric</span>[<span style="color: #00bcff;">WriterT</span>[[<span style="color: #00bcff;">A1</span>] =&gt;&gt; <span style="color: #00bcff;">Either</span>[<span style="color: #00bcff;">EvalError</span>, <span style="color: #00bcff;">A1</span>], <span style="color: #00bcff;">List</span>[<span style="color: #00bcff;">String</span>], <span style="color: #00bcff;">A</span>]] <span style="color: #b6a0ff;">with</span>
   <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">... implementations</span>
 </pre>
 </div>
@@ -546,7 +546,7 @@ lets you build a log entry from them.
 
 <div class="org-src-container">
 <pre class="src src-scala"><span style="color: #b6a0ff;">def</span> <span style="color: #feacd0;">mapTell2</span>[<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>,<span style="color: #00bcff;">F</span>[<span style="color: #b6a0ff;">_</span>],<span style="color: #00bcff;">W</span>](fa<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">A</span>],fb<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">B</span>],fabc<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">C</span>,fabcw<span style="color: #b6a0ff;">:</span> (<span style="color: #00bcff;">A</span>,<span style="color: #00bcff;">B</span>,<span style="color: #00bcff;">C</span>) <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">W</span>)
-                           (<span style="color: #b6a0ff;">using</span> m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monad</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> {
+                           (using m<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monoid</span>[<span style="color: #00bcff;">W</span>], f<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">Monad</span>[<span style="color: #00bcff;">F</span>])<span style="color: #b6a0ff;">:</span> <span style="color: #6ae4b9;">WriterT</span>[<span style="color: #00bcff;">F</span>,<span style="color: #00bcff;">W</span>,<span style="color: #00bcff;">C</span>] <span style="color: #b6a0ff;">=</span> {
    <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">r</span> <span style="color: #b6a0ff;">=</span> fa.unwrap().map2(fb.unwrap()){
      <span style="color: #b6a0ff;">case</span> ((<span style="color: #00d3d0;">al</span>,<span style="color: #00d3d0;">a</span>),(<span style="color: #00d3d0;">bl</span>,<span style="color: #00d3d0;">b</span>)) <span style="color: #b6a0ff;">=&gt;</span>
        <span style="color: #b6a0ff;">val</span> <span style="color: #00d3d0;">c</span> <span style="color: #b6a0ff;">=</span> fabc(a,b)
@@ -606,9 +606,9 @@ one with step-by-step logging.
 </div>
 </div>
 
-<div id="outline-container-orgfb53321" class="outline-2">
-<h2 id="orgfb53321">ReaderT</h2>
-<div class="outline-text-2" id="text-orgfb53321">
+<div id="outline-container-org697c96c" class="outline-2">
+<h2 id="org697c96c">ReaderT</h2>
+<div class="outline-text-2" id="text-org697c96c">
 <p>
 Another useful data type with a Monad instance is the Reader. As the
 name may imply, this is the conceptual opposite of Writer. i.e.,
@@ -714,9 +714,9 @@ println(eval(exp1).run(env1))
 </div>
 </div>
 
-<div id="outline-container-orga677d25" class="outline-2">
-<h2 id="orga677d25">WriterT and ReaderT</h2>
-<div class="outline-text-2" id="text-orga677d25">
+<div id="outline-container-orgae19976" class="outline-2">
+<h2 id="orgae19976">WriterT and ReaderT</h2>
+<div class="outline-text-2" id="text-orgae19976">
 <div style="padding: 30px;">
   <img class="img" src="../../../images/monadtransformer.png" border="1" alt="Diagram of monad transformers" width="600"/>
 </div>
@@ -831,9 +831,9 @@ Multiplied 22 by 45 (990)
 </div>
 </div>
 
-<div id="outline-container-orgd577892" class="outline-2">
-<h2 id="orgd577892">Monad Transformers - some takeaways</h2>
-<div class="outline-text-2" id="text-orgd577892">
+<div id="outline-container-org7a383cf" class="outline-2">
+<h2 id="org7a383cf">Monad Transformers - some takeaways</h2>
+<div class="outline-text-2" id="text-org7a383cf">
 <p>
 You can see that monad transformers offer some expressive power since
 they allow us to manually combine different effect types to get the
@@ -921,9 +921,9 @@ annotations in general.
 </div>
 </div>
 
-<div id="outline-container-org9071c96" class="outline-2">
-<h2 id="org9071c96">Effect rotation with Zio Prelude's ZPure</h2>
-<div class="outline-text-2" id="text-org9071c96">
+<div id="outline-container-org0f5756a" class="outline-2">
+<h2 id="org0f5756a">Effect rotation with Zio Prelude's ZPure</h2>
+<div class="outline-text-2" id="text-org0f5756a">
 <p>
 <a href="https://github.com/zio/zio-prelude">Zio Prelude</a> is a new library that acts as a sort of add on library to
 <a href="https://github.com/zio/zio">ZIO</a> (a zero-dependency Scala library for asynchronous and concurrent
@@ -1054,7 +1054,7 @@ Now let's implement the symbol table lookup of variables.
 <span class="linenr"> 5: </span>       mapError(<span style="color: #b6a0ff;">_</span> <span style="color: #b6a0ff;">=&gt;</span> <span style="color: #00bcff;">EvalZPure</span>.<span style="color: #00bcff;">SymbolNotFound</span>).
 <span class="linenr"> 6: </span>       flatMap{
 <span class="linenr"> 7: </span>        a <span style="color: #b6a0ff;">=&gt;</span>
-<span class="linenr"> 8: </span>          <span style="color: #00bcff;">ZPure</span>.log(s<span style="color: #79a8ff;">"Var </span><span style="color: #00d3d0;">$s</span><span style="color: #79a8ff;"> value </span><span style="color: #00d3d0;">$a</span><span style="color: #79a8ff;">"</span>).<span style="color: #b6a0ff;">as</span>(a)
+<span class="linenr"> 8: </span>          <span style="color: #00bcff;">ZPure</span>.log(s<span style="color: #79a8ff;">"Var </span><span style="color: #00d3d0;">$s</span><span style="color: #79a8ff;"> value </span><span style="color: #00d3d0;">$a</span><span style="color: #79a8ff;">"</span>).as(a)
 <span class="linenr"> 9: </span>       }      
 <span class="linenr">10: </span>    }
 <span class="linenr">11: </span>}
@@ -1174,9 +1174,9 @@ Add 100 and 100 (200)
 </div>
 </div>
 
-<div id="outline-container-org65b4994" class="outline-2">
-<h2 id="org65b4994">Conclusion</h2>
-<div class="outline-text-2" id="text-org65b4994">
+<div id="outline-container-orgcd6c223" class="outline-2">
+<h2 id="orgcd6c223">Conclusion</h2>
+<div class="outline-text-2" id="text-orgcd6c223">
 <p>
 In this post I implemented and motivated ReaderT and WriterT and
 transforming monads to combine effects. Even in Haskell where they

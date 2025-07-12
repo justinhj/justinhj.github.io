@@ -9,7 +9,7 @@
 ---
 layout: post
 title: The Magic of Lazy Lists
-tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, kleisli, zio]
+tags: [pure-functional-programming, cats, scala, applicative, monads, comonads, kleisli, zio, popular]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT

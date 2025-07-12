@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Hacker News API Part 5"
-tags: [scala, functional-programming, zio, hacker-news-api]
+tags: [scala, functional-programming, zio, hacker-news-api, popular]
 ---
 
 Updated June 29th 2019 to work with latest ZIO version (1.0.0-RC8-12)

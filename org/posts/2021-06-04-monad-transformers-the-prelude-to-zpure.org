@@ -9,7 +9,7 @@
 ---
 layout: post
 title: Monad Transformers - the prelude to ZPure
-tags: [scala, scala-3, dotty, monads, category-theory]
+tags: [scala, scala-3, dotty, monads, category-theory, popular]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT

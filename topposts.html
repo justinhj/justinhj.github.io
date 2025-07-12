@@ -10,11 +10,33 @@ comments: true
 
 
   <ul class="post-list">
-    {% for post in site.top_posts %}
+    {% for post in site.tags.popular %}
       <li>
-        <h2>
-		<a class="post-link" href="{{ post | prepend: site.baseurl }}">{{ post | prepend: site.baseurl }}</a>
-        </h2>
+        <article class="post-card">
+            <header class="mb-2">
+              <p class="font-mono text-sm text-[var(--secondary-text-color)]">{{ post.date | date: "%b %-d, %Y" }}</p>
+                <h3 class="text-2xl font-bold mt-1">
+                    <a href="{{ post.url | prepend: site.baseurl }}" class="hover:text-[var(--accent-color)] transition-colors duration-200">{{ post.title }}</a>
+                </h3>
+            </header>
+            <p class="text-base mb-4">
+                {{ post.excerpt | strip_html | truncatewords: 30 }}
+            </p>
+            <footer class="flex flex-wrap items-center gap-2">
+
+              {% for post_tag in post.tags %}
+                {% if post_tag %}
+                <span class="tag">
+                  <a href="{{ "/tag/" | append: post_tag }}">
+                    {{ post_tag }}
+                  </a>
+                </span>
+                {% endif %}
+              {% endfor %}
+
+            </footer>
+        </article>
+
       </li>
     {% endfor %}
   </ul>

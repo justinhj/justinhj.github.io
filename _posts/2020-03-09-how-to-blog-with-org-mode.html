@@ -1,12 +1,12 @@
 ---
 layout: post
 title: How to blog with Org-mode
-tags: [emacs, org-mode, blogging, github-pages, jekyll]
+tags: [emacs, org-mode, blogging, github-pages, jekyll, popular]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
-<div id="outline-container-orgbddb18e" class="outline-2">
-<h2 id="orgbddb18e">Why blog with Org mode?</h2>
-<div class="outline-text-2" id="text-orgbddb18e">
+<div id="outline-container-org3ce02a6" class="outline-2">
+<h2 id="org3ce02a6">Why blog with Org mode?</h2>
+<div class="outline-text-2" id="text-org3ce02a6">
 <blockquote>
 <p>
 Org is a mode for keeping notes, maintaining TODO lists, and project
@@ -44,9 +44,9 @@ modifications to get everything working.
 </div>
 </div>
 
-<div id="outline-container-org6bb36e1" class="outline-2">
-<h2 id="org6bb36e1">How to author content with Org mode</h2>
-<div class="outline-text-2" id="text-org6bb36e1">
+<div id="outline-container-orgf99bae3" class="outline-2">
+<h2 id="orgf99bae3">How to author content with Org mode</h2>
+<div class="outline-text-2" id="text-orgf99bae3">
 <p>
 In my blog repository I made a new folder <code>org/posts</code>. In the <code>org</code> folder I
 added an Emacs Lisp file <code>publish.el</code> which contains some code to set up the
@@ -72,7 +72,7 @@ headings and sub-headings in your post. All of the formatting
 For example:
 </p>
 
-<pre class="example">
+<pre class="example" id="org61374dc">
 #+BEGIN_QUOTE
 "You can format quotes using the quote directive."
   ― Emacs User
@@ -124,7 +124,7 @@ Images can be included by using a file link (without a description if you want
 to inline the image), and you can modify the HTML attributes as follows:
 </p>
 
-<pre class="example">
+<pre class="example" id="org5c200f2">
 #+CAPTION: Photo by Rumman Amin on Unsplash
 #+ATTR_HTML: :alt A nice cup of coffee :width 400
 [[../../../images/rumman-amin-bJzJH85Kp7g-unsplash.jpg]]
@@ -135,7 +135,7 @@ Which renders the image inline:
 </p>
 
 
-<div class="figure">
+<div id="org75407f6" class="figure">
 <p><img src="../../../images/rumman-amin-bJzJH85Kp7g-unsplash.jpg" alt="A nice cup of coffee" width="400" />
 </p>
 <p><span class="figure-number">Figure 1: </span>Photo by Rumman Amin on Unsplash</p>
@@ -143,9 +143,9 @@ Which renders the image inline:
 </div>
 </div>
 
-<div id="outline-container-org442f616" class="outline-2">
-<h2 id="org442f616">Source code</h2>
-<div class="outline-text-2" id="text-org442f616">
+<div id="outline-container-org74cb602" class="outline-2">
+<h2 id="org74cb602">Source code</h2>
+<div class="outline-text-2" id="text-org74cb602">
 <p>
 Since you're reading my technical blog you may be the sort of person that likes
 to share code. Org mode supports source code (you can even run it and pass the
@@ -160,7 +160,7 @@ numbers using the <code>-n</code> option:
 
 (<span style="color: #b6a0ff;">defun</span> <span style="color: #feacd0;">custom-dictionary-company-backend</span> (command <span style="color: #6ae4b9;">&amp;optional</span> arg <span style="color: #6ae4b9;">&amp;rest</span> ignored)
   <span style="color: #b0d6f5;">"Company mode backend for a custom dictionary stored as a radix tree."</span>
-  (<span style="color: #b6a0ff;">case</span> command
+  (case command
     ('init    
      (<span style="color: #b6a0ff;">unless</span> (boundp 'custom-dictionary-company--words-tree)
          (<span style="color: #b6a0ff;">setq</span> custom-dictionary-company--words-tree (tree-from-file <span style="color: #79a8ff;">"dictionary.el"</span>))))
@@ -197,9 +197,9 @@ And some Scala code with line numbers
 </div>
 </div>
 </div>
-<div id="outline-container-org0eb39bb" class="outline-2">
-<h2 id="org0eb39bb">Implementation notes</h2>
-<div class="outline-text-2" id="text-org0eb39bb">
+<div id="outline-container-org67f268d" class="outline-2">
+<h2 id="org67f268d">Implementation notes</h2>
+<div class="outline-text-2" id="text-org67f268d">
 <p>
 I diverged from the guide I was following. Firstly I made a file <code>publish.el</code>
 which contains the code required to configure the publishing of the blog, and
@@ -241,9 +241,9 @@ Pages.
 </div>
 </div>
 
-<div id="outline-container-org96dd1ce" class="outline-2">
-<h2 id="org96dd1ce">Summary</h2>
-<div class="outline-text-2" id="text-org96dd1ce">
+<div id="outline-container-org3850aaa" class="outline-2">
+<h2 id="org3850aaa">Summary</h2>
+<div class="outline-text-2" id="text-org3850aaa">
 <p>
 One thing I'm not sure about is if I like using Emacs's code blocks instead of
 embedded Github gists. It's certainly possible to use either. Anyway I plan to
