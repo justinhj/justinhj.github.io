@@ -221,3 +221,16 @@ a:hover {
     font-size: 0.75rem;
     font-weight: 500;
 }
+
+/* Force override of margins */
+.home h1,
+.home h2,
+.home h3 {
+  margin: 20px 0 20px 0;
+}
+
+.post h1,
+.post h2,
+.post h3 {
+  margin: 20px 0 20px 0;
+}
