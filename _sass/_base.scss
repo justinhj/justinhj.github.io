@@ -159,6 +159,15 @@ code {
     }
 }
 
+/* Custom accent color variables for easy theme changes */
+:root {
+    --accent-color: $accent-color; /* A vibrant, "technical" blue */
+    --accent-hover-color: $accent-hover-color;
+    --secondary-text-color: $secondary-text-color; /* Muted gray for metadata */
+    --border-color: border-color;
+    --card-bg-color: card-bg-color;
+}
+
 /* Custom styles to extend Tailwind */
 body {
     /* Using a deep, modern dark color palette */
@@ -167,15 +176,6 @@ body {
     font-family: $base-font-family;
     -webkit-text-size-adjust: 100%;
     font-kerning: auto;
-}
-
-/* Custom accent color variables for easy theme changes */
-:root {
-    --accent-color: #7aa2f7; /* A vibrant, "technical" blue */
-    --accent-hover-color: #9eceff;
-    --secondary-text-color: #5c6370; /* Muted gray for metadata */
-    --border-color: #2c2e3b;
-    --card-bg-color: #24283b;
 }
 
 /* Applying the monospaced font for a "coder" feel on specific elements */
