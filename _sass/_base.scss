@@ -169,7 +169,13 @@ body {
     font-kerning: auto;
 }
 
-/* Custom accent color variables for easy theme changes */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: $background-color-light;
+    color: $text-color-light;
+  }
+}
+
 /* Custom accent color variables for easy theme changes */
 :root {
     --accent-color: #{$accent-color};
