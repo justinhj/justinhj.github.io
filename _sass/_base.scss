@@ -76,6 +76,21 @@ a {
 }
 
 
+@media (prefers-color-scheme: light) {
+  a {
+      color: $brand-color-light;
+      text-decoration: none;
+
+      &:visited {
+          color: darken($brand-color-light, 15%);
+      }
+
+      &:hover {
+          color: $text-color-light;
+          text-decoration: underline;
+      }
+  }
+}
 
 /**
  * Blockquotes
