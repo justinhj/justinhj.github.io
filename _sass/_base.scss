@@ -192,7 +192,13 @@ body {
 
 /* Styling for headings and links with the accent color */
 h1, h2, h3, .accent-text {
-    color: #c0caf5; /* A slightly brighter white for important text */
+    color: $accent-text; /* A slightly brighter white for important text */
+}
+
+@media (prefers-color-scheme: light) {
+  h1, h2, h3, .accent-text {
+    color: $accent-text-light;
+  }
 }
 
 a {
@@ -211,6 +217,13 @@ a:hover {
     border-radius: 12px;
     padding: 1.5rem;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+@media (prefers-color-scheme: light) {
+  .post-card {
+    background-color: $card-bg-color-light;
+    border: 1px solid $border-color-light;
+  }
 }
 
 .post-card:hover {
