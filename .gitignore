@@ -12,3 +12,4 @@ tramp
 .\#*
 .DS_store
 target/
+node_modules/

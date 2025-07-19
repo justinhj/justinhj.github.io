@@ -1,0 +1,29 @@
+{
+  "name": "justinhj.github.io",
+  "version": "1.0.0",
+  "description": "This is the Jekyll site source code for my technical blog",
+  "main": "index.js",
+  "scripts": {
+   "build:css": "tailwindcss -i ./_assets/css/input.css -o ./css/style.css",
+    "watch:css": "tailwindcss -i ./_assets/css/input.css -o ./css/style.css --watch",
+    "build": "jekyll build",
+    "serve": "jekyll serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justinhj/justinhj.github.io.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/justinhj/justinhj.github.io/issues"
+  },
+  "homepage": "https://github.com/justinhj/justinhj.github.io#readme",
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17"
+  }
+}
