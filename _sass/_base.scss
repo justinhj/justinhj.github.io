@@ -249,12 +249,19 @@ a:hover {
 /* Styling for the topic tags */
 .tag {
     display: inline-block;
-    background-color: rgba(122, 162, 247, 0.1); /* Accent color with low opacity */
-    color: $accent-color;
+    background-color: #268bd2; /* A vibrant blue for tags */
+    color: #ffffff; /* White text for high contrast */
     padding: 0.25rem 0.75rem;
     border-radius: 9999px; /* Pill shape */
     font-size: 0.75rem;
     font-weight: 500;
+    text-decoration: none; /* No underlines on tags */
+}
+
+.tag:hover {
+    background-color: #2071a8; /* A slightly darker blue on hover */
+    color: #ffffff;
+    text-decoration: none;
 }
 
 /* Force override of margins */
