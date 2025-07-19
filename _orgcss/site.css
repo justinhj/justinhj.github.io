@@ -22,5 +22,6 @@ pre.src.src-scala {
     color: #fff;
     font-size: 16px;
     font-family: 'JetBrains Mono', monospace;
+    overflow-x: auto;
 }
 
