@@ -1,0 +1,315 @@
+---
+layout: post
+title: Let's build the GPT Tokenizer in C++
+tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+
+<div id="outline-container-org2e0801c" class="outline-2">
+<h2 id="org2e0801c">Introduction</h2>
+<div class="outline-text-2" id="text-org2e0801c">
+<p>
+In February 2024, reknowned AI researcher Andrej Karpathy published the following video. 
+</p>
+
+<p>
+<a href="https://www.youtube.com/watch?v=zduSFxRajkE">https://www.youtube.com/watch?v=zduSFxRajkE</a>
+</p>
+
+<p>
+An excellent introduction to the fascinating topic of tokenization,
+something he considers a necessary evil right now. Maybe the need for
+it will go away but for now it must be well understood by AI engineers
+in order to get good results when building and using large language
+models.
+</p>
+
+<p>
+As a software engineer in 2025 LLM and generative AI in general brings
+a profound shift into how I design, develop and implement systems. As
+such I have been delving into the details of how they they work with
+Tokenization being a significant side quest.
+</p>
+
+<p>
+In this blog, related video and accompanying C++ project, I will walk
+through my exploration of the training aspect of tokenizers and look
+at their performance characteristics and optimization opportunities.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5a48473" class="outline-2">
+<h2 id="org5a48473">Briefly, Tokenization and BPE</h2>
+<div class="outline-text-2" id="text-org5a48473">
+<p>
+I don't want to even try and do a better job of explaining the need
+for tokenization and the BPE algorithm, so I instead recommend
+watching Karpathy's video and for additional insights read the paper
+below:
+</p>
+
+<p>
+[Neural Machine Translation of Rare Words with Subword Units](<a href="https://arxiv.org/pdf/1508.07909">https://arxiv.org/pdf/1508.07909</a>)
+</p>
+</div>
+
+<div id="outline-container-org457d3c1" class="outline-3">
+<h3 id="org457d3c1">The need for tokenization</h3>
+<div class="outline-text-3" id="text-org457d3c1">
+<ul class="org-ul">
+<li>Large language models deal with numbers not words or characters, so we must map input text to numbers.</li>
+<li>The model requires a fixed size vocabulary.</li>
+<li>Unforunately that vocabulary would have to be enormous to fit all words from all languages.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org61241d9" class="outline-3">
+<h3 id="org61241d9">Sub word unit tokenization</h3>
+<div class="outline-text-3" id="text-org61241d9">
+<p>
+The solution to these issues is sub-word tokenization; splitting words
+up into numbers representing components of words. Once you have that
+you can handle:
+</p>
+
+<ul class="org-ul">
+<li>Open-Vocabulary: Part of the token set is the basic characters of each language so you can represent every word.</li>
+<li>Rare words: Because the vocabulary set is open it means any rare word is handled.</li>
+<li>Enables Translation of Novel Words: The model can translate and generate words it has not encountered before by composing them from sub-word units.</li>
+</ul>
+
+<p>
+Tokenization means taking text and splitting it into subword units. An input text like "My cat, Blovarian, is making a mess." may be tokenized into something like this:
+</p>
+
+<p>
+You can explore this tokenization here:
+<a href="https://platform.openai.com/tokenizer">https://platform.openai.com/tokenizer</a>
+</p>
+
+<p>
+&lt;p style="font-family: monospace; font-size: 1.2em;"&gt;
+  &lt;span style="background-color: #d1c4e9;"&gt;My &lt;/span&gt;
+  &lt;span style="background-color: #c8e6c9;"&gt;cat&lt;/span&gt;
+  &lt;span style="background-color: #ffcdd2;"&gt;, Bl&lt;/span&gt;
+  &lt;span style="background-color: #b3e5fc;"&gt;ovar&lt;/span&gt;
+  &lt;span style="background-color: #d1c4e9;"&gt;ian,&lt;/span&gt;
+  &lt;span style="background-color: #f0f4c3;"&gt; is&lt;/span&gt;
+  &lt;span style="background-color: #ffcdd2;"&gt; making&lt;/span&gt;
+  &lt;span style="background-color: #b3e5fc;"&gt; a&lt;/span&gt;
+  &lt;span style="background-color: #d1c4e9;"&gt; mess.&lt;/span&gt;
+&lt;/p&gt;
+[5444, 9059, 11, 3130, 569, 21203, 11, 382, 4137, 261, 13017]
+</p>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org9901ded" class="outline-2">
+<h2 id="org9901ded"></h2>
+<div class="outline-text-2" id="text-org9901ded">
+<p>
+It's a fair question. The Python code is clean, educational, and works perfectly. My motivation was twofold:
+</p>
+
+<ol class="org-ol">
+<li><b>Self-Education</b>: The best way to learn something is to build it. Rewriting the code in a lower-level language like C++ would force me to confront every detail of the Byte-Pair Encoding (BPE) algorithm, from memory management to performance trade-offs.</li>
+<li><b>The Craft of Optimization</b>: This is a classic software engineering exercise. Python is fantastic for prototyping and research, but for raw, number-crunching performance, we often turn to languages like C++. This project was a perfect real-world test case for that practice.</li>
+</ol>
+</div>
+</div>
+
+<div id="outline-container-org375050c" class="outline-2">
+<h2 id="org375050c">The Heart of the Algorithm: Finding Frequent Pairs</h2>
+<div class="outline-text-2" id="text-org375050c">
+<p>
+The core loop of the BPE algorithm is conceptually simple: find the most frequent pair of adjacent tokens in the text and merge them into a new, single token. You repeat this process for a set number of merges to build your vocabulary.
+</p>
+
+<p>
+The interesting part is <i>how</i> you define "most frequent" when there are ties. This led to two different approaches in my C++ version.
+</p>
+</div>
+
+<div id="outline-container-org5ac40fe" class="outline-3">
+<h3 id="org5ac40fe">The First Pair (Compatible Mode)</h3>
+<div class="outline-text-3" id="text-org5ac40fe">
+<p>
+To maintain 1:1 compatibility with Karpathy's original output, the first approach is simple: if multiple pairs have the same highest frequency, you pick the one that appears <b>first</b> in the current vocabulary list. This is straightforward but requires more searching.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org27d07f9" class="outline-3">
+<h3 id="org27d07f9">The Lexical Pair (Optimized Mode)</h3>
+<div class="outline-text-3" id="text-org27d07f9">
+<p>
+For maximum speed, I implemented a second strategy. When multiple pairs have the same highest frequency, you instead pick the pair that comes first <b>lexicographically</b>. This small change allows for significant optimization in the search process, as we'll see in the benchmarks.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org48c37b8" class="outline-2">
+<h2 id="org48c37b8">The Payoff: Performance Benchmarks</h2>
+<div class="outline-text-2" id="text-org48c37b8">
+<p>
+This is where the effort really shines. I ran the original Python code against my two C++ versions on two different datasets: the "Complete Works of Shakespeare" and a slice of the much larger "Wikitext-103" dataset.
+</p>
+
+<p>
+The results are dramatic.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<caption class="t-above"><span class="table-number">Table 1:</span> Tokenizer training time in seconds (lower is better).</caption>
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Implementation</th>
+<th scope="col" class="org-left">Dataset</th>
+<th scope="col" class="org-right">Time (seconds)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Python</td>
+<td class="org-left">Shakespeare</td>
+<td class="org-right">15.5</td>
+</tr>
+
+<tr>
+<td class="org-left">C++ (First Pair)</td>
+<td class="org-left">Shakespeare</td>
+<td class="org-right">0.45</td>
+</tr>
+
+<tr>
+<td class="org-left">C++ (Lexical Pair)</td>
+<td class="org-left">Shakespeare</td>
+<td class="org-right"><b>0.12</b></td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="org-left">Python</td>
+<td class="org-left">Wikitext-103</td>
+<td class="org-right">180.2</td>
+</tr>
+
+<tr>
+<td class="org-left">C++ (First Pair)</td>
+<td class="org-left">Wikitext-103</td>
+<td class="org-right">5.1</td>
+</tr>
+
+<tr>
+<td class="org-left">C++ (Lexical Pair)</td>
+<td class="org-left">Wikitext-103</td>
+<td class="org-right"><b>1.4</b></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+The C++ versions are orders of magnitude faster. The optimized "lexical pair" approach provides another 3-4x speedup over the already fast "compatible" C++ version.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge6dd077" class="outline-2">
+<h2 id="orge6dd077">The C++ Struggle is Real</h2>
+<div class="outline-text-2" id="text-orge6dd077">
+<p>
+Of course, these performance gains didn't come for free. Writing modern C++ can be a journey, and I hit a few notable roadblocks.
+</p>
+</div>
+
+<div id="outline-container-org57f91ef" class="outline-3">
+<h3 id="org57f91ef">Build Systems: CMake vs. Zig</h3>
+<div class="outline-text-3" id="text-org57f91ef">
+<p>
+I started with CMake, the de-facto standard for C++ projects. However, I quickly found myself wrestling with boilerplate. I eventually discovered that I could use the <a href="https://ziglang.org/">Zig</a> toolchain not just for Zig code, but as an incredibly clean and simple C++ build system.
+</p>
+
+<p>
+Compare the verbosity of a typical <code>CMakeLists.txt</code> to my final <code>build.zig</code> file:
+</p>
+<div class="org-src-container">
+<pre class="src src-zig">const std = @import("std");
+
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const exe = b.addExecutable(.{
+        .name = "minbpe",
+        .root_source_file = .{ .path = "main.cpp" },
+        .target = target,
+        .optimize = optimize,
+    });
+    // ... link libraries
+    b.installArtifact(exe);
+}
+</pre>
+</div>
+
+<p>
+This was a revelation. It's cross-platform and ridiculously easy to use.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga7c9e4e" class="outline-3">
+<h3 id="orga7c9e4e">The Regex Nightmare</h3>
+<div class="outline-text-3" id="text-orga7c9e4e">
+<p>
+The GPT-4 tokenizer pattern uses a tricky bit of regex: a <b>negative lookahead</b>. Finding a modern, header-only C++ regex library with good Unicode support that could handle this correctly was surprisingly difficult.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org48d1c0f" class="outline-3">
+<h3 id="org48d1c0f">A Subtle Bug: Integer Sizes</h3>
+<div class="outline-text-3" id="text-org48d1c0f">
+<p>
+I originally used a standard C++ <code>int</code> for token IDs. On my 64-bit system, this was overkill and could mask potential bugs. A <code>uint16_t</code> (max value 65,535) is a common choice, but to support vocabularies up to 100k, I settled on <code>uint32_t</code>. It's a small detail, but it's the kind of memory and type consideration that is front-and-center in C++ development.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge16fdc5" class="outline-2">
+<h2 id="orge16fdc5">Conclusion</h2>
+<div class="outline-text-2" id="text-orge16fdc5">
+<p>
+This project was a fantastic learning experience. It solidified my understanding of tokenization and was a practical lesson in the art of performance optimization. It demonstrates the enduring value of C++ for high-performance computing and highlights how modern tools like Zig can make the development experience much more pleasant.
+</p>
+
+<p>
+If you want to dive into the code or run the benchmarks yourself, you can find the full project on GitHub.
+</p>
+
+<ul class="org-ul">
+<li><a href="https://github.com/justinhj/minbpe-cc">https://github.com/justinhj/minbpe-cc</a></li>
+</ul>
+
+<p>
+Thanks for reading!
+</p>
+
+<p>
+&copy;2025 Justin Heyes-Jones. All Rights Reserved
+</p>
+</div>
+</div>

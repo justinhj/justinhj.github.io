@@ -1,0 +1,162 @@
+#+TITLE: Let's build the GPT Tokenizer in C++
+#+AUTHOR: Justin Heyes-Jones
+#+DATE: 2025-07-30
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 29.1 (<a href="http://orgmode.org">Org</a> mode 9.6)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: Let's build the GPT Tokenizer in C++
+tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+#+END_EXPORT
+
+** Introduction
+
+In February 2024, reknowned AI researcher Andrej Karpathy published the following video. 
+
+https://www.youtube.com/watch?v=zduSFxRajkE
+
+An excellent introduction to the fascinating topic of tokenization,
+something he considers a necessary evil right now. Maybe the need for
+it will go away but for now it must be well understood by AI engineers
+in order to get good results when building and using large language
+models.
+
+As a software engineer in 2025 LLM and generative AI in general brings
+a profound shift into how I design, develop and implement systems. As
+such I have been delving into the details of how they they work with
+Tokenization being a significant side quest.
+
+In this blog, related video and accompanying C++ project, I will walk
+through my exploration of the training aspect of tokenizers and look
+at their performance characteristics and optimization opportunities.
+
+** Briefly, Tokenization and BPE
+
+I don't want to even try and do a better job of explaining the need
+for tokenization and the BPE algorithm, so I instead recommend
+watching Karpathy's video and for additional insights read the paper
+below:
+
+[Neural Machine Translation of Rare Words with Subword Units](https://arxiv.org/pdf/1508.07909)
+
+*** The need for tokenization
+
+- Large language models deal with numbers not words or characters, so we must map input text to numbers.
+- The model requires a fixed size vocabulary.
+- Unforunately that vocabulary would have to be enormous to fit all words from all languages.
+
+*** Sub word unit tokenization
+
+The solution to these issues is sub-word tokenization; splitting words
+up into numbers representing components of words. Once you have that
+you can handle:
+
+- Open-Vocabulary: Part of the token set is the basic characters of each language so you can represent every word.
+- Rare words: Because the vocabulary set is open it means any rare word is handled.
+- Enables Translation of Novel Words: The model can translate and generate words it has not encountered before by composing them from sub-word units.
+
+Tokenization means taking text and splitting it into subword units. An input text like "My cat, Blovarian, is making a mess." may be tokenized into something like this:
+
+You can explore this tokenization here:
+https://platform.openai.com/tokenizer
+
+<p style="font-family: monospace; font-size: 1.2em;">
+  <span style="background-color: #d1c4e9;">My </span>
+  <span style="background-color: #c8e6c9;">cat</span>
+  <span style="background-color: #ffcdd2;">, Bl</span>
+  <span style="background-color: #b3e5fc;">ovar</span>
+  <span style="background-color: #d1c4e9;">ian,</span>
+  <span style="background-color: #f0f4c3;"> is</span>
+  <span style="background-color: #ffcdd2;"> making</span>
+  <span style="background-color: #b3e5fc;"> a</span>
+  <span style="background-color: #d1c4e9;"> mess.</span>
+</p>
+[5444, 9059, 11, 3130, 569, 21203, 11, 382, 4137, 261, 13017]
+
+
+** 
+
+It's a fair question. The Python code is clean, educational, and works perfectly. My motivation was twofold:
+
+1.  *Self-Education*: The best way to learn something is to build it. Rewriting the code in a lower-level language like C++ would force me to confront every detail of the Byte-Pair Encoding (BPE) algorithm, from memory management to performance trade-offs.
+2.  *The Craft of Optimization*: This is a classic software engineering exercise. Python is fantastic for prototyping and research, but for raw, number-crunching performance, we often turn to languages like C++. This project was a perfect real-world test case for that practice.
+
+** The Heart of the Algorithm: Finding Frequent Pairs
+
+The core loop of the BPE algorithm is conceptually simple: find the most frequent pair of adjacent tokens in the text and merge them into a new, single token. You repeat this process for a set number of merges to build your vocabulary.
+
+The interesting part is /how/ you define "most frequent" when there are ties. This led to two different approaches in my C++ version.
+
+*** The First Pair (Compatible Mode)
+To maintain 1:1 compatibility with Karpathy's original output, the first approach is simple: if multiple pairs have the same highest frequency, you pick the one that appears *first* in the current vocabulary list. This is straightforward but requires more searching.
+
+*** The Lexical Pair (Optimized Mode)
+For maximum speed, I implemented a second strategy. When multiple pairs have the same highest frequency, you instead pick the pair that comes first *lexicographically*. This small change allows for significant optimization in the search process, as we'll see in the benchmarks.
+
+** The Payoff: Performance Benchmarks
+
+This is where the effort really shines. I ran the original Python code against my two C++ versions on two different datasets: the "Complete Works of Shakespeare" and a slice of the much larger "Wikitext-103" dataset.
+
+The results are dramatic.
+
+#+CAPTION: Tokenizer training time in seconds (lower is better).
+| Implementation      | Dataset         | Time (seconds) |
+|---------------------+-----------------+----------------|
+| Python              | Shakespeare     |           15.5 |
+| C++ (First Pair)    | Shakespeare     |           0.45 |
+| C++ (Lexical Pair)  | Shakespeare     |           *0.12* |
+|---------------------+-----------------+----------------|
+| Python              | Wikitext-103    |          180.2 |
+| C++ (First Pair)    | Wikitext-103    |            5.1 |
+| C++ (Lexical Pair)  | Wikitext-103    |           *1.4* |
+
+The C++ versions are orders of magnitude faster. The optimized "lexical pair" approach provides another 3-4x speedup over the already fast "compatible" C++ version.
+
+** The C++ Struggle is Real
+
+Of course, these performance gains didn't come for free. Writing modern C++ can be a journey, and I hit a few notable roadblocks.
+
+*** Build Systems: CMake vs. Zig
+I started with CMake, the de-facto standard for C++ projects. However, I quickly found myself wrestling with boilerplate. I eventually discovered that I could use the [[https://ziglang.org/][Zig]] toolchain not just for Zig code, but as an incredibly clean and simple C++ build system.
+
+Compare the verbosity of a typical ~CMakeLists.txt~ to my final ~build.zig~ file:
+#+BEGIN_SRC zig
+const std = @import("std");
+
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const exe = b.addExecutable(.{
+        .name = "minbpe",
+        .root_source_file = .{ .path = "main.cpp" },
+        .target = target,
+        .optimize = optimize,
+    });
+    // ... link libraries
+    b.installArtifact(exe);
+}
+#+END_SRC
+
+This was a revelation. It's cross-platform and ridiculously easy to use.
+
+*** The Regex Nightmare
+The GPT-4 tokenizer pattern uses a tricky bit of regex: a *negative lookahead*. Finding a modern, header-only C++ regex library with good Unicode support that could handle this correctly was surprisingly difficult.
+
+*** A Subtle Bug: Integer Sizes
+I originally used a standard C++ ~int~ for token IDs. On my 64-bit system, this was overkill and could mask potential bugs. A ~uint16_t~ (max value 65,535) is a common choice, but to support vocabularies up to 100k, I settled on ~uint32_t~. It's a small detail, but it's the kind of memory and type consideration that is front-and-center in C++ development.
+
+** Conclusion
+This project was a fantastic learning experience. It solidified my understanding of tokenization and was a practical lesson in the art of performance optimization. It demonstrates the enduring value of C++ for high-performance computing and highlights how modern tools like Zig can make the development experience much more pleasant.
+
+If you want to dive into the code or run the benchmarks yourself, you can find the full project on GitHub.
+
+- [[https://github.com/justinhj/minbpe-cc]]
+
+Thanks for reading!
+
+\copy2025 Justin Heyes-Jones. All Rights Reserved
