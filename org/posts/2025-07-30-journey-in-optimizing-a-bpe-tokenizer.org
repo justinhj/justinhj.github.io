@@ -59,26 +59,99 @@ you can handle:
 - Rare words: Because the vocabulary set is open it means any rare word is handled.
 - Enables Translation of Novel Words: The model can translate and generate words it has not encountered before by composing them from sub-word units.
 
-Tokenization means taking text and splitting it into subword units. An input text like "My cat, Blovarian, is making a mess." may be tokenized into something like this:
+Tokenization means taking text and splitting it into subword units. An input text like ~"My cat, Blivarian, is making a mess."~ may be tokenized into something like this:
 
 You can explore this tokenization here:
 https://platform.openai.com/tokenizer
 
-<p style="font-family: monospace; font-size: 1.2em;">
+#+BEGIN_EXPORT html
+<p style="text-xl">
   <span style="background-color: #d1c4e9;">My </span>
   <span style="background-color: #c8e6c9;">cat</span>
-  <span style="background-color: #ffcdd2;">, Bl</span>
-  <span style="background-color: #b3e5fc;">ovar</span>
-  <span style="background-color: #d1c4e9;">ian,</span>
-  <span style="background-color: #f0f4c3;"> is</span>
+  <span style="background-color: #f0f4c3;">, </span>
+  <span style="background-color: #ffcdd2;">Bl</span>
+  <span style="background-color: #b3e5fc;">iv</span>
+  <span style="background-color: #d1c4e9;">arian</span>
+  <span style="background-color: #f0f4c3;">, </span>
+  <span style="background-color: #c8e6c9;"> is</span>
   <span style="background-color: #ffcdd2;"> making</span>
   <span style="background-color: #b3e5fc;"> a</span>
-  <span style="background-color: #d1c4e9;"> mess.</span>
+  <span style="background-color: #d1c4e9;"> mess</span>
+  <span style="background-color: #c8e6c9;">.</span>
 </p>
-[5444, 9059, 11, 3130, 569, 21203, 11, 382, 4137, 261, 13017]
+#+END_EXPORT
 
+[5444, 9059, 11, 3130, 569, 21203, 11, 382, 4137, 261, 13017, 13]
 
-** 
+Notice that the commas have the same token value when appearing in
+different places. Also that common words like cat and mess have their
+own tokens.
+
+I deliberately made up a name for the made up Cat that is not a real
+word "Blivarian". You can see that it is split up into 3 sub
+words. Without tokenization this would instead have been stored with a
+special "Out of vocabulary" token, that means it carries no semantic
+meaning. When dealing with sub word tokens however, the LLM has the
+opportunity to build up meaning for those components that may help
+with overall model quality.
+
+*** Byte Pair Encoding - BPE
+
+**** Why BPE?
+
+From above we understand that we should split words into sub-word components to handle the vast space of human vocabulary in the finite space of the LLMs vocabulary.
+
+How to do that is the next question. Why not, for example, just have a vocabulary consisting of the punctuation and alphabetic characters of every language?
+
+It won't work well because in the LLM training it will build up an
+embedding vector for each token, the unit of vocabulary. This vector
+is an array of numbers that represents a direction in multidimensional
+space. To us those numbers mean nothing, but in LLM training those
+numbers, when used in conjunction with the rest of the models weights,
+can be used to learn and represent all kinds of meaning.
+
+Models like Transformers have a finite context window. When sequences
+are excessively long, it becomes much harder for the model to capture
+long-range dependencies and relationships between words that are far
+apart. The model has to work harder to understand the overall context.
+
+Instead we want something that splits things into meaningful chunks, morphemes, as well as capturing commonly used words with tokens. This ends up looking something like Huffman Encoding:
+
+https://en.wikipedia.org/wiki/Huffman_coding
+
+It represents more frequently occuring substrings with less bits, giving us a more efficicent data size.
+
+Similarly, BPE, is data-driven algorithm that creates a vocabulary of meaningful and frequently occurring subword units.
+
+**** BPE algorithm
+
+First you need to train across a large corpus of realistic text. For
+state of the art (SOTA) LLMs this is likely in the trillions of
+characters of data.
+
+The algorithm itself is very simple, it works as follows:
+
+Start with 256 tokens (0 to 255), our basic character set.
+
+1. First turn the text into its underlying numberic representation (utf-8 format input as bytes is fine).
+2. Count all the pairs of bytes. 
+3. Pick the most frequently occuring pair and generate the next new token (257, 258...).
+4. Replace that pair whereever it occurs with the new token.
+
+Repeat until you have your full vocabulary. You can then save the merge pairs and these are then used by end users to encode their text before sending to the model. 
+
+They can also be used to reconstuct the original text in the decoding process when the response comes from the model. 
+
+**** Conflict Resolution
+
+An important decision in tokenization is how to handle pairs with the same frequency. In this post I'll consider two methods:
+
+- First in corpus wins. 
+- Lexicographical ordering.
+
+With any tokenization algorithm design we need to consider efficiency of implementation alongside methods that give the best results.
+
+** minbpe-cc. A rewrite of minbpe in modern C++.
 
 It's a fair question. The Python code is clean, educational, and works perfectly. My motivation was twofold:
 
