@@ -5,6 +5,131 @@ tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+</style>
+
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const benchmarkData = {
+                shakespeare: {
+                    labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                    times: [77.5, 36.5, 1.50],
+                },
+                wikitext: {
+                    labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                    times: [46080.0, 13500.0, 2217.5],
+                }
+            };
+
+            const ctx = document.getElementById('benchmarkChart').getContext('2d');
+            const benchmarkChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: benchmarkData.shakespeare.labels,
+                    datasets: [{
+                        label: 'Training Time (seconds)',
+                        data: benchmarkData.shakespeare.times,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(75, 192, 192, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(75, 192, 192, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            type: 'logarithmic',
+                            title: {
+                                display: true,
+                                text: 'Time in Seconds (Logarithmic Scale)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += context.parsed.x.toFixed(2) + ' seconds';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const btnShakespeare = document.getElementById('btn-shakespeare');
+            const btnWikitext = document.getElementById('btn-wikitext');
+
+            function updateChart(datasetName) {
+                const newData = benchmarkData[datasetName];
+                benchmarkChart.data.labels = newData.labels;
+                benchmarkChart.data.datasets[0].data = newData.times;
+                benchmarkChart.update();
+
+                if (datasetName === 'shakespeare') {
+                    btnShakespeare.classList.add('btn-active');
+                    btnWikitext.classList.remove('btn-active');
+                } else {
+                    btnWikitext.classList.add('btn-active');
+                    btnShakespeare.classList.remove('btn-active');
+                }
+            }
+
+            btnShakespeare.addEventListener('click', () => updateChart('shakespeare'));
+            btnWikitext.addEventListener('click', () => updateChart('wikitext'));
+
+            // Set initial active state
+            updateChart('shakespeare');
+            
+            // Smooth scrolling for nav links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+
 <div id="outline-container-org2e0801c" class="outline-2">
 <h2 id="org2e0801c">Introduction</h2>
 <div class="outline-text-2" id="text-org2e0801c">
@@ -39,6 +164,27 @@ at their performance characteristics and optimization opportunities.
 </p>
 </div>
 </div>
+
+<div id="outline-container-org55fa1e8" class="outline-2">
+<h2 id="org55fa1e8">TL;DR optimization results</h2>
+<div class="outline-text-2" id="text-org55fa1e8">
+<div class="text-center mb-12">
+            <h3 class="text-3xl font-bold text-slate-900">The Proof</h3>
+            <p class="mt-2 text-lg text-slate-600">This is where the hard work pays off. The chart below shows the time taken to train a tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
+        </div>
+        <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-center items-center mb-6 space-x-2">
+                <button id="btn-shakespeare" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">Shakespeare</button>
+                <button id="btn-wikitext" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">Wikitext-103-all</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="benchmarkChart"></canvas>
+            </div>
+             <p class="text-center text-xs text-slate-500 mt-4">Lower is better. Time in seconds.</p>
+        </div>
+</div>
+</div>
+
 
 <div id="outline-container-org5a48473" class="outline-2">
 <h2 id="org5a48473">Briefly, Tokenization and BPE</h2>
