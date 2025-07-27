@@ -5,9 +5,9 @@ tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 
-<div id="outline-container-org2e0801c" class="outline-2">
-<h2 id="org2e0801c">Introduction</h2>
-<div class="outline-text-2" id="text-org2e0801c">
+<div id="outline-container-org2e0801c" class="outline-3">
+<h3 id="org2e0801c">Introduction</h3>
+<div class="outline-text-3" id="text-org2e0801c">
 <p>
 In February 2024, reknowned AI researcher Andrej Karpathy published the following video. 
 </p>
@@ -25,10 +25,11 @@ models.
 </p>
 
 <p>
-As a software engineer in 2025 LLM and generative AI in general brings
-a profound shift into how I design, develop and implement systems. As
-such I have been delving into the details of how they they work with
-Tokenization being a significant side quest.
+As software engineers in 2025 the advent of large language models, and
+generative AI in general, bring about a profound shift in how we
+design, develop and implement software systems. As such I have been
+delving into the details of how they they work with Tokenization being
+a significant side quest.
 </p>
 
 <p>
@@ -39,14 +40,14 @@ at their performance characteristics and optimization opportunities.
 </div>
 </div>
 
-<div id="outline-container-org5a48473" class="outline-2">
-<h2 id="org5a48473">Briefly, Tokenization and BPE</h2>
-<div class="outline-text-2" id="text-org5a48473">
+<div id="outline-container-org5a48473" class="outline-3">
+<h3 id="org5a48473">Briefly, Tokenization and BPE</h3>
+<div class="outline-text-3" id="text-org5a48473">
 <p>
 I don't want to even try and do a better job of explaining the need
-for tokenization and the BPE algorithm, so I instead recommend
-watching Karpathy's video and for additional insights read the paper
-below:
+for tokenization and the BPE algorithm than Karpathy, so I instead
+recommend watching his video and, for additional insights, read the
+paper below:
 </p>
 
 <p>
@@ -54,9 +55,9 @@ below:
 </p>
 </div>
 
-<div id="outline-container-org457d3c1" class="outline-3">
-<h3 id="org457d3c1">The need for tokenization</h3>
-<div class="outline-text-3" id="text-org457d3c1">
+<div id="outline-container-org457d3c1" class="outline-4">
+<h4 id="org457d3c1">The need for tokenization</h4>
+<div class="outline-text-4" id="text-org457d3c1">
 <ul class="org-ul">
 <li>Large language models deal with numbers not words or characters, so we must map input text to numbers.</li>
 <li>The model requires a fixed size vocabulary.</li>
@@ -65,9 +66,9 @@ below:
 </div>
 </div>
 
-<div id="outline-container-org61241d9" class="outline-3">
-<h3 id="org61241d9">Sub word unit tokenization</h3>
-<div class="outline-text-3" id="text-org61241d9">
+<div id="outline-container-org61241d9" class="outline-4">
+<h4 id="org61241d9">Sub word unit tokenization</h4>
+<div class="outline-text-4" id="text-org61241d9">
 <p>
 The solution to these issues is sub-word tokenization; splitting words
 up into numbers representing components of words. Once you have that
@@ -126,19 +127,23 @@ with overall model quality.
 </div>
 </div>
 
-<div id="outline-container-org5b03015" class="outline-3">
-<h3 id="org5b03015">Byte Pair Encoding - BPE</h3>
-<div class="outline-text-3" id="text-org5b03015">
+<div id="outline-container-org5b03015" class="outline-4">
+<h4 id="org5b03015">Byte Pair Encoding - BPE</h4>
+<div class="outline-text-4" id="text-org5b03015">
 </div>
-<div id="outline-container-org6a0c0da" class="outline-4">
-<h4 id="org6a0c0da">Why BPE?</h4>
-<div class="outline-text-4" id="text-org6a0c0da">
+<div id="outline-container-org6a0c0da" class="outline-5">
+<h5 id="org6a0c0da">Why BPE?</h5>
+<div class="outline-text-5" id="text-org6a0c0da">
 <p>
-From above we understand that we should split words into sub-word components to handle the vast space of human vocabulary in the finite space of the LLMs vocabulary.
+From above we understand that we should split words into sub-word
+components to handle the vast space of human vocabulary in the finite
+space of the LLMs vocabulary.
 </p>
 
 <p>
-How to do that is the next question. Why not, for example, just have a vocabulary consisting of the punctuation and alphabetic characters of every language?
+How to do that is the next question. Why not, for example, just have a
+vocabulary consisting of the punctuation and alphabetic characters of
+every language?
 </p>
 
 <p>
@@ -175,9 +180,9 @@ Similarly, BPE, is data-driven algorithm that creates a vocabulary of meaningful
 </div>
 </div>
 
-<div id="outline-container-orgcab669d" class="outline-4">
-<h4 id="orgcab669d">BPE algorithm</h4>
-<div class="outline-text-4" id="text-orgcab669d">
+<div id="outline-container-orgcab669d" class="outline-5">
+<h5 id="orgcab669d">BPE algorithm</h5>
+<div class="outline-text-5" id="text-orgcab669d">
 <p>
 First you need to train across a large corpus of realistic text. For
 state of the art (SOTA) LLMs this is likely in the trillions of
@@ -189,29 +194,32 @@ The algorithm itself is very simple, it works as follows:
 </p>
 
 <p>
-Start with 256 tokens (0 to 255), our basic cgaracter set.
+Start with 256 tokens (0 to 255), our basic character set.
 </p>
 
 <ol class="org-ol">
-<li>First turn the text into its underlying numberic representation (utf-8 format input as bytes is fine).</li>
+<li>First turn the text into its underlying numeric representation (typically just the bytes of a UTF-8 input).</li>
 <li>Count all the pairs of bytes.</li>
 <li>Pick the most frequently occuring pair and generate the next new token (257, 258&#x2026;).</li>
 <li>Replace that pair whereever it occurs with the new token.</li>
 </ol>
 
 <p>
-Repeat until you have your full vocabulary. You can then save the merge pairs and these are then used by end users to encode their text before sending to the model. 
+Repeat until you have your full vocabulary. You can then save the
+merge pairs and these are then used by end users to encode their text
+before sending to the model.
 </p>
 
 <p>
-They can also be used to reconstuct the original text in the decoding process when the response comes from the model. 
+They can also be used to reconstuct the original text in the decoding
+process when the response comes from the model.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org60512a5" class="outline-4">
-<h4 id="org60512a5">Conflict Resolution</h4>
-<div class="outline-text-4" id="text-org60512a5">
+<div id="outline-container-org60512a5" class="outline-5">
+<h5 id="org60512a5">Conflict Resolution</h5>
+<div class="outline-text-5" id="text-org60512a5">
 <p>
 An important decision in tokenization is how to handle pairs with the same frequency. In this post I'll consider two methods:
 </p>
@@ -222,197 +230,280 @@ An important decision in tokenization is how to handle pairs with the same frequ
 </ul>
 
 <p>
-With any tokenization algorithm design we need to consider efficiency of implementation alongside methods that give the best results.
+With any tokenization algorithm design we need to consider efficiency of implementation alongside methods that give the best results. Some of these concerns will be highlighted below.
 </p>
 </div>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org241a45b" class="outline-2">
-<h2 id="org241a45b">minbpe-cc. A rewrite of minbpe in modern C++.</h2>
-<div class="outline-text-2" id="text-org241a45b">
+<div id="outline-container-org12ceb67" class="outline-3">
+<h3 id="org12ceb67">minbpe-cc an exercise in optimization</h3>
+<div class="outline-text-3" id="text-org12ceb67">
 <p>
-It's a fair question. The Python code is clean, educational, and works perfectly. My motivation was twofold:
+For me I find the best way to learn a topic is to get my hands dirty,
+and as such I decided to reimplement Karpathy's Python code in C++.
+</p>
+
+<p>
+I also wanted to focus on optimization of the training stage, for no
+other reason that curiousity.
+</p>
+
+<p>
+Why C++?
+</p>
+
+<ul class="org-ul">
+<li>It's a low level language with generally low to zero cost abstractions.</li>
+<li>I've recently been catching up with modern C++ and wanted to try out some of the new features (C++23 required).</li>
+</ul>
+
+<p>
+The final code here fully implements all the facets of Karpathy's minbpe including encoding, decoding and training. I've included end to end tests and tested in a linux and MacOS environment. I have not tested on Windows yet, but I expect it will work without much modification.
+</p>
+
+<p>
+<a href="https://github.com/justinhj/minbpe-cc">https://github.com/justinhj/minbpe-cc</a>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org75441f7" class="outline-3">
+<h3 id="org75441f7">Implementation tales</h3>
+<div class="outline-text-3" id="text-org75441f7">
+<p>
+Converting from Python to C++ is fairly straightforward although I hit some speed bumps on the way:
 </p>
 
 <ol class="org-ol">
-<li><b>Self-Education</b>: The best way to learn something is to build it. Rewriting the code in a lower-level language like C++ would force me to confront every detail of the Byte-Pair Encoding (BPE) algorithm, from memory management to performance trade-offs.</li>
-<li><b>The Craft of Optimization</b>: This is a classic software engineering exercise. Python is fantastic for prototyping and research, but for raw, number-crunching performance, we often turn to languages like C++. This project was a perfect real-world test case for that practice.</li>
+<li>Regex compatibility.</li>
+<li>Python dictionary behaviour.</li>
+<li>CMake.</li>
 </ol>
 </div>
-</div>
 
-<div id="outline-container-org375050c" class="outline-2">
-<h2 id="org375050c">The Heart of the Algorithm: Finding Frequent Pairs</h2>
-<div class="outline-text-2" id="text-org375050c">
+<div id="outline-container-orgfb58706" class="outline-4">
+<h4 id="orgfb58706">Regex compatibility</h4>
+<div class="outline-text-4" id="text-orgfb58706">
 <p>
-The core loop of the BPE algorithm is conceptually simple: find the most frequent pair of adjacent tokens in the text and merge them into a new, single token. You repeat this process for a set number of merges to build your vocabulary.
+Firstly, what are regex's needed for? 
 </p>
 
 <p>
-The interesting part is <i>how</i> you define "most frequent" when there are ties. This led to two different approaches in my C++ version.
-</p>
-</div>
-
-<div id="outline-container-org5ac40fe" class="outline-3">
-<h3 id="org5ac40fe">The First Pair (Compatible Mode)</h3>
-<div class="outline-text-3" id="text-org5ac40fe">
-<p>
-To maintain 1:1 compatibility with Karpathy's original output, the first approach is simple: if multiple pairs have the same highest frequency, you pick the one that appears <b>first</b> in the current vocabulary list. This is straightforward but requires more searching.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org27d07f9" class="outline-3">
-<h3 id="org27d07f9">The Lexical Pair (Optimized Mode)</h3>
-<div class="outline-text-3" id="text-org27d07f9">
-<p>
-For maximum speed, I implemented a second strategy. When multiple pairs have the same highest frequency, you instead pick the pair that comes first <b>lexicographically</b>. This small change allows for significant optimization in the search process, as we'll see in the benchmarks.
+In the GPT series of tokenizers, OpenAI realized that is beneficial to
+try and keep parts of text together, as such rather than run BPE on
+the whole input text, they first divide it up into sections by the
+following regular expressions:
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org48c37b8" class="outline-2">
-<h2 id="org48c37b8">The Payoff: Performance Benchmarks</h2>
-<div class="outline-text-2" id="text-org48c37b8">
+<div id="outline-container-org0abce84" class="outline-2">
+<h2 id="org0abce84">GPT2 <code>"'(?:[sdmt]|ll|ve|re)| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+"</code></h2>
+</div>
+<div id="outline-container-org4ecfa1a" class="outline-2">
+<h2 id="org4ecfa1a">GPT4 <code>"'(?i:[sdmt]|ll|ve|re)|[^\\r\\n\\p{L}\\p{N}]?+\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]++[\\r\\n]*|\\s*[\\r\\n]|\\s+(?!\\S)|\\s+"</code></h2>
+<div class="outline-text-2" id="text-org4ecfa1a">
 <p>
-This is where the effort really shines. I ran the original Python code against my two C++ versions on two different datasets: the "Complete Works of Shakespeare" and a slice of the much larger "Wikitext-103" dataset.
+These expressions are designed to preserve various aspects of English text rather than allow them to be split up during the merge process.
 </p>
 
 <p>
-The results are dramatic.
+Whilst there are a few established regex libraries for C++ (writing my own being out of scope for this project), finding one that was capable of handling these regular expressions took some looking. 
 </p>
 
-<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
-<caption class="t-above"><span class="table-number">Table 1:</span> Tokenizer training time in seconds (lower is better).</caption>
-
-<colgroup>
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-right" />
-</colgroup>
-<thead>
-<tr>
-<th scope="col" class="org-left">Implementation</th>
-<th scope="col" class="org-left">Dataset</th>
-<th scope="col" class="org-right">Time (seconds)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="org-left">Python</td>
-<td class="org-left">Shakespeare</td>
-<td class="org-right">15.5</td>
-</tr>
-
-<tr>
-<td class="org-left">C++ (First Pair)</td>
-<td class="org-left">Shakespeare</td>
-<td class="org-right">0.45</td>
-</tr>
-
-<tr>
-<td class="org-left">C++ (Lexical Pair)</td>
-<td class="org-left">Shakespeare</td>
-<td class="org-right"><b>0.12</b></td>
-</tr>
-</tbody>
-<tbody>
-<tr>
-<td class="org-left">Python</td>
-<td class="org-left">Wikitext-103</td>
-<td class="org-right">180.2</td>
-</tr>
-
-<tr>
-<td class="org-left">C++ (First Pair)</td>
-<td class="org-left">Wikitext-103</td>
-<td class="org-right">5.1</td>
-</tr>
-
-<tr>
-<td class="org-left">C++ (Lexical Pair)</td>
-<td class="org-left">Wikitext-103</td>
-<td class="org-right"><b>1.4</b></td>
-</tr>
-</tbody>
-</table>
+<p>
+These expressions need support for unicode matchers and also negative lookahead.
+</p>
 
 <p>
-The C++ versions are orders of magnitude faster. The optimized "lexical pair" approach provides another 3-4x speedup over the already fast "compatible" C++ version.
+I compared several libraries:
+</p>
+
+<ol class="org-ol">
+<li>RE2 from Google.</li>
+<li>std::regex in the C++ standard library.</li>
+<li>Boost::regex</li>
+<li>Re-Flex</li>
+</ol>
+
+<p>
+None of these met the requirements. 
+</p>
+
+<p>
+In the end I found the Perl compatible PRE2 library worked the best.
+</p>
+
+<p>
+The biggest footgun was that the Boost::regex library was asserting
+because Boost was not linking properly with the ICU
+(internationalization) library. I suspect this could be made to work
+but I gave up.
+</p>
+</div>
+
+<div id="outline-container-org268ef34" class="outline-4">
+<h4 id="org268ef34">Optimization mantras</h4>
+<div class="outline-text-4" id="text-org268ef34">
+<p>
+In System's Performance, Enterprise and the Cloud by Brendan Gregg (2021) the following mantras for performance are listed, ordered from most to least effective. I find these useful when considering optimization.
+</p>
+
+<ol class="org-ol">
+<li>Don’t do it.</li>
+<li>Do it, but don’t do it again.</li>
+<li>Do it less.</li>
+<li>Do it later.</li>
+<li>Do it when they’re not looking.</li>
+<li>Do it concurrently.</li>
+<li>Do it more cheaply.</li>
+</ol>
+
+<p>
+We can refer to these during the post.
 </p>
 </div>
 </div>
 
-<div id="outline-container-orge6dd077" class="outline-2">
-<h2 id="orge6dd077">The C++ Struggle is Real</h2>
-<div class="outline-text-2" id="text-orge6dd077">
+<div id="outline-container-orgdf21769" class="outline-4">
+<h4 id="orgdf21769">Data structures</h4>
+<div class="outline-text-4" id="text-orgdf21769">
 <p>
-Of course, these performance gains didn't come for free. Writing modern C++ can be a journey, and I hit a few notable roadblocks.
+The first step to port the Python code and make it more efficient is to think about the data involved and how that data needs to accessed. 
 </p>
 </div>
 
-<div id="outline-container-org57f91ef" class="outline-3">
-<h3 id="org57f91ef">Build Systems: CMake vs. Zig</h3>
-<div class="outline-text-3" id="text-org57f91ef">
+<div id="outline-container-orge5842ea" class="outline-5">
+<h5 id="orge5842ea">Data</h5>
+<div class="outline-text-5" id="text-orge5842ea">
+<ul class="org-ul">
+<li>Body text. We will store this as a vector (array) of numbers representing the input text for training.</li>
+<li>Pair frequencies. We need to keep track of all the pairs in the body text and their frequencies.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgee29ac0" class="outline-5">
+<h5 id="orgee29ac0">Access patterns</h5>
+<div class="outline-text-5" id="text-orgee29ac0">
+<ul class="org-ul">
+<li>Body text. We need sequential access to scan for pairs. The we need to be able to delete elements as part of the merge process.</li>
+<li>Pair frequencies. We need to be able to store the pairs and their frequencies and efficiently update them as we scan the body text. In addition we need fast access to the next most frequent pair.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgcfe6a9b" class="outline-5">
+<h5 id="orgcfe6a9b">Implementation</h5>
+<div class="outline-text-5" id="text-orgcfe6a9b">
+</div>
+<ul class="org-ul">
+<li><a id="org6edd3b9"></a>Body text<br />
+<div class="outline-text-6" id="text-org6edd3b9">
 <p>
-I started with CMake, the de-facto standard for C++ projects. However, I quickly found myself wrestling with boilerplate. I eventually discovered that I could use the <a href="https://ziglang.org/">Zig</a> toolchain not just for Zig code, but as an incredibly clean and simple C++ build system.
+Because the body text required sequential access and the ability to quickly remove elements I used a singly linked list, or <code>forward_list</code>. This has the desirable properties of sequential access and O(1) deletions.
 </p>
 
 <p>
-Compare the verbosity of a typical <code>CMakeLists.txt</code> to my final <code>build.zig</code> file:
+<code>forward_list</code> has the lowest memory overhead of all std C++ containers (a single pointer to the next element.
 </p>
+
+<p>
+Other valid options considered:
+</p>
+
+<ol class="org-ol">
+<li>Keep in a vector but use tombstones for removed items. This has the
+advantage of eliminating the memory moves for each replacement, and
+it doesn't have the problem forward list has with giving us a way
+to know the position in the input text (see later). This is quite a
+tricky implementation but perfectly feasible.</li>
+<li>Keep in a vector and do the memory moves. Requires a lot of memory
+bandwidth and cpu for the copying but it is simple.</li>
+</ol>
+</div>
+</li>
+
+<li><a id="org7c71903"></a>Pair frequencies<br />
+<div class="outline-text-6" id="text-org7c71903">
+<p>
+Ultimately I needed multiple structures here as I wanted to support more than one conflict resolution strategy. So first I made a virtual class with the required interface for both:
+</p>
+
 <div class="org-src-container">
-<pre class="src src-zig">const std = @import("std");
+<pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
+<span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">PairCount</span> {
+<span style="color: #b6a0ff;">public</span>:
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Virtual destructor to ensure proper cleanup of derived classes.</span>
+    <span style="color: #b6a0ff;">virtual</span> ~<span style="color: #feacd0;">PairCount</span>() = <span style="color: #b6a0ff;">default</span>;
 
-pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Gets the total number of unique pairs stored.</span>
+    <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">size_t</span> <span style="color: #feacd0;">get_count</span>() = 0;
 
-    const exe = b.addExecutable(.{
-        .name = "minbpe",
-        .root_source_file = .{ .path = "main.cpp" },
-        .target = target,
-        .optimize = optimize,
-    });
-    // ... link libraries
-    b.installArtifact(exe);
-}
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Retrieves the count for a specific pair.</span>
+    <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">optional</span>&lt;<span style="color: #6ae4b9;">int</span>&gt; <span style="color: #feacd0;">get_pair</span>(<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">mp</span>) = 0;
+
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Creates a new pair or modifies the frequency of an existing one.</span>
+    <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">bool</span> <span style="color: #feacd0;">create_or_modify_pair</span>(<span style="color: #6ae4b9;">T</span> <span style="color: #00d3d0;">a</span>, <span style="color: #6ae4b9;">T</span> <span style="color: #00d3d0;">b</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">freq</span>) = 0;
+
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Gets the pair with the highest count.</span>
+    <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">optional</span>&lt;<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt;&gt; <span style="color: #feacd0;">get_top_pair_count</span>() = 0;
+
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Retrieves all pairs and their counts.</span>
+    <span style="color: #b6a0ff;">virtual</span> <span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">vector</span>&lt;<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">vector</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt; <span style="color: #feacd0;">get_all</span>() = 0;
+};
 </pre>
 </div>
 
 <p>
-This was a revelation. It's cross-platform and ridiculously easy to use.
+Note that class has a template parameter, as the Tokenizer can be recompiled with different underlying numeric types for the tokens.
 </p>
 </div>
-</div>
 
-<div id="outline-container-orga7c9e4e" class="outline-3">
-<h3 id="orga7c9e4e">The Regex Nightmare</h3>
-<div class="outline-text-3" id="text-orga7c9e4e">
+<ul class="org-ul">
+<li><a id="org007443d"></a>Conflict resolution strategy: First seen in input<br />
+<div class="outline-text-7" id="text-org007443d">
 <p>
-The GPT-4 tokenizer pattern uses a tricky bit of regex: a <b>negative lookahead</b>. Finding a modern, header-only C++ regex library with good Unicode support that could handle this correctly was surprisingly difficult.
+For handling the case where the pair that comes first is the decider
+we must track the insertion order. Rather than let the user deal with
+that I built it into the PairCount class. As elements are added, new
+ones get the current count and the count is incremented.
 </p>
-</div>
-</div>
 
-<div id="outline-container-org48d1c0f" class="outline-3">
-<h3 id="org48d1c0f">A Subtle Bug: Integer Sizes</h3>
-<div class="outline-text-3" id="text-org48d1c0f">
 <p>
-I originally used a standard C++ <code>int</code> for token IDs. On my 64-bit system, this was overkill and could mask potential bugs. A <code>uint16_t</code> (max value 65,535) is a common choice, but to support vocabularies up to 100k, I settled on <code>uint32_t</code>. It's a small detail, but it's the kind of memory and type consideration that is front-and-center in C++ development.
+In Python this insertion order comes for free because of Raymond
+Hettinger's 2012 redesign of the Python dictionary. Implemented in
+Python 3.6 (released December 23, 2016), introduced compact
+dictionaries with key-sharing and faster performance. A side effect of
+this redesign was that dictionaries began preserving insertion order
+as an implementation detail. This was later formalized as a language
+guarantee in Python 3.7 (released June 27, 2018), meaning dictionaries
+officially maintain the order of key-value pairs as they are inserted.
 </p>
 </div>
+</li>
+
+<li><a id="org68fb120"></a>Conflict resolution strategy: Lexicographical<br />
+<div class="outline-text-7" id="text-org68fb120">
+<p>
+Referred to as lexical in my code to save typing, this method means we pick from pairs 
+</p>
+</div>
+</li>
+</ul>
+</li>
+</ul>
 </div>
 </div>
 
-<div id="outline-container-orge16fdc5" class="outline-2">
-<h2 id="orge16fdc5">Conclusion</h2>
-<div class="outline-text-2" id="text-orge16fdc5">
+
+
+<div id="outline-container-orge16fdc5" class="outline-3">
+<h3 id="orge16fdc5">Conclusion</h3>
+<div class="outline-text-3" id="text-orge16fdc5">
 <p>
 This project was a fantastic learning experience. It solidified my understanding of tokenization and was a practical lesson in the art of performance optimization. It demonstrates the enduring value of C++ for high-performance computing and highlights how modern tools like Zig can make the development experience much more pleasant.
 </p>
@@ -424,7 +515,12 @@ If you want to dive into the code or run the benchmarks yourself, you can find t
 <ul class="org-ul">
 <li><a href="https://github.com/justinhj/minbpe-cc">https://github.com/justinhj/minbpe-cc</a></li>
 </ul>
+</div>
+</div>
 
+<div id="outline-container-org9d17545" class="outline-3">
+<h3 id="org9d17545">References</h3>
+<div class="outline-text-3" id="text-org9d17545">
 <p>
 Thanks for reading!
 </p>
@@ -432,5 +528,6 @@ Thanks for reading!
 <p>
 &copy;2025 Justin Heyes-Jones. All Rights Reserved
 </p>
+</div>
 </div>
 </div>
