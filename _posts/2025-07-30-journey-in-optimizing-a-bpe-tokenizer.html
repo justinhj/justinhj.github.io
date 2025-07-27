@@ -283,7 +283,51 @@ you can handle:
 </ul>
 
 <p>
-Tokenization means taking text and splitting it into subword units. An input text like <code>"My cat, Blivarian, is making a mess."</code> may be tokenized into something like this:
+Here is a diagram showing how the fixed sized vocabulary of tokens maps to an array of learned embedding vectors that feed into the Transformer model underlying all LLMs.
+</p>
+
+<pre class="example" id="org9cff01b">
+      Input Text
+          │
+          ▼
+     "I love NLP"
+          │
+┌─────────┴─────────┐
+│   Tokenizer       │
+└─────────┬─────────┘
+          │
+          ▼
+      Tokens
+   ["i", "love", "nlp"]
+          │
+┌─────────┴─────────┐
+│ Vocabulary Lookup │
+└─────────┬─────────┘
+          │
+          ▼
+      Token IDs
+      [25, 2097, 12510]
+          │
+          │         ┌───────────────────────────────────┐
+          │         │          Embedding Matrix         │
+          │         │ (Size: |V| x d_model)            │
+          │         ├───────────────────────────────────┤
+          ├────────►│ Row 25:   [0.1, -0.4, 0.2, ...]   │  ───►  Embedding for "i"
+          │         ├───────────────────────────────────┤
+          ├────────►│ Row 2097: [-0.8, 0.5, 0.9, ...]   │  ───►  Embedding for "love"
+          │         ├───────────────────────────────────┤
+          ├────────►│ Row 12510: [0.3, 0.7, -0.1, ...]  │  ───►  Embedding for "nlp"
+          │         ├───────────────────────────────────┤
+          │         │                ...                │
+          │         └───────────────────────────────────┘
+          │
+          ▼
+  Input Embeddings
+(Dense Vectors fed to the model)
+</pre>
+
+<p>
+Tokenization means taking text and splitting it into sub-word (and whole-word or even multi-word) units. An input text like <code>"My cat, Blivarian, is making a mess."</code> may be tokenized into something like this:
 </p>
 
 <p>
@@ -1024,6 +1068,7 @@ For me the project is at a good point to move on to other things but there are s
 <li>Optimization of the encode and decode steps.</li>
 <li>Implement download and conversion of GPT merges like Karpathy does in his gpt4 code.</li>
 <li>Look at implementations of other Tokenization algorithms.</li>
+<li>Optimization by parallel computation. At face value it seems possible to do the merge process on multiple cores using a divide and conquer approach. Edge cases where the sections overlap may be tricky.</li>
 </ol>
 </div>
 </div>
