@@ -16,134 +16,155 @@ tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 
 <style>
   .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 40vh;
-        }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 400px;
-            }
-        }
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      height: 300px;
+      max-height: 40vh;
+  }
+  @media (min-width: 768px) {
+      .chart-container {
+          height: 400px;
+      }
+  }
+  .chart-btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 0.375rem;
+      transition: background-color 0.2s, color 0.2s;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+  }
+  .chart-btn-active {
+      background-color: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+  }
 </style>
 
 <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const benchmarkData = {
-                shakespeare: {
-                    labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
-                    times: [77.5, 36.5, 1.50],
-                },
-                wikitext: {
-                    labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
-                    times: [46080.0, 13500.0, 2217.5],
-                }
-            };
+    document.addEventListener('DOMContentLoaded', () => {
+        const benchmarkData = {
+            taylorswift: {
+                labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                times: [11.0, 5.5, 0.04], // Using 0.04 instead of 0.0 for log scale
+            },
+            shakespeare: {
+                labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                times: [77.5, 36.5, 1.50],
+            },
+            bible: {
+                labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                times: [298.5, 107.0, 5.5],
+            },
+            wikitext: {
+                labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                times: [46080.0, 13500.0, 2217.5],
+            }
+        };
 
-            const ctx = document.getElementById('benchmarkChart').getContext('2d');
-            const benchmarkChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: benchmarkData.shakespeare.labels,
-                    datasets: [{
-                        label: 'Training Time (seconds)',
-                        data: benchmarkData.shakespeare.times,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(75, 192, 192, 0.2)'
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(75, 192, 192, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            type: 'logarithmic',
-                            title: {
-                                display: true,
-                                text: 'Time in Seconds (Logarithmic Scale)'
-                            }
+        const ctx = document.getElementById('benchmarkChart').getContext('2d');
+        const benchmarkChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Training Time (seconds)',
+                    data: [],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(75, 192, 192, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        type: 'logarithmic',
+                        title: {
+                            display: true,
+                            text: 'Time in Seconds (Logarithmic Scale)'
                         }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
                     },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.x !== null) {
-                                        label += context.parsed.x.toFixed(2) + ' seconds';
-                                    }
-                                    return label;
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
                                 }
+                                if (context.parsed.x !== null) {
+                                    label += context.parsed.x.toFixed(2) + ' seconds';
+                                }
+                                return label;
                             }
                         }
                     }
                 }
-            });
-
-            const btnShakespeare = document.getElementById('btn-shakespeare');
-            const btnWikitext = document.getElementById('btn-wikitext');
-
-            function updateChart(datasetName) {
-                const newData = benchmarkData[datasetName];
-                benchmarkChart.data.labels = newData.labels;
-                benchmarkChart.data.datasets[0].data = newData.times;
-                benchmarkChart.update();
-
-                if (datasetName === 'shakespeare') {
-                    btnShakespeare.classList.add('btn-active');
-                    btnWikitext.classList.remove('btn-active');
-                } else {
-                    btnWikitext.classList.add('btn-active');
-                    btnShakespeare.classList.remove('btn-active');
-                }
             }
+        });
 
-            btnShakespeare.addEventListener('click', () => updateChart('shakespeare'));
-            btnWikitext.addEventListener('click', () => updateChart('wikitext'));
+        const buttons = document.querySelectorAll('.chart-btn');
 
-            // Set initial active state
-            updateChart('shakespeare');
-            
-            // Smooth scrolling for nav links
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    document.querySelector(this.getAttribute('href')).scrollIntoView({
-                        behavior: 'smooth'
-                    });
+        function updateChart(datasetName) {
+            const newData = benchmarkData[datasetName];
+            benchmarkChart.data.labels = newData.labels;
+            benchmarkChart.data.datasets[0].data = newData.times;
+            benchmarkChart.update();
+
+            buttons.forEach(button => {
+                if (button.dataset.corpus === datasetName) {
+                    button.classList.add('chart-btn-active');
+                } else {
+                    button.classList.remove('chart-btn-active');
+                }
+            });
+        }
+
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                updateChart(button.dataset.corpus);
+            });
+        });
+
+        // Set initial active state
+        updateChart('taylorswift');
+        
+        // Smooth scrolling for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
                 });
             });
         });
-    </script>
-
-
-
+    });
+</script>
 #+END_EXPORT
 
 ** Introduction
 
-In February 2024, renowned AI researcher and educator Andrej Karpathy, published the following video. 
+In February 2024, renowned AI researcher and educator Andrej Karpathy, published the following video. 
 
 https://www.youtube.com/watch?v=zduSFxRajkE
 
@@ -163,26 +184,42 @@ In this blog, related video and accompanying C++ project, I will walk
 through my exploration of the training aspect of tokenizers and look
 at their performance characteristics and optimization opportunities.
 
-** TL;DR optimization results
+My main goal was to port the Python to C++ but also I became interested in optimizing the training stage.
+
+Training SOTA (State of the Art) models is a massive expense in terms of time and computation needed. The Llama 3 model was trained on 15 trillion tokens, and although it is not known, its tokenizer may also have been trained on the whole data set. Even if it used only a smaller representative sample, tokenizer training is also a huge expense.
+
+For that reason it stands to reason you would want to optimize it as much as possible so that changes to the data set or algorithm can be made more easily and quickly.
+
+Ultimately, I was able to reduce the training time by a factor of 23 (for the large wikitext input) as shown below.
+
+** Optimization results
 
 #+begin_export html
     <div class="text-center mb-12">
-                <h3 class="text-3xl font-bold text-slate-900">The Proof</h3>
-                <p class="mt-2 text-lg text-slate-600">This is where the hard work pays off. The chart below shows the time taken to train a tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
+            <h3 class="text-3xl font-bold text-slate-900">Time to run train.py/.cpp</h3>
+            <p class="mt-2 text-lg text-slate-600">The chart below shows the time taken to train a tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
+        </div>
+        <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex flex-wrap justify-center items-center mb-6 space-x-2 space-y-2">
+                <button data-corpus="taylorswift" class="chart-btn">Taylor Swift</button>
+                <button data-corpus="shakespeare" class="chart-btn">Shakespeare</button>
+                <button data-corpus="bible" class="chart-btn">Bible</button>
+                <button data-corpus="wikitext" class="chart-btn">Wikitext-103</button>
             </div>
-            <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm">
-                <div class="flex justify-center items-center mb-6 space-x-2">
-                    <button id="btn-shakespeare" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">Shakespeare</button>
-                    <button id="btn-wikitext" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">Wikitext-103-all</button>
-                </div>
-                <div class="chart-container">
-                    <canvas id="benchmarkChart"></canvas>
-                </div>
-                 <p class="text-center text-xs text-slate-500 mt-4">Lower is better. Time in seconds.</p>
+            <div class="chart-container">
+                <canvas id="benchmarkChart"></canvas>
             </div>
-
+             <p class="text-center text-xs text-slate-500 mt-4">Lower is better. Time in seconds.</p>
+        </div>
 #+end_export
 
+Input data sets used:
+1. taylorswift. Text of the Taylor Swift wikipedia page.
+2. shakespeare. The complete works of Shakespeare.
+3. bible. The old and new testament of the Bible.
+4. wikitext-103. https://huggingface.co/datasets/Salesforce/wikitext 100 million tokens of high quality wikipedia articles.
+
+These are included in the repository apart from wikitext which you can download from hugging face.
 
 ** Briefly, Tokenization and BPE
 
@@ -288,8 +325,8 @@ The algorithm itself is very simple, it works as follows:
 Start with 256 tokens (0 to 255), our basic character set.
 
 1. First turn the text into its underlying numeric representation (typically just the bytes of a UTF-8 input).
-2. Count all the pairs of bytes. 
-3. Pick the most frequently occuring pair and generate the next new token (257, 258...).
+2. Count all the pairs of bytes. 
+3. Pick the most frequently occurring pair and generate the next new token (257, 258...).
 4. Replace that pair wherever it occurs with the new token.
 
 Repeat until you have your full vocabulary. You can then save the
@@ -303,7 +340,7 @@ process when the response comes from the model.
 
 An important decision in tokenization is how to handle pairs with the same frequency. In this post I'll consider two methods:
 
-- First in corpus wins. 
+- First in corpus wins. 
 - Lexicographical ordering.
 
 With any tokenization algorithm design we need to consider efficiency
@@ -319,7 +356,7 @@ my hands dirty, and as such I decided to reimplement Karpathy's Python
 code in C++.
 
 I also wanted to focus on optimization of the training stage, for no
-other reason that curiosity.
+other reason than curiosity.
 
 Why C++?
 
@@ -339,9 +376,9 @@ Converting from Python to C++ is fairly straightforward although I hit some spee
 3. CMake. CMake is not a casual tool. I found I could just about get my project to build and run using it, but after switching to Zig build instead I found it much easier to manage. In other words to effectively use CMake would require me to read the manual in a lot more detail.
 *** Regex compatibility
 
-Firstly, what are regexes needed for? 
+Firstly, what are regexes needed for? 
 
-In the GPT series of tokenizers, OpenAI realized that is beneficial to
+In the GPT series of tokenizers, OpenAI realized that it is beneficial to
 try and keep parts of text together, as such rather than run BPE on
 the whole input text, they first divide it up into sections by the
 following regular expressions:
@@ -351,7 +388,7 @@ following regular expressions:
 
 These expressions are designed to preserve various aspects of English text rather than allow them to be split up during the merge process.
 
-Whilst there are a few established regex libraries for C++ (writing my own being out of scope for this project), finding one that was capable of handling these regular expressions took some looking. 
+Whilst there are a few established regex libraries for C++ (writing my own being out of scope for this project), finding one that was capable of handling these regular expressions took some looking. 
 
 These expressions need support for unicode matchers and also negative lookahead.
 
@@ -362,7 +399,7 @@ I compared several libraries:
 3. Boost::regex
 4. Re-Flex
 
-None of these met the requirements. 
+None of these met the requirements. 
 
 In the end I found the Perl compatible PRE2 library worked the best.
 
@@ -387,16 +424,16 @@ We can refer to these during the post.
 
 *** Data structures
 
-The first step to port the Python code and make it more efficient is to think about the data involved and how that data needs to accessed. 
+The first step to port the Python code and make it more efficient is to think about the data involved and how that data needs to accessed. 
 
 **** Data
 
 - Body text. We will store this as a vector (array) of numbers representing the input text for training.
-- Pair frequencies. We need to keep track of all the pairs in the body text and their frequencies. 
+- Pair frequencies. We need to keep track of all the pairs in the body text and their frequencies. 
 
 **** Access patterns
 
-- Body text. We need sequential access to scan for pairs. The we need to be able to delete elements as part of the merge process.
+- Body text. We need sequential access to scan for pairs. Then we need to be able to delete elements as part of the merge process.
 - Pair frequencies. We need to be able to store the pairs and their frequencies and efficiently update them as we scan the body text. In addition we need fast access to the next most frequent pair.
 
 **** Implementation
@@ -410,12 +447,12 @@ Because the body text required sequential access and the ability to quickly remo
 Other valid options considered:
 
 1. Keep in a vector but use tombstones for removed items. This has the
-   advantage of eliminating the memory moves for each replacement, and
-   it doesn't have the problem forward list has with giving us a way
-   to know the position in the input text (see later). This is quite a
-   tricky implementation but perfectly feasible.
+   advantage of eliminating the memory moves for each replacement, and
+   it doesn't have the problem forward list has with giving us a way
+   to know the position in the input text (see later). This is quite a
+   tricky implementation but perfectly feasible.
 2. Keep in a vector and do the memory moves. Requires a lot of memory
-   bandwidth and cpu for the copying but it is simple.
+   bandwidth and cpu for the copying but it is simple.
 
 ***** Pair frequencies
 
@@ -425,23 +462,23 @@ Ultimately I needed multiple structures here as I wanted to support more than on
 template<typename T>
 class PairCount {
 public:
-    // Virtual destructor to ensure proper cleanup of derived classes.
-    virtual ~PairCount() = default;
+    // Virtual destructor to ensure proper cleanup of derived classes.
+    virtual ~PairCount() = default;
 
-    // Gets the total number of unique pairs stored.
-    virtual size_t get_count() = 0;
+    // Gets the total number of unique pairs stored.
+    virtual size_t get_count() = 0;
 
-    // Retrieves the count for a specific pair.
-    virtual optional<int> get_pair(pair<T,T> mp) = 0;
+    // Retrieves the count for a specific pair.
+    virtual optional<int> get_pair(pair<T,T> mp) = 0;
 
-    // Creates a new pair or modifies the frequency of an existing one.
-    virtual bool create_or_modify_pair(T a, T b, int freq) = 0;
+    // Creates a new pair or modifies the frequency of an existing one.
+    virtual bool create_or_modify_pair(T a, T b, int freq) = 0;
 
-    // Gets the pair with the highest count.
-    virtual optional<pair<T,T>> get_top_pair_count() = 0;
+    // Gets the pair with the highest count.
+    virtual optional<pair<T,T>> get_top_pair_count() = 0;
 
-    // Retrieves all pairs and their counts.
-    virtual std::vector<std::vector<T>> get_all() = 0;
+    // Retrieves all pairs and their counts.
+    virtual std::vector<std::vector<T>> get_all() = 0;
 };
 #+END_SRC
 
@@ -455,7 +492,7 @@ Imagine a sequence as follows:
 
 After counting all the pairs we find that [1,2] and [3,4] have the same frequency.
 
-1. [1,2] => 20 
+1. [1,2] => 20 
 2. [3,4] => 20
 
 In this case we pick the one added first, which means the one first seen
@@ -516,24 +553,24 @@ First the data; we need to store pair, the count and the insert order.
 #+BEGIN_SRC c++
 template<typename T>
 struct PairCountOrder {
-    ::pair<T,T> pair;
-    int count;
-    size_t insert_order;
+    ::pair<T,T> pair;
+    int count;
+    size_t insert_order;
 
-    PairCountOrder(::pair<T,T> p, int c, size_t fo) : pair(p), count(c), insert_order(fo) {}
-    PairCountOrder(::pair<T,T> p, int c) : pair(p), count(c), insert_order(std::numeric_limits<size_t>::max()) {}
+    PairCountOrder(::pair<T,T> p, int c, size_t fo) : pair(p), count(c), insert_order(fo) {}
+    PairCountOrder(::pair<T,T> p, int c) : pair(p), count(c), insert_order(std::numeric_limits<size_t>::max()) {}
 };
 
 // Comparison struct for sorting. Sorts by count (descending), then by insertion order (ascending).
 template<typename T>
 struct CompareCountOrder {
-    bool operator()(const PairCountOrder<T>& a, const PairCountOrder<T>& b) const {
-        if(a.count == b.count) {
-            return a.insert_order < b.insert_order;
-        } else {
-            return a.count > b.count; // higher count is greater
-        }
-    }
+    bool operator()(const PairCountOrder<T>& a, const PairCountOrder<T>& b) const {
+        if(a.count == b.count) {
+            return a.insert_order < b.insert_order;
+        } else {
+            return a.count > b.count; // higher count is greater
+        }
+    }
 };
 #+END_SRC
 
@@ -542,13 +579,13 @@ Next we define the container itself. We just specify the indexes required and Bo
 #+BEGIN_SRC c++
 template<typename T>
 using PairCountStore = boost::multi_index_container<
-    PairCountOrder<T>,
-    indexed_by<
-        // Index 0: Hashed unique index on the 'pair' member for fast lookups.
-        hashed_unique<member<PairCountOrder<T>, pair<T,T>, &PairCountOrder<T>::pair>>,
-        // Index 1: Ordered non-unique index for sorting by count and insertion order.
-        ordered_non_unique<identity<PairCountOrder<T>>, CompareCountOrder<T>>
-    >
+    PairCountOrder<T>,
+    indexed_by<
+        // Index 0: Hashed unique index on the 'pair' member for fast lookups.
+        hashed_unique<member<PairCountOrder<T>, pair<T,T>, &PairCountOrder<T>::pair>>,
+        // Index 1: Ordered non-unique index for sorting by count and insertion order.
+        ordered_non_unique<identity<PairCountOrder<T>>, CompareCountOrder<T>>
+    >
 >;
 #+END_SRC
 
@@ -556,7 +593,7 @@ Index 0 explanation:
 It is hashed so we should get an O(1) lookup type, and unique meaning keys are unique, each pair can occur once only.
 The rest of the declaration explains how to get the key for this index (use the pair member).
 
-Index 1 explanation: 
+Index 1 explanation: 
 This needs to be an ordered collection so we can extract the highest
 frequency. It also needs to be non-unique (in its sort criteria),
 because we can have multiple elements with the same frequency.
@@ -570,11 +607,11 @@ indexes in the container.
 auto& index_by_key = pcs.template get<0>();
 auto f = index_by_key.find(mp);
 if(f != pcs.end()) {
-    index_by_key.modify(f, [freq](PairCountOrder<T>& pc) { pc.count += freq; });
-    return false;
+    index_by_key.modify(f, [freq](PairCountOrder<T>& pc) { pc.count += freq; });
+    return false;
 } else {
-    pcs.insert(PairCountOrder<T>(mp, freq, next_insert++));
-    return true;
+    pcs.insert(PairCountOrder<T>(mp, freq, next_insert++));
+    return true;
 }
 #+END_SRC
 
@@ -582,7 +619,7 @@ if(f != pcs.end()) {
 
 Referred to as lexical in my implementation to save typing, this method means we pick from pairs based on which comes first. For example given the following two pairs:
 
-1. [1,2] => 20 
+1. [1,2] => 20 
 2. [3,4] => 20
 
 They have the same frequency so we pick pair 1) as 1 < 3. The second member
@@ -595,26 +632,26 @@ Again a multi_index container is needed here. Let's start with the data:
 #+BEGIN_SRC c++
 template<typename T>
 struct PairCountLexical {
-    ::pair<T,T> pair;
-    int count;
+    ::pair<T,T> pair;
+    int count;
 
-    PairCountLexical(::pair<T,T> p, int c) : pair(p), count(c) {}
+    PairCountLexical(::pair<T,T> p, int c) : pair(p), count(c) {}
 };
 
 // Comparison struct for sorting. Sorts by count (descending), then by pair (lexical ascending).
 template<typename T>
 struct CompareLexicalOrder {
-    bool operator()(const PairCountLexical<T>& a, const PairCountLexical<T>& b) const {
-        if(a.count == b.count) {
-            if (a.pair.first == b.pair.first) {
-                return a.pair.second < b.pair.second;
-            } else {
-                return a.pair.first < b.pair.first;
-            }
-        } else {
-            return a.count > b.count; // higher count is greater
-        }
-    }
+    bool operator()(const PairCountLexical<T>& a, const PairCountLexical<T>& b) const {
+        if(a.count == b.count) {
+            if (a.pair.first == b.pair.first) {
+                return a.pair.second < b.pair.second;
+            } else {
+                return a.pair.first < b.pair.first;
+            }
+        } else {
+            return a.count > b.count; // higher count is greater
+        }
+    }
 };
 #+END_SRC
 
@@ -623,13 +660,13 @@ And the container looks like this:
 #+BEGIN_SRC c++
 template<typename T>
 using PairCountLexicalStore = boost::multi_index_container<
-    PairCountLexical<T>,
-    indexed_by<
-        // Index 0: Hashed unique index on the 'pair' member for fast lookups.
-        hashed_unique<member<PairCountLexical<T>, pair<T,T>, &PairCountLexical<T>::pair>>,
-        // Index 1: Ordered non-unique index for sorting by count and lexical order.
-        ordered_non_unique<identity<PairCountLexical<T>>, CompareLexicalOrder<T>>
-    >
+    PairCountLexical<T>,
+    indexed_by<
+        // Index 0: Hashed unique index on the 'pair' member for fast lookups.
+        hashed_unique<member<PairCountLexical<T>, pair<T,T>, &PairCountLexical<T>::pair>>,
+        // Index 1: Ordered non-unique index for sorting by count and lexical order.
+        ordered_non_unique<identity<PairCountLexical<T>>, CompareLexicalOrder<T>>
+    >
 >;
 #+END_SRC
 
@@ -656,15 +693,15 @@ Let's work through Brendan Gregg's impactful optimizations:
 6. Do it concurrently.
 7. Do it more cheaply.
 
-Don't do it is not an option, we need those updated counts each step. 
-Do it but not again is fruitful though. 
+Don't do it is not an option, we need those updated counts each step. 
+Do it but not again is fruitful though. 
 
 The key insight here is that we only need to do a full frequency count
 one time. Then we can incrementally update the pair frequencies as we
 walk through doing the merge process. Essentially we are removing and
 adding a number of pairs on each replacement.
 
-I noticed that the authors of the paper mentioned this too: 
+I noticed that the authors of the paper mentioned this too: 
 
 "In practice, we increase efficiency by indexing all pairs, and updating data structures incrementally."
 
@@ -716,4 +753,4 @@ https://github.com/rsennrich/subword-nmt
 
 Thanks for reading!
 
-\copy2025 Justin Heyes-Jones. All Rights Reserved
+\copy2025 Justin Heyes-Jones. All Rights Reser

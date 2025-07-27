@@ -9,132 +9,156 @@ tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 
 <style>
   .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 40vh;
-        }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 400px;
-            }
-        }
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      height: 300px;
+      max-height: 40vh;
+  }
+  @media (min-width: 768px) {
+      .chart-container {
+          height: 400px;
+      }
+  }
+  .chart-btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 0.375rem;
+      transition: background-color 0.2s, color 0.2s;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+  }
+  .chart-btn-active {
+      background-color: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+  }
 </style>
 
 <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const benchmarkData = {
-                shakespeare: {
-                    labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
-                    times: [77.5, 36.5, 1.50],
-                },
-                wikitext: {
-                    labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
-                    times: [46080.0, 13500.0, 2217.5],
-                }
-            };
+    document.addEventListener('DOMContentLoaded', () => {
+        const benchmarkData = {
+            taylorswift: {
+                labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                times: [11.0, 5.5, 0.04], // Using 0.04 instead of 0.0 for log scale
+            },
+            shakespeare: {
+                labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                times: [77.5, 36.5, 1.50],
+            },
+            bible: {
+                labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                times: [298.5, 107.0, 5.5],
+            },
+            wikitext: {
+                labels: ['Python', 'C++ (First)', 'C++ (Lexical)'],
+                times: [46080.0, 13500.0, 2217.5],
+            }
+        };
 
-            const ctx = document.getElementById('benchmarkChart').getContext('2d');
-            const benchmarkChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: benchmarkData.shakespeare.labels,
-                    datasets: [{
-                        label: 'Training Time (seconds)',
-                        data: benchmarkData.shakespeare.times,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(75, 192, 192, 0.2)'
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(75, 192, 192, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            type: 'logarithmic',
-                            title: {
-                                display: true,
-                                text: 'Time in Seconds (Logarithmic Scale)'
-                            }
+        const ctx = document.getElementById('benchmarkChart').getContext('2d');
+        const benchmarkChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Training Time (seconds)',
+                    data: [],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(75, 192, 192, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        type: 'logarithmic',
+                        title: {
+                            display: true,
+                            text: 'Time in Seconds (Logarithmic Scale)'
                         }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
                     },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.x !== null) {
-                                        label += context.parsed.x.toFixed(2) + ' seconds';
-                                    }
-                                    return label;
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
                                 }
+                                if (context.parsed.x !== null) {
+                                    label += context.parsed.x.toFixed(2) + ' seconds';
+                                }
+                                return label;
                             }
                         }
                     }
                 }
-            });
-
-            const btnShakespeare = document.getElementById('btn-shakespeare');
-            const btnWikitext = document.getElementById('btn-wikitext');
-
-            function updateChart(datasetName) {
-                const newData = benchmarkData[datasetName];
-                benchmarkChart.data.labels = newData.labels;
-                benchmarkChart.data.datasets[0].data = newData.times;
-                benchmarkChart.update();
-
-                if (datasetName === 'shakespeare') {
-                    btnShakespeare.classList.add('btn-active');
-                    btnWikitext.classList.remove('btn-active');
-                } else {
-                    btnWikitext.classList.add('btn-active');
-                    btnShakespeare.classList.remove('btn-active');
-                }
             }
+        });
 
-            btnShakespeare.addEventListener('click', () => updateChart('shakespeare'));
-            btnWikitext.addEventListener('click', () => updateChart('wikitext'));
+        const buttons = document.querySelectorAll('.chart-btn');
 
-            // Set initial active state
-            updateChart('shakespeare');
-            
-            // Smooth scrolling for nav links
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    document.querySelector(this.getAttribute('href')).scrollIntoView({
-                        behavior: 'smooth'
-                    });
+        function updateChart(datasetName) {
+            const newData = benchmarkData[datasetName];
+            benchmarkChart.data.labels = newData.labels;
+            benchmarkChart.data.datasets[0].data = newData.times;
+            benchmarkChart.update();
+
+            buttons.forEach(button => {
+                if (button.dataset.corpus === datasetName) {
+                    button.classList.add('chart-btn-active');
+                } else {
+                    button.classList.remove('chart-btn-active');
+                }
+            });
+        }
+
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                updateChart(button.dataset.corpus);
+            });
+        });
+
+        // Set initial active state
+        updateChart('taylorswift');
+        
+        // Smooth scrolling for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
                 });
             });
         });
-    </script>
+    });
+</script>
 
 <div id="outline-container-org2e0801c" class="outline-2">
 <h2 id="org2e0801c">Introduction</h2>
 <div class="outline-text-2" id="text-org2e0801c">
 <p>
-In February 2024, renowned AI researcher and educator Andrej Karpathy, published the following video. 
+In February 2024, renowned AI researcher and educator Andrej Karpathy, published the following video. 
 </p>
 
 <p>
@@ -162,29 +186,60 @@ In this blog, related video and accompanying C++ project, I will walk
 through my exploration of the training aspect of tokenizers and look
 at their performance characteristics and optimization opportunities.
 </p>
+
+<p>
+My main goal was to port the Python to C++ but also I became interested in optimizing the training stage.
+</p>
+
+<p>
+Training SOTA (State of the Art) models is a massive expense in terms of time and computation needed. The Llama 3 model was trained on 15 trillion tokens, and although it is not known, its tokenizer may also have been trained on the whole data set. Even if it used only a smaller representative sample, tokenizer training is also a huge expense.
+</p>
+
+<p>
+For that reason it stands to reason you would want to optimize it as much as possible so that changes to the data set or algorithm can be made more easily and quickly.
+</p>
+
+<p>
+Ultimately, I was able to reduce the training time by a factor of 23 (for the large wikitext input) as shown below.
+</p>
 </div>
 </div>
 
-<div id="outline-container-org55fa1e8" class="outline-2">
-<h2 id="org55fa1e8">TL;DR optimization results</h2>
-<div class="outline-text-2" id="text-org55fa1e8">
+<div id="outline-container-orgb8bea08" class="outline-2">
+<h2 id="orgb8bea08">Optimization results</h2>
+<div class="outline-text-2" id="text-orgb8bea08">
 <div class="text-center mb-12">
-            <h3 class="text-3xl font-bold text-slate-900">The Proof</h3>
-            <p class="mt-2 text-lg text-slate-600">This is where the hard work pays off. The chart below shows the time taken to train a tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
+        <h3 class="text-3xl font-bold text-slate-900">Time to run train.py/.cpp</h3>
+        <p class="mt-2 text-lg text-slate-600">The chart below shows the time taken to train a tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
+    </div>
+    <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex flex-wrap justify-center items-center mb-6 space-x-2 space-y-2">
+            <button data-corpus="taylorswift" class="chart-btn">Taylor Swift</button>
+            <button data-corpus="shakespeare" class="chart-btn">Shakespeare</button>
+            <button data-corpus="bible" class="chart-btn">Bible</button>
+            <button data-corpus="wikitext" class="chart-btn">Wikitext-103</button>
         </div>
-        <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm">
-            <div class="flex justify-center items-center mb-6 space-x-2">
-                <button id="btn-shakespeare" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">Shakespeare</button>
-                <button id="btn-wikitext" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">Wikitext-103-all</button>
-            </div>
-            <div class="chart-container">
-                <canvas id="benchmarkChart"></canvas>
-            </div>
-             <p class="text-center text-xs text-slate-500 mt-4">Lower is better. Time in seconds.</p>
+        <div class="chart-container">
+            <canvas id="benchmarkChart"></canvas>
         </div>
-</div>
-</div>
+         <p class="text-center text-xs text-slate-500 mt-4">Lower is better. Time in seconds.</p>
+    </div>
 
+<p>
+Input data sets used:
+</p>
+<ol class="org-ol">
+<li>taylorswift. Text of the Taylor Swift wikipedia page.</li>
+<li>shakespeare. The complete works of Shakespeare.</li>
+<li>bible. The old and new testament of the Bible.</li>
+<li>wikitext-103. <a href="https://huggingface.co/datasets/Salesforce/wikitext">https://huggingface.co/datasets/Salesforce/wikitext</a> 100 million tokens of high quality wikipedia articles.</li>
+</ol>
+
+<p>
+These are included in the repository apart from wikitext which you can download from hugging face.
+</p>
+</div>
+</div>
 
 <div id="outline-container-org5a48473" class="outline-2">
 <h2 id="org5a48473">Briefly, Tokenization and BPE</h2>
@@ -345,8 +400,8 @@ Start with 256 tokens (0 to 255), our basic character set.
 
 <ol class="org-ol">
 <li>First turn the text into its underlying numeric representation (typically just the bytes of a UTF-8 input).</li>
-<li>Count all the pairs of bytes.</li>
-<li>Pick the most frequently occuring pair and generate the next new token (257, 258&#x2026;).</li>
+<li>Count all the pairs of bytes. </li>
+<li>Pick the most frequently occurring pair and generate the next new token (257, 258&#x2026;).</li>
 <li>Replace that pair wherever it occurs with the new token.</li>
 </ol>
 
@@ -371,7 +426,7 @@ An important decision in tokenization is how to handle pairs with the same frequ
 </p>
 
 <ul class="org-ul">
-<li>First in corpus wins.</li>
+<li>First in corpus wins. </li>
 <li>Lexicographical ordering.</li>
 </ul>
 
@@ -398,7 +453,7 @@ code in C++.
 
 <p>
 I also wanted to focus on optimization of the training stage, for no
-other reason that curiosity.
+other reason than curiosity.
 </p>
 
 <p>
@@ -442,11 +497,11 @@ Converting from Python to C++ is fairly straightforward although I hit some spee
 <h3 id="orgfb58706">Regex compatibility</h3>
 <div class="outline-text-3" id="text-orgfb58706">
 <p>
-Firstly, what are regexes needed for? 
+Firstly, what are regexes needed for? 
 </p>
 
 <p>
-In the GPT series of tokenizers, OpenAI realized that is beneficial to
+In the GPT series of tokenizers, OpenAI realized that it is beneficial to
 try and keep parts of text together, as such rather than run BPE on
 the whole input text, they first divide it up into sections by the
 following regular expressions:
@@ -462,7 +517,7 @@ These expressions are designed to preserve various aspects of English text rathe
 </p>
 
 <p>
-Whilst there are a few established regex libraries for C++ (writing my own being out of scope for this project), finding one that was capable of handling these regular expressions took some looking. 
+Whilst there are a few established regex libraries for C++ (writing my own being out of scope for this project), finding one that was capable of handling these regular expressions took some looking. 
 </p>
 
 <p>
@@ -481,7 +536,7 @@ I compared several libraries:
 </ol>
 
 <p>
-None of these met the requirements. 
+None of these met the requirements. 
 </p>
 
 <p>
@@ -524,7 +579,7 @@ We can refer to these during the post.
 <h3 id="orgdf21769">Data structures</h3>
 <div class="outline-text-3" id="text-orgdf21769">
 <p>
-The first step to port the Python code and make it more efficient is to think about the data involved and how that data needs to accessed. 
+The first step to port the Python code and make it more efficient is to think about the data involved and how that data needs to accessed. 
 </p>
 </div>
 
@@ -533,7 +588,7 @@ The first step to port the Python code and make it more efficient is to think ab
 <div class="outline-text-4" id="text-orge5842ea">
 <ul class="org-ul">
 <li>Body text. We will store this as a vector (array) of numbers representing the input text for training.</li>
-<li>Pair frequencies. We need to keep track of all the pairs in the body text and their frequencies.</li>
+<li>Pair frequencies. We need to keep track of all the pairs in the body text and their frequencies. </li>
 </ul>
 </div>
 </div>
@@ -542,7 +597,7 @@ The first step to port the Python code and make it more efficient is to think ab
 <h4 id="orgee29ac0">Access patterns</h4>
 <div class="outline-text-4" id="text-orgee29ac0">
 <ul class="org-ul">
-<li>Body text. We need sequential access to scan for pairs. The we need to be able to delete elements as part of the merge process.</li>
+<li>Body text. We need sequential access to scan for pairs. Then we need to be able to delete elements as part of the merge process.</li>
 <li>Pair frequencies. We need to be able to store the pairs and their frequencies and efficiently update them as we scan the body text. In addition we need fast access to the next most frequent pair.</li>
 </ul>
 </div>
@@ -568,14 +623,20 @@ Other valid options considered:
 </p>
 
 <ol class="org-ol">
-<li>Keep in a vector but use tombstones for removed items. This has the
-advantage of eliminating the memory moves for each replacement, and
-it doesn't have the problem forward list has with giving us a way
-to know the position in the input text (see later). This is quite a
-tricky implementation but perfectly feasible.</li>
-<li>Keep in a vector and do the memory moves. Requires a lot of memory
-bandwidth and cpu for the copying but it is simple.</li>
+<li>Keep in a vector but use tombstones for removed items. This has the</li>
 </ol>
+<p>
+   advantage of eliminating the memory moves for each replacement, and
+   it doesn't have the problem forward list has with giving us a way
+   to know the position in the input text (see later). This is quite a
+   tricky implementation but perfectly feasible.
+</p>
+<ol class="org-ol">
+<li>Keep in a vector and do the memory moves. Requires a lot of memory</li>
+</ol>
+<p>
+   bandwidth and cpu for the copying but it is simple.
+</p>
 </div>
 </div>
 
@@ -590,23 +651,23 @@ Ultimately I needed multiple structures here as I wanted to support more than on
 <pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
 <span style="color: #b6a0ff;">class</span> <span style="color: #6ae4b9;">PairCount</span> {
 <span style="color: #b6a0ff;">public</span>:
-    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Virtual destructor to ensure proper cleanup of derived classes.</span>
-    <span style="color: #b6a0ff;">virtual</span> ~<span style="color: #feacd0;">PairCount</span>() = <span style="color: #b6a0ff;">default</span>;
+&#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Virtual destructor to ensure proper cleanup of derived classes.</span>
+&#160; &#160; <span style="color: #b6a0ff;">virtual</span> ~PairCount() = <span style="color: #b6a0ff;">default</span>;
 
-    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Gets the total number of unique pairs stored.</span>
-    <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">size_t</span> <span style="color: #feacd0;">get_count</span>() = 0;
+&#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Gets the total number of unique pairs stored.</span>
+&#160; &#160; <span style="color: #b6a0ff;">virtual</span> size_t get_count() = 0;
 
-    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Retrieves the count for a specific pair.</span>
-    <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">optional</span>&lt;<span style="color: #6ae4b9;">int</span>&gt; <span style="color: #feacd0;">get_pair</span>(<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">mp</span>) = 0;
+&#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Retrieves the count for a specific pair.</span>
+&#160; &#160; <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">optional</span>&lt;<span style="color: #6ae4b9;">int</span>&gt; get_pair(<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">mp</span>) = 0;
 
-    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Creates a new pair or modifies the frequency of an existing one.</span>
-    <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">bool</span> <span style="color: #feacd0;">create_or_modify_pair</span>(<span style="color: #6ae4b9;">T</span> <span style="color: #00d3d0;">a</span>, <span style="color: #6ae4b9;">T</span> <span style="color: #00d3d0;">b</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">freq</span>) = 0;
+&#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Creates a new pair or modifies the frequency of an existing one.</span>
+&#160; &#160; <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">bool</span> create_or_modify_pair(<span style="color: #6ae4b9;">T</span> <span style="color: #00d3d0;">a</span>, <span style="color: #6ae4b9;">T</span> <span style="color: #00d3d0;">b</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">freq</span>) = 0;
 
-    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Gets the pair with the highest count.</span>
-    <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">optional</span>&lt;<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt;&gt; <span style="color: #feacd0;">get_top_pair_count</span>() = 0;
+&#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Gets the pair with the highest count.</span>
+&#160; &#160; <span style="color: #b6a0ff;">virtual</span> <span style="color: #6ae4b9;">optional</span>&lt;<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt;&gt; get_top_pair_count() = 0;
 
-    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Retrieves all pairs and their counts.</span>
-    <span style="color: #b6a0ff;">virtual</span> <span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">vector</span>&lt;<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">vector</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt; <span style="color: #feacd0;">get_all</span>() = 0;
+&#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Retrieves all pairs and their counts.</span>
+&#160; &#160; <span style="color: #b6a0ff;">virtual</span> <span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">vector</span>&lt;<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">vector</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt; get_all() = 0;
 };
 </pre>
 </div>
@@ -632,7 +693,7 @@ After counting all the pairs we find that [1,2] and [3,4] have the same frequenc
 </p>
 
 <ol class="org-ol">
-<li>[1,2] =&gt; 20</li>
+<li>[1,2] =&gt; 20 </li>
 <li>[3,4] =&gt; 20</li>
 </ol>
 
@@ -719,24 +780,24 @@ First the data; we need to store pair, the count and the insert order.
 <div class="org-src-container">
 <pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
 <span style="color: #b6a0ff;">struct</span> <span style="color: #6ae4b9;">PairCountOrder</span> {
-    ::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">pair</span>;
-    <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">count</span>;
-    <span style="color: #6ae4b9;">size_t</span> <span style="color: #00d3d0;">insert_order</span>;
+&#160; &#160; ::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; pair;
+&#160; &#160; <span style="color: #6ae4b9;">int</span> count;
+&#160; &#160; size_t insert_order;
 
-    <span style="color: #feacd0;">PairCountOrder</span>(::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">p</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">c</span>, <span style="color: #6ae4b9;">size_t</span> <span style="color: #00d3d0;">fo</span>) : pair(p), count(c), insert_order(fo) {}
-    <span style="color: #feacd0;">PairCountOrder</span>(::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">p</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">c</span>) : pair(p), count(c), insert_order(<span style="color: #00bcff;">std</span>::<span style="color: #00bcff;">numeric_limits</span>&lt;<span style="color: #6ae4b9;">size_t</span>&gt;::max()) {}
+&#160; &#160; PairCountOrder(::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">p</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">c</span>, <span style="color: #6ae4b9;">size_t</span> <span style="color: #00d3d0;">fo</span>) : pair(p), count(c), insert_order(fo) {}
+&#160; &#160; PairCountOrder(::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">p</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">c</span>) : pair(p), count(c), insert_order(<span style="color: #00bcff;">std</span>::<span style="color: #00bcff;">numeric_limits</span>&lt;<span style="color: #6ae4b9;">size_t</span>&gt;::max()) {}
 };
 
 <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Comparison struct for sorting. Sorts by count (descending), then by insertion order (ascending).</span>
 <span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
 <span style="color: #b6a0ff;">struct</span> <span style="color: #6ae4b9;">CompareCountOrder</span> {
-    <span style="color: #6ae4b9;">bool</span> <span style="color: #b6a0ff;">operator</span><span style="color: #feacd0;">()</span>(<span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">a</span>, <span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">const</span> {
-        <span style="color: #b6a0ff;">if</span>(a.count == b.count) {
-            <span style="color: #b6a0ff;">return</span> a.insert_order &lt; b.insert_order;
-        } <span style="color: #b6a0ff;">else</span> {
-            <span style="color: #b6a0ff;">return</span> a.count &gt; b.count; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">higher count is greater</span>
-        }
-    }
+&#160; &#160; <span style="color: #6ae4b9;">bool</span> <span style="color: #b6a0ff;">operator</span>()(<span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">a</span>, <span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">const</span> {
+&#160; &#160; &#160; &#160; <span style="color: #b6a0ff;">if</span>(a.count == b.count) {
+&#160; &#160; &#160; &#160; &#160; &#160; <span style="color: #b6a0ff;">return</span> a.insert_order &lt; b.insert_order;
+&#160; &#160; &#160; &#160; } <span style="color: #b6a0ff;">else</span> {
+&#160; &#160; &#160; &#160; &#160; &#160; <span style="color: #b6a0ff;">return</span> a.count &gt; b.count; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">higher count is greater</span>
+&#160; &#160; &#160; &#160; }
+&#160; &#160; }
 };
 </pre>
 </div>
@@ -748,13 +809,13 @@ Next we define the container itself. We just specify the indexes required and Bo
 <div class="org-src-container">
 <pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
 <span style="color: #b6a0ff;">using</span> <span style="color: #6ae4b9;">PairCountStore</span> = <span style="color: #00bcff;">boost</span>::<span style="color: #6ae4b9;">multi_index_container</span>&lt;
-    <span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;,
-    <span style="color: #6ae4b9;">indexed_by</span>&lt;
-        <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 0: Hashed unique index on the 'pair' member for fast lookups.</span>
-        <span style="color: #6ae4b9;">hashed_unique</span>&lt;<span style="color: #6ae4b9;">member</span>&lt;<span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;, <span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt;, &amp;<span style="color: #00bcff;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;::pair&gt;&gt;,
-        <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 1: Ordered non-unique index for sorting by count and insertion order.</span>
-        <span style="color: #6ae4b9;">ordered_non_unique</span>&lt;<span style="color: #6ae4b9;">identity</span>&lt;<span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;, <span style="color: #6ae4b9;">CompareCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;
-    &gt;
+&#160; &#160; <span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;,
+&#160; &#160; <span style="color: #6ae4b9;">indexed_by</span>&lt;
+&#160; &#160; &#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 0: Hashed unique index on the 'pair' member for fast lookups.</span>
+&#160; &#160; &#160; &#160; <span style="color: #6ae4b9;">hashed_unique</span>&lt;<span style="color: #6ae4b9;">member</span>&lt;<span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;, <span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt;, &amp;<span style="color: #00bcff;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;::pair&gt;&gt;,
+&#160; &#160; &#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 1: Ordered non-unique index for sorting by count and insertion order.</span>
+&#160; &#160; &#160; &#160; <span style="color: #6ae4b9;">ordered_non_unique</span>&lt;<span style="color: #6ae4b9;">identity</span>&lt;<span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;, <span style="color: #6ae4b9;">CompareCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;
+&#160; &#160; &gt;
 &gt;;
 </pre>
 </div>
@@ -766,7 +827,7 @@ The rest of the declaration explains how to get the key for this index (use the 
 </p>
 
 <p>
-Index 1 explanation: 
+Index 1 explanation: 
 This needs to be an ordered collection so we can extract the highest
 frequency. It also needs to be non-unique (in its sort criteria),
 because we can have multiple elements with the same frequency.
@@ -783,11 +844,11 @@ indexes in the container.
 <pre class="src src-C++"><span style="color: #b6a0ff;">auto</span>&amp; <span style="color: #00d3d0;">index_by_key</span> = pcs.<span style="color: #b6a0ff;">template</span> get&lt;0&gt;();
 <span style="color: #b6a0ff;">auto</span> <span style="color: #00d3d0;">f</span> = index_by_key.find(mp);
 <span style="color: #b6a0ff;">if</span>(f != pcs.end()) {
-    index_by_key.modify(f, [<span style="color: #00bcff;">freq</span>](<span style="color: #6ae4b9;">PairCountOrder</span>&lt;T&gt;&amp; <span style="color: #00d3d0;">pc</span>) { pc.count += freq; });
-    <span style="color: #b6a0ff;">return</span> <span style="color: #00bcff;">false</span>;
+&#160; &#160; index_by_key.modify(f, [<span style="color: #00bcff;">freq</span>](<span style="color: #6ae4b9;">PairCountOrder</span>&lt;T&gt;&amp; <span style="color: #00d3d0;">pc</span>) { pc.count += freq; });
+&#160; &#160; <span style="color: #b6a0ff;">return</span> <span style="color: #00bcff;">false</span>;
 } <span style="color: #b6a0ff;">else</span> {
-    pcs.insert(PairCountOrder&lt;T&gt;(mp, freq, next_insert++));
-    <span style="color: #b6a0ff;">return</span> <span style="color: #00bcff;">true</span>;
+&#160; &#160; pcs.insert(PairCountOrder&lt;T&gt;(mp, freq, next_insert++));
+&#160; &#160; <span style="color: #b6a0ff;">return</span> <span style="color: #00bcff;">true</span>;
 }
 </pre>
 </div>
@@ -801,7 +862,7 @@ Referred to as lexical in my implementation to save typing, this method means we
 </p>
 
 <ol class="org-ol">
-<li>[1,2] =&gt; 20</li>
+<li>[1,2] =&gt; 20 </li>
 <li>[3,4] =&gt; 20</li>
 </ol>
 
@@ -819,26 +880,26 @@ Again a multi<sub>index</sub> container is needed here. Let's start with the dat
 <div class="org-src-container">
 <pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
 <span style="color: #b6a0ff;">struct</span> <span style="color: #6ae4b9;">PairCountLexical</span> {
-    ::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">pair</span>;
-    <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">count</span>;
+&#160; &#160; ::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; pair;
+&#160; &#160; <span style="color: #6ae4b9;">int</span> count;
 
-    <span style="color: #feacd0;">PairCountLexical</span>(::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">p</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">c</span>) : pair(p), count(c) {}
+&#160; &#160; PairCountLexical(::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">p</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">c</span>) : pair(p), count(c) {}
 };
 
 <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Comparison struct for sorting. Sorts by count (descending), then by pair (lexical ascending).</span>
 <span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
 <span style="color: #b6a0ff;">struct</span> <span style="color: #6ae4b9;">CompareLexicalOrder</span> {
-    <span style="color: #6ae4b9;">bool</span> <span style="color: #b6a0ff;">operator</span><span style="color: #feacd0;">()</span>(<span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">a</span>, <span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">const</span> {
-        <span style="color: #b6a0ff;">if</span>(a.count == b.count) {
-            <span style="color: #b6a0ff;">if</span> (a.pair.first == b.pair.first) {
-                <span style="color: #b6a0ff;">return</span> a.pair.second &lt; b.pair.second;
-            } <span style="color: #b6a0ff;">else</span> {
-                <span style="color: #b6a0ff;">return</span> a.pair.first &lt; b.pair.first;
-            }
-        } <span style="color: #b6a0ff;">else</span> {
-            <span style="color: #b6a0ff;">return</span> a.count &gt; b.count; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">higher count is greater</span>
-        }
-    }
+&#160; &#160; <span style="color: #6ae4b9;">bool</span> <span style="color: #b6a0ff;">operator</span>()(<span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">a</span>, <span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">const</span> {
+&#160; &#160; &#160; &#160; <span style="color: #b6a0ff;">if</span>(a.count == b.count) {
+&#160; &#160; &#160; &#160; &#160; &#160; <span style="color: #b6a0ff;">if</span> (a.pair.first == b.pair.first) {
+&#160; &#160; &#160; &#160; &#160; &#160; &#160; &#160; <span style="color: #b6a0ff;">return</span> a.pair.second &lt; b.pair.second;
+&#160; &#160; &#160; &#160; &#160; &#160; } <span style="color: #b6a0ff;">else</span> {
+&#160; &#160; &#160; &#160; &#160; &#160; &#160; &#160; <span style="color: #b6a0ff;">return</span> a.pair.first &lt; b.pair.first;
+&#160; &#160; &#160; &#160; &#160; &#160; }
+&#160; &#160; &#160; &#160; } <span style="color: #b6a0ff;">else</span> {
+&#160; &#160; &#160; &#160; &#160; &#160; <span style="color: #b6a0ff;">return</span> a.count &gt; b.count; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">higher count is greater</span>
+&#160; &#160; &#160; &#160; }
+&#160; &#160; }
 };
 </pre>
 </div>
@@ -850,13 +911,13 @@ And the container looks like this:
 <div class="org-src-container">
 <pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
 <span style="color: #b6a0ff;">using</span> <span style="color: #6ae4b9;">PairCountLexicalStore</span> = <span style="color: #00bcff;">boost</span>::<span style="color: #6ae4b9;">multi_index_container</span>&lt;
-    <span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;,
-    <span style="color: #6ae4b9;">indexed_by</span>&lt;
-        <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 0: Hashed unique index on the 'pair' member for fast lookups.</span>
-        <span style="color: #6ae4b9;">hashed_unique</span>&lt;<span style="color: #6ae4b9;">member</span>&lt;<span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;, <span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt;, &amp;<span style="color: #00bcff;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;::pair&gt;&gt;,
-        <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 1: Ordered non-unique index for sorting by count and lexical order.</span>
-        <span style="color: #6ae4b9;">ordered_non_unique</span>&lt;<span style="color: #6ae4b9;">identity</span>&lt;<span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;, <span style="color: #6ae4b9;">CompareLexicalOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;
-    &gt;
+&#160; &#160; <span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;,
+&#160; &#160; <span style="color: #6ae4b9;">indexed_by</span>&lt;
+&#160; &#160; &#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 0: Hashed unique index on the 'pair' member for fast lookups.</span>
+&#160; &#160; &#160; &#160; <span style="color: #6ae4b9;">hashed_unique</span>&lt;<span style="color: #6ae4b9;">member</span>&lt;<span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;, <span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt;, &amp;<span style="color: #00bcff;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;::pair&gt;&gt;,
+&#160; &#160; &#160; &#160; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 1: Ordered non-unique index for sorting by count and lexical order.</span>
+&#160; &#160; &#160; &#160; <span style="color: #6ae4b9;">ordered_non_unique</span>&lt;<span style="color: #6ae4b9;">identity</span>&lt;<span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;, <span style="color: #6ae4b9;">CompareLexicalOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;
+&#160; &#160; &gt;
 &gt;;
 </pre>
 </div>
@@ -897,8 +958,8 @@ Let's work through Brendan Gregg's impactful optimizations:
 </ol>
 
 <p>
-Don't do it is not an option, we need those updated counts each step. 
-Do it but not again is fruitful though. 
+Don't do it is not an option, we need those updated counts each step. 
+Do it but not again is fruitful though. 
 </p>
 
 <p>
@@ -909,7 +970,7 @@ adding a number of pairs on each replacement.
 </p>
 
 <p>
-I noticed that the authors of the paper mentioned this too: 
+I noticed that the authors of the paper mentioned this too: 
 </p>
 
 <p>
@@ -1015,7 +1076,7 @@ Thanks for reading!
 </p>
 
 <p>
-&copy;2025 Justin Heyes-Jones. All Rights Reserved
+&copy;2025 Justin Heyes-Jones. All Rights Reser
 </p>
 </div>
 </div>
