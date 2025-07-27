@@ -230,7 +230,15 @@ An important decision in tokenization is how to handle pairs with the same frequ
 </ul>
 
 <p>
-With any tokenization algorithm design we need to consider efficiency of implementation alongside methods that give the best results. Some of these concerns will be highlighted below.
+With any tokenization algorithm design we need to consider efficiency
+of implementation alongside methods that give the best results. Some
+of these concerns will be highlighted below.
+</p>
+
+<p>
+"With these algorithmic decisions in mind, I was ready to dive into
+the C++ implementation and see how they performed in practice. This
+led to my project, minbpe-cc."
 </p>
 </div>
 </div>
@@ -467,10 +475,25 @@ Note that class has a template parameter, as the Tokenizer can be recompiled wit
 <li><a id="org007443d"></a>Conflict resolution strategy: First seen in input<br />
 <div class="outline-text-7" id="text-org007443d">
 <p>
-For handling the case where the pair that comes first is the decider
-we must track the insertion order. Rather than let the user deal with
-that I built it into the PairCount class. As elements are added, new
-ones get the current count and the count is incremented.
+Imagine a sequence as follows:
+</p>
+
+<p>
+1,2,8,9,3,4&#x2026;
+</p>
+
+<p>
+After counting all the pairs we find that [1,2] and [3,4] have the same frequency.
+</p>
+
+<p>
+a) [1,2] =&gt; 20 
+b) [3,4] =&gt; 20
+</p>
+
+<p>
+In this case we pick the one add first, which means the one first seen
+in the input text.
 </p>
 
 <p>
@@ -483,13 +506,61 @@ as an implementation detail. This was later formalized as a language
 guarantee in Python 3.7 (released June 27, 2018), meaning dictionaries
 officially maintain the order of key-value pairs as they are inserted.
 </p>
+
+<p>
+In Karpathy's code you can see that he simply relies on this behaviour
+to get the consistent result based on above.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #a8a8a8;"># </span><span style="color: #a8a8a8;">count up the number of times every consecutive pair appears</span>
+<span style="color: #00d3d0;">stats</span> = get_stats(ids)
+<span style="color: #a8a8a8;"># </span><span style="color: #a8a8a8;">find the pair with the highest count</span>
+<span style="color: #00d3d0;">pair</span> = <span style="color: #f78fe7;">max</span>(stats, key=stats.get)
+</pre>
+</div>
+
+<p>
+And from the Python documentation: <a href="https://docs.python.org/3/library/functions.html#max">https://docs.python.org/3/library/functions.html#max</a>
+</p>
+
+<blockquote>
+<p>
+If multiple items are maximal, the function returns the first one
+encountered. This is consistent with other sort-stability preserving
+tools such as sorted(iterable, key=keyfunc, reverse=True)[0] and
+heapq.nlargest(1, iterable, key=keyfunc).
+</p>
+
+<p>
+In order to implement that we must track the insertion order. Rather
+than let the user deal with that I built it into the PairCount
+class. As elements are added, new ones get the current count and the
+count is incremented.
+</p>
+</blockquote>
 </div>
 </li>
+
+
+
 
 <li><a id="org68fb120"></a>Conflict resolution strategy: Lexicographical<br />
 <div class="outline-text-7" id="text-org68fb120">
 <p>
-Referred to as lexical in my code to save typing, this method means we pick from pairs 
+Referred to as lexical in my implementation to save typing, this method means we pick from pairs based on which comes first. For example given the following two pairs:
+</p>
+
+<p>
+a) [1,2] =&gt; 20 
+b) [3,4] =&gt; 20
+</p>
+
+<p>
+They have the same frequency so we pick a) as 1 &lt; 3. The second member
+of the pair is used as the tie-breaker, and of course if both members
+are the same then they would be combined to a single entry in the
+PairCount.
 </p>
 </div>
 </li>
@@ -498,6 +569,9 @@ Referred to as lexical in my code to save typing, this method means we pick from
 </ul>
 </div>
 </div>
+
+
+
 
 
 

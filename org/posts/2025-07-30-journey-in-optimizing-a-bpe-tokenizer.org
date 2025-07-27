@@ -272,7 +272,7 @@ Other valid options considered:
 
 ***** Pair frequencies
 
-Ultimately I needed multiple structures here as I wanted to support more than one conflict resolution strategy. So first I made a virtual class with the required interface for both:
+Ultimately I needed multiple structures here as I wanted to support more than one conflict resolution strategy and since these are picked by the user at runtime we need dynamic dispatch. So first I made a virtual class with the required interface for both:
 
 #+BEGIN_SRC c++
 template<typename T>
@@ -314,11 +314,7 @@ b) [3,4] => 20
 In this case we pick the one add first, which means the one first seen
 in the input text.
 
-In order to implement that we must track the insertion order. Rather
-than let the user deal with that I built it into the PairCount
-class. As elements are added, new ones get the current count and the
-count is incremented.
-
+#+begin_quote
 In Python this insertion order comes for free because of Raymond
 Hettinger's 2012 redesign of the Python dictionary. Implemented in
 Python 3.6 (released December 23, 2016), introduced compact
@@ -327,6 +323,10 @@ this redesign was that dictionaries began preserving insertion order
 as an implementation detail. This was later formalized as a language
 guarantee in Python 3.7 (released June 27, 2018), meaning dictionaries
 officially maintain the order of key-value pairs as they are inserted.
+#+end_quote
+
+In Karpathy's code you can see that he simply relies on this behaviour
+to get the consistent result based on above.
 
 #+BEGIN_SRC python
 # count up the number of times every consecutive pair appears
@@ -335,6 +335,101 @@ stats = get_stats(ids)
 pair = max(stats, key=stats.get)
 #+END_SRC
 
+And from the Python documentation: https://docs.python.org/3/library/functions.html#max
+
+#+begin_quote
+If multiple items are maximal, the function returns the first one
+encountered. This is consistent with other sort-stability preserving
+tools such as sorted(iterable, key=keyfunc, reverse=True)[0] and
+heapq.nlargest(1, iterable, key=keyfunc).
+
+In order to implement that we must track the insertion order. Rather
+than let the user deal with that I built it into the PairCount
+class. As elements are added, new ones get the current count and the
+count is incremented.
+#+end_quote
+
+Picking a data structure here is tricky because we want to be able to
+quickly store and modify pair frequencies (unordered_map), and a way
+to get the most frequent (priority_queue). Furthermore, we want to
+keep track of insertion order?
+
+Sometimes you need to use multiple data structures to support a use case with conflicting requirements. For this purpose I used the ~boost::multi_index~.
+
+https://www.boost.org/doc/libs/1_88_0/libs/multi_index/doc/index.html
+
+There's nothing to stop you from using a set and a priority queue and
+tracking them yourself, but multi_index handles that for you based on
+the declaration of which indexes and access patterns you need.
+
+Let's take a look at the implementation of ~PairCountInsertOrder~:
+
+First the data; we need to store pair, the count and the insert order.
+
+#+BEGIN_SRC c++
+template<typename T>
+struct PairCountOrder {
+    ::pair<T,T> pair;
+    int count;
+    size_t insert_order;
+
+    PairCountOrder(::pair<T,T> p, int c, size_t fo) : pair(p), count(c), insert_order(fo) {}
+    PairCountOrder(::pair<T,T> p, int c) : pair(p), count(c), insert_order(std::numeric_limits<size_t>::max()) {}
+};
+
+// Comparison struct for sorting. Sorts by count (descending), then by insertion order (ascending).
+template<typename T>
+struct CompareCountOrder {
+    bool operator()(const PairCountOrder<T>& a, const PairCountOrder<T>& b) const {
+        if(a.count == b.count) {
+            return a.insert_order < b.insert_order;
+        } else {
+            return a.count > b.count; // higher count is greater
+        }
+    }
+};
+#+END_SRC
+
+Next we define the container itself. We just specify the indexes required and Boost takes care of picking the underlying data structures.
+
+#+BEGIN_SRC c++
+template<typename T>
+using PairCountStore = boost::multi_index_container<
+    PairCountOrder<T>,
+    indexed_by<
+        // Index 0: Hashed unique index on the 'pair' member for fast lookups.
+        hashed_unique<member<PairCountOrder<T>, pair<T,T>, &PairCountOrder<T>::pair>>,
+        // Index 1: Ordered non-unique index for sorting by count and insertion order.
+        ordered_non_unique<identity<PairCountOrder<T>>, CompareCountOrder<T>>
+    >
+>;
+#+END_SRC
+
+Index 0 explanation:
+It is hashed so we should get an O(1) lookup type, and unique meaning keys are unique, each pair can occur once only.
+The rest of the declaration explains how to get the key for this index (use the pair member).
+
+Index 1 explanation: 
+This needs to be an ordered collection so we can extract the highest
+frequency. It also needs to be non-unique (in its sort criteria),
+because we can have multiple elements with the same frequency.
+
+Now in our code we can grab the appropriate index depending on the
+current purpose and when we make modifications to the data the boost
+library will ensure the changes are synchronized across all the
+indexes in the container.
+
+#+BEGIN_SRC C++
+auto& index_by_key = pcs.template get<0>();
+auto f = index_by_key.find(mp);
+if(f != pcs.end()) {
+    index_by_key.modify(f, [freq](PairCountOrder<T>& pc) { pc.count += freq; });
+    return false;
+} else {
+    pcs.insert(PairCountOrder<T>(mp, freq, next_insert++));
+    return true;
+}
+#+END_SRC
 
 ****** Conflict resolution strategy: Lexicographical
 
@@ -348,8 +443,54 @@ of the pair is used as the tie-breaker, and of course if both members
 are the same then they would be combined to a single entry in the
 PairCount.
 
+Again a multi_index container is needed here. Let's start with the data:
 
+#+BEGIN_SRC c++
+template<typename T>
+struct PairCountLexical {
+    ::pair<T,T> pair;
+    int count;
 
+    PairCountLexical(::pair<T,T> p, int c) : pair(p), count(c) {}
+};
+
+// Comparison struct for sorting. Sorts by count (descending), then by pair (lexical ascending).
+template<typename T>
+struct CompareLexicalOrder {
+    bool operator()(const PairCountLexical<T>& a, const PairCountLexical<T>& b) const {
+        if(a.count == b.count) {
+            if (a.pair.first == b.pair.first) {
+                return a.pair.second < b.pair.second;
+            } else {
+                return a.pair.first < b.pair.first;
+            }
+        } else {
+            return a.count > b.count; // higher count is greater
+        }
+    }
+};
+#+END_SRC
+
+And the container looks like this:
+
+#+BEGIN_SRC c++
+template<typename T>
+using PairCountLexicalStore = boost::multi_index_container<
+    PairCountLexical<T>,
+    indexed_by<
+        // Index 0: Hashed unique index on the 'pair' member for fast lookups.
+        hashed_unique<member<PairCountLexical<T>, pair<T,T>, &PairCountLexical<T>::pair>>,
+        // Index 1: Ordered non-unique index for sorting by count and lexical order.
+        ordered_non_unique<identity<PairCountLexical<T>>, CompareLexicalOrder<T>>
+    >
+>;
+#+END_SRC
+
+Index 0 explanation:
+Same as above this gives us fast insert, modify and lookup for the pair frequencies.
+
+Index 1 explanation:
+Same as above except the outcome is different because of the implementation of ~CompareLexicalOrder~.
 
 
 
