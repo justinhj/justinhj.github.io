@@ -15,7 +15,7 @@ tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 
 ** Introduction
 
-In February 2024, reknowned AI researcher Andrej Karpathy published the following video. 
+In February 2024, renowned AI researcher and educator Andrej Karpathy, published the following video. 
 
 https://www.youtube.com/watch?v=zduSFxRajkE
 
@@ -28,7 +28,7 @@ models.
 As software engineers in 2025 the advent of large language models, and
 generative AI in general, bring about a profound shift in how we
 design, develop and implement software systems. As such I have been
-delving into the details of how they they work with Tokenization being
+delving into the details of how they they work, with Tokenization being
 a significant side quest.
 
 In this blog, related video and accompanying C++ project, I will walk
@@ -48,7 +48,7 @@ paper below:
 
 - Large language models deal with numbers not words or characters, so we must map input text to numbers.
 - The model requires a fixed size vocabulary.
-- Unforunately that vocabulary would have to be enormous to fit all words from all languages.
+- Unfortunately, that vocabulary would have to be enormous to fit all words from all languages.
 
 *** Sub word unit tokenization
 
@@ -124,7 +124,7 @@ Instead we want something that splits things into meaningful chunks, morphemes, 
 
 https://en.wikipedia.org/wiki/Huffman_coding
 
-It represents more frequently occuring substrings with less bits, giving us a more efficicent data size.
+It represents more frequently occurring substrings with less bits, giving us a more efficient data size.
 
 Similarly, BPE, is data-driven algorithm that creates a vocabulary of meaningful and frequently occurring subword units.
 
@@ -141,13 +141,13 @@ Start with 256 tokens (0 to 255), our basic character set.
 1. First turn the text into its underlying numeric representation (typically just the bytes of a UTF-8 input).
 2. Count all the pairs of bytes. 
 3. Pick the most frequently occuring pair and generate the next new token (257, 258...).
-4. Replace that pair whereever it occurs with the new token.
+4. Replace that pair wherever it occurs with the new token.
 
 Repeat until you have your full vocabulary. You can then save the
 merge pairs and these are then used by end users to encode their text
 before sending to the model.
 
-They can also be used to reconstuct the original text in the decoding
+They can also be used to reconstruct the original text in the decoding
 process when the response comes from the model.
 
 **** Conflict Resolution
@@ -161,17 +161,16 @@ With any tokenization algorithm design we need to consider efficiency
 of implementation alongside methods that give the best results. Some
 of these concerns will be highlighted below.
 
-"With these algorithmic decisions in mind, I was ready to dive into
-the C++ implementation and see how they performed in practice. This
-led to my project, minbpe-cc."
-
 ** minbpe-cc an exercise in optimization
 
-For me I find the best way to learn a topic is to get my hands dirty,
-and as such I decided to reimplement Karpathy's Python code in C++.
+With these algorithmic decisions in mind, I was ready to dive into the
+C++ implementation and see how they performed in practice. This led to
+my project, minbpe-cc. I find the best way to learn a topic is to get
+my hands dirty, and as such I decided to reimplement Karpathy's Python
+code in C++.
 
 I also wanted to focus on optimization of the training stage, for no
-other reason that curiousity.
+other reason that curiosity.
 
 Why C++?
 
@@ -188,10 +187,10 @@ Converting from Python to C++ is fairly straightforward although I hit some spee
 
 1. Python dictionary behaviour. The Python dictionary is designed to be flexible for multiple purposes rather than optimized, so getting the same behaviour from C++ containers required some additional thought.
 2. Polymorphism. I didn't really like Karpathy's polymorphic version and instead decided to use a single class design with flags and other parameters to handle whether special tokens are used, what the conflict strategy was, and whether to use a regex or not. It was quite easy to make this work with some tweaks to the original code. Ironically I did use polymorphism on the PairCount class so I can use different implementations at runtime depending on the users preferences.
-3. CMake. CMake is not casual tool. I found I could just about get my project to build and run using it, but after switching to Zig build instead I found it much easier to manage.
+3. CMake. CMake is not a casual tool. I found I could just about get my project to build and run using it, but after switching to Zig build instead I found it much easier to manage. In other words to effectively use CMake would require me to read the manual in a lot more detail.
 *** Regex compatibility
 
-Firstly, what are regex's needed for? 
+Firstly, what are regexes needed for? 
 
 In the GPT series of tokenizers, OpenAI realized that is beneficial to
 try and keep parts of text together, as such rather than run BPE on
@@ -297,7 +296,7 @@ public:
 };
 #+END_SRC
 
-Note that class has a template parameter, as the Tokenizer can be recompiled with different underlying numeric types for the tokens.
+Note that the class has a template parameter, as the Tokenizer can be recompiled with different underlying numeric types for the tokens.
 
 ****** Conflict resolution strategy: First seen in input
 
@@ -310,7 +309,7 @@ After counting all the pairs we find that [1,2] and [3,4] have the same frequenc
 1. [1,2] => 20 
 2. [3,4] => 20
 
-In this case we pick the one add first, which means the one first seen
+In this case we pick the one added first, which means the one first seen
 in the input text.
 
 #+begin_quote
@@ -534,7 +533,7 @@ In any case, for my lexicographical conflict strategy I do implement
 this optimization and it is a huge win on performance as shown in the
 charts.
 
-Crucially, it is not implemented for the first occuring strategy,
+Crucially, it is not implemented for the first occurring strategy,
 because the current implementation gives now way to easily keep track
 of the first occurence of a pair in the input corpus.
 
@@ -543,10 +542,14 @@ For me the project is at a good point to move on to other things but there are s
 1. Port to Zig. Currently I'm using Zig for some other projects and would be interested in the porting experience and how the performance compares.
 2. Work on different data structures for the input text to support incremental frequency counting for the first strategy.
 3. Optimization of the encode and decode steps.
-4. Implement download and conversion of GTP merges like Karpathy does.
+4. Implement download and conversion of GPT merges like Karpathy does in his gpt4 code.
 5. Look at implementations of other Tokenization algorithms.
 ** Conclusion
 I had a lot of pain and a lot of fun working on the code. I highly recommend this kind of process to fully understand the nuances and implementation details required for AI engineering.
+
+As a refresher on modern C++ this was a great project. (I recommend (Tour of C++)[https://www.amazon.ca/Tour-C-2nd-Bjarne-Stroustrup/dp/0134997832] and https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines.
+
+Apart from the complexity of CMake I found that using C++ today is a pleasant and safe experience as long as you carefully tread the recommended path.
 ** References
 
 If you want to dive into the code or run the benchmarks yourself, you can find the full project on GitHub.

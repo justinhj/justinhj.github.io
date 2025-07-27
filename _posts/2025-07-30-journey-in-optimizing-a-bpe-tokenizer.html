@@ -9,7 +9,7 @@ tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 <h2 id="org2e0801c">Introduction</h2>
 <div class="outline-text-2" id="text-org2e0801c">
 <p>
-In February 2024, reknowned AI researcher Andrej Karpathy published the following video. 
+In February 2024, renowned AI researcher and educator Andrej Karpathy, published the following video. 
 </p>
 
 <p>
@@ -28,7 +28,7 @@ models.
 As software engineers in 2025 the advent of large language models, and
 generative AI in general, bring about a profound shift in how we
 design, develop and implement software systems. As such I have been
-delving into the details of how they they work with Tokenization being
+delving into the details of how they they work, with Tokenization being
 a significant side quest.
 </p>
 
@@ -61,7 +61,7 @@ paper below:
 <ul class="org-ul">
 <li>Large language models deal with numbers not words or characters, so we must map input text to numbers.</li>
 <li>The model requires a fixed size vocabulary.</li>
-<li>Unforunately that vocabulary would have to be enormous to fit all words from all languages.</li>
+<li>Unfortunately, that vocabulary would have to be enormous to fit all words from all languages.</li>
 </ul>
 </div>
 </div>
@@ -171,7 +171,7 @@ Instead we want something that splits things into meaningful chunks, morphemes, 
 </p>
 
 <p>
-It represents more frequently occuring substrings with less bits, giving us a more efficicent data size.
+It represents more frequently occurring substrings with less bits, giving us a more efficient data size.
 </p>
 
 <p>
@@ -201,7 +201,7 @@ Start with 256 tokens (0 to 255), our basic character set.
 <li>First turn the text into its underlying numeric representation (typically just the bytes of a UTF-8 input).</li>
 <li>Count all the pairs of bytes.</li>
 <li>Pick the most frequently occuring pair and generate the next new token (257, 258&#x2026;).</li>
-<li>Replace that pair whereever it occurs with the new token.</li>
+<li>Replace that pair wherever it occurs with the new token.</li>
 </ol>
 
 <p>
@@ -211,7 +211,7 @@ before sending to the model.
 </p>
 
 <p>
-They can also be used to reconstuct the original text in the decoding
+They can also be used to reconstruct the original text in the decoding
 process when the response comes from the model.
 </p>
 </div>
@@ -234,12 +234,6 @@ With any tokenization algorithm design we need to consider efficiency
 of implementation alongside methods that give the best results. Some
 of these concerns will be highlighted below.
 </p>
-
-<p>
-"With these algorithmic decisions in mind, I was ready to dive into
-the C++ implementation and see how they performed in practice. This
-led to my project, minbpe-cc."
-</p>
 </div>
 </div>
 </div>
@@ -249,13 +243,16 @@ led to my project, minbpe-cc."
 <h2 id="org12ceb67">minbpe-cc an exercise in optimization</h2>
 <div class="outline-text-2" id="text-org12ceb67">
 <p>
-For me I find the best way to learn a topic is to get my hands dirty,
-and as such I decided to reimplement Karpathy's Python code in C++.
+With these algorithmic decisions in mind, I was ready to dive into the
+C++ implementation and see how they performed in practice. This led to
+my project, minbpe-cc. I find the best way to learn a topic is to get
+my hands dirty, and as such I decided to reimplement Karpathy's Python
+code in C++.
 </p>
 
 <p>
 I also wanted to focus on optimization of the training stage, for no
-other reason that curiousity.
+other reason that curiosity.
 </p>
 
 <p>
@@ -291,7 +288,7 @@ Converting from Python to C++ is fairly straightforward although I hit some spee
 <ol class="org-ol">
 <li>Python dictionary behaviour. The Python dictionary is designed to be flexible for multiple purposes rather than optimized, so getting the same behaviour from C++ containers required some additional thought.</li>
 <li>Polymorphism. I didn't really like Karpathy's polymorphic version and instead decided to use a single class design with flags and other parameters to handle whether special tokens are used, what the conflict strategy was, and whether to use a regex or not. It was quite easy to make this work with some tweaks to the original code. Ironically I did use polymorphism on the PairCount class so I can use different implementations at runtime depending on the users preferences.</li>
-<li>CMake. CMake is not casual tool. I found I could just about get my project to build and run using it, but after switching to Zig build instead I found it much easier to manage.</li>
+<li>CMake. CMake is not a casual tool. I found I could just about get my project to build and run using it, but after switching to Zig build instead I found it much easier to manage. In other words to effectively use CMake would require me to read the manual in a lot more detail.</li>
 </ol>
 </div>
 </div>
@@ -299,7 +296,7 @@ Converting from Python to C++ is fairly straightforward although I hit some spee
 <h3 id="orgfb58706">Regex compatibility</h3>
 <div class="outline-text-3" id="text-orgfb58706">
 <p>
-Firstly, what are regex's needed for? 
+Firstly, what are regexes needed for? 
 </p>
 
 <p>
@@ -469,7 +466,7 @@ Ultimately I needed multiple structures here as I wanted to support more than on
 </div>
 
 <p>
-Note that class has a template parameter, as the Tokenizer can be recompiled with different underlying numeric types for the tokens.
+Note that the class has a template parameter, as the Tokenizer can be recompiled with different underlying numeric types for the tokens.
 </p>
 </div>
 
@@ -494,7 +491,7 @@ After counting all the pairs we find that [1,2] and [3,4] have the same frequenc
 </ol>
 
 <p>
-In this case we pick the one add first, which means the one first seen
+In this case we pick the one added first, which means the one first seen
 in the input text.
 </p>
 
@@ -796,7 +793,7 @@ charts.
 </p>
 
 <p>
-Crucially, it is not implemented for the first occuring strategy,
+Crucially, it is not implemented for the first occurring strategy,
 because the current implementation gives now way to easily keep track
 of the first occurence of a pair in the input corpus.
 </p>
@@ -818,7 +815,7 @@ For me the project is at a good point to move on to other things but there are s
 <li>Port to Zig. Currently I'm using Zig for some other projects and would be interested in the porting experience and how the performance compares.</li>
 <li>Work on different data structures for the input text to support incremental frequency counting for the first strategy.</li>
 <li>Optimization of the encode and decode steps.</li>
-<li>Implement download and conversion of GTP merges like Karpathy does.</li>
+<li>Implement download and conversion of GPT merges like Karpathy does in his gpt4 code.</li>
 <li>Look at implementations of other Tokenization algorithms.</li>
 </ol>
 </div>
@@ -828,6 +825,14 @@ For me the project is at a good point to move on to other things but there are s
 <div class="outline-text-2" id="text-orge16fdc5">
 <p>
 I had a lot of pain and a lot of fun working on the code. I highly recommend this kind of process to fully understand the nuances and implementation details required for AI engineering.
+</p>
+
+<p>
+As a refresher on modern C++ this was a great project. (I recommend (Tour of C++)[<a href="https://www.amazon.ca/Tour-C-2nd-Bjarne-Stroustrup/dp/0134997832">https://www.amazon.ca/Tour-C-2nd-Bjarne-Stroustrup/dp/0134997832</a>] and <a href="https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines">https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines</a>.
+</p>
+
+<p>
+Apart from the complexity of CMake I found that using C++ today is a pleasant and safe experience as long as you carefully tread the recommended path.
 </p>
 </div>
 </div>
