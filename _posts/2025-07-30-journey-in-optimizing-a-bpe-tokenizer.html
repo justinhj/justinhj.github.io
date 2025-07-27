@@ -1,13 +1,13 @@
 ---
 layout: post
-title: Let's build the GPT Tokenizer in C++
+title: Optimizing GPT style tokenizer training with C++
 tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 
-<div id="outline-container-org2e0801c" class="outline-3">
-<h3 id="org2e0801c">Introduction</h3>
-<div class="outline-text-3" id="text-org2e0801c">
+<div id="outline-container-org2e0801c" class="outline-2">
+<h2 id="org2e0801c">Introduction</h2>
+<div class="outline-text-2" id="text-org2e0801c">
 <p>
 In February 2024, reknowned AI researcher Andrej Karpathy published the following video. 
 </p>
@@ -40,9 +40,9 @@ at their performance characteristics and optimization opportunities.
 </div>
 </div>
 
-<div id="outline-container-org5a48473" class="outline-3">
-<h3 id="org5a48473">Briefly, Tokenization and BPE</h3>
-<div class="outline-text-3" id="text-org5a48473">
+<div id="outline-container-org5a48473" class="outline-2">
+<h2 id="org5a48473">Briefly, Tokenization and BPE</h2>
+<div class="outline-text-2" id="text-org5a48473">
 <p>
 I don't want to even try and do a better job of explaining the need
 for tokenization and the BPE algorithm than Karpathy, so I instead
@@ -55,9 +55,9 @@ paper below:
 </p>
 </div>
 
-<div id="outline-container-org457d3c1" class="outline-4">
-<h4 id="org457d3c1">The need for tokenization</h4>
-<div class="outline-text-4" id="text-org457d3c1">
+<div id="outline-container-org457d3c1" class="outline-3">
+<h3 id="org457d3c1">The need for tokenization</h3>
+<div class="outline-text-3" id="text-org457d3c1">
 <ul class="org-ul">
 <li>Large language models deal with numbers not words or characters, so we must map input text to numbers.</li>
 <li>The model requires a fixed size vocabulary.</li>
@@ -66,9 +66,9 @@ paper below:
 </div>
 </div>
 
-<div id="outline-container-org61241d9" class="outline-4">
-<h4 id="org61241d9">Sub word unit tokenization</h4>
-<div class="outline-text-4" id="text-org61241d9">
+<div id="outline-container-org61241d9" class="outline-3">
+<h3 id="org61241d9">Sub word unit tokenization</h3>
+<div class="outline-text-3" id="text-org61241d9">
 <p>
 The solution to these issues is sub-word tokenization; splitting words
 up into numbers representing components of words. Once you have that
@@ -90,7 +90,7 @@ You can explore this tokenization here:
 <a href="https://platform.openai.com/tokenizer">https://platform.openai.com/tokenizer</a>
 </p>
 
-<p style="text-xl">
+<p class="text-4xl flex">
   <span style="background-color: #d1c4e9;">My </span>
   <span style="background-color: #c8e6c9;">cat</span>
   <span style="background-color: #f0f4c3;">, </span>
@@ -127,13 +127,13 @@ with overall model quality.
 </div>
 </div>
 
-<div id="outline-container-org5b03015" class="outline-4">
-<h4 id="org5b03015">Byte Pair Encoding - BPE</h4>
-<div class="outline-text-4" id="text-org5b03015">
+<div id="outline-container-org5b03015" class="outline-3">
+<h3 id="org5b03015">Byte Pair Encoding - BPE</h3>
+<div class="outline-text-3" id="text-org5b03015">
 </div>
-<div id="outline-container-org6a0c0da" class="outline-5">
-<h5 id="org6a0c0da">Why BPE?</h5>
-<div class="outline-text-5" id="text-org6a0c0da">
+<div id="outline-container-org6a0c0da" class="outline-4">
+<h4 id="org6a0c0da">Why BPE?</h4>
+<div class="outline-text-4" id="text-org6a0c0da">
 <p>
 From above we understand that we should split words into sub-word
 components to handle the vast space of human vocabulary in the finite
@@ -180,9 +180,9 @@ Similarly, BPE, is data-driven algorithm that creates a vocabulary of meaningful
 </div>
 </div>
 
-<div id="outline-container-orgcab669d" class="outline-5">
-<h5 id="orgcab669d">BPE algorithm</h5>
-<div class="outline-text-5" id="text-orgcab669d">
+<div id="outline-container-orgcab669d" class="outline-4">
+<h4 id="orgcab669d">BPE algorithm</h4>
+<div class="outline-text-4" id="text-orgcab669d">
 <p>
 First you need to train across a large corpus of realistic text. For
 state of the art (SOTA) LLMs this is likely in the trillions of
@@ -217,9 +217,9 @@ process when the response comes from the model.
 </div>
 </div>
 
-<div id="outline-container-org60512a5" class="outline-5">
-<h5 id="org60512a5">Conflict Resolution</h5>
-<div class="outline-text-5" id="text-org60512a5">
+<div id="outline-container-org60512a5" class="outline-4">
+<h4 id="org60512a5">Conflict Resolution</h4>
+<div class="outline-text-4" id="text-org60512a5">
 <p>
 An important decision in tokenization is how to handle pairs with the same frequency. In this post I'll consider two methods:
 </p>
@@ -245,9 +245,9 @@ led to my project, minbpe-cc."
 </div>
 </div>
 
-<div id="outline-container-org12ceb67" class="outline-3">
-<h3 id="org12ceb67">minbpe-cc an exercise in optimization</h3>
-<div class="outline-text-3" id="text-org12ceb67">
+<div id="outline-container-org12ceb67" class="outline-2">
+<h2 id="org12ceb67">minbpe-cc an exercise in optimization</h2>
+<div class="outline-text-2" id="text-org12ceb67">
 <p>
 For me I find the best way to learn a topic is to get my hands dirty,
 and as such I decided to reimplement Karpathy's Python code in C++.
@@ -277,23 +277,27 @@ The final code here fully implements all the facets of Karpathy's minbpe includi
 </div>
 </div>
 
-<div id="outline-container-org75441f7" class="outline-3">
-<h3 id="org75441f7">Implementation tales</h3>
-<div class="outline-text-3" id="text-org75441f7">
+<div id="outline-container-org75441f7" class="outline-2">
+<h2 id="org75441f7">Implementation tales</h2>
+<div class="outline-text-2" id="text-org75441f7">
+</div>
+<div id="outline-container-orgd71570e" class="outline-3">
+<h3 id="orgd71570e">Speed bumps</h3>
+<div class="outline-text-3" id="text-orgd71570e">
 <p>
 Converting from Python to C++ is fairly straightforward although I hit some speed bumps on the way:
 </p>
 
 <ol class="org-ol">
-<li>Regex compatibility.</li>
-<li>Python dictionary behaviour.</li>
-<li>CMake.</li>
+<li>Python dictionary behaviour. The Python dictionary is designed to be flexible for multiple purposes rather than optimized, so getting the same behaviour from C++ containers required some additional thought.</li>
+<li>Polymorphism. I didn't really like Karpathy's polymorphic version and instead decided to use a single class design with flags and other parameters to handle whether special tokens are used, what the conflict strategy was, and whether to use a regex or not. It was quite easy to make this work with some tweaks to the original code. Ironically I did use polymorphism on the PairCount class so I can use different implementations at runtime depending on the users preferences.</li>
+<li>CMake. CMake is not casual tool. I found I could just about get my project to build and run using it, but after switching to Zig build instead I found it much easier to manage.</li>
 </ol>
 </div>
-
-<div id="outline-container-orgfb58706" class="outline-4">
-<h4 id="orgfb58706">Regex compatibility</h4>
-<div class="outline-text-4" id="text-orgfb58706">
+</div>
+<div id="outline-container-orgfb58706" class="outline-3">
+<h3 id="orgfb58706">Regex compatibility</h3>
+<div class="outline-text-3" id="text-orgfb58706">
 <p>
 Firstly, what are regex's needed for? 
 </p>
@@ -304,16 +308,12 @@ try and keep parts of text together, as such rather than run BPE on
 the whole input text, they first divide it up into sections by the
 following regular expressions:
 </p>
-</div>
-</div>
-</div>
 
-<div id="outline-container-org0abce84" class="outline-2">
-<h2 id="org0abce84">GPT2 <code>"'(?:[sdmt]|ll|ve|re)| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+"</code></h2>
-</div>
-<div id="outline-container-org4ecfa1a" class="outline-2">
-<h2 id="org4ecfa1a">GPT4 <code>"'(?i:[sdmt]|ll|ve|re)|[^\\r\\n\\p{L}\\p{N}]?+\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]++[\\r\\n]*|\\s*[\\r\\n]|\\s+(?!\\S)|\\s+"</code></h2>
-<div class="outline-text-2" id="text-org4ecfa1a">
+<ul class="org-ul">
+<li>GPT2 <code>"'(?:[sdmt]|ll|ve|re)| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+"</code></li>
+<li>GPT4 <code>"'(?i:[sdmt]|ll|ve|re)|[^\\r\\n\\p{L}\\p{N}]?+\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]++[\\r\\n]*|\\s*[\\r\\n]|\\s+(?!\\S)|\\s+"</code></li>
+</ul>
+
 <p>
 These expressions are designed to preserve various aspects of English text rather than allow them to be split up during the merge process.
 </p>
@@ -352,10 +352,11 @@ because Boost was not linking properly with the ICU
 but I gave up.
 </p>
 </div>
+</div>
 
-<div id="outline-container-org268ef34" class="outline-4">
-<h4 id="org268ef34">Optimization mantras</h4>
-<div class="outline-text-4" id="text-org268ef34">
+<div id="outline-container-org268ef34" class="outline-3">
+<h3 id="org268ef34">Optimization mantras</h3>
+<div class="outline-text-3" id="text-org268ef34">
 <p>
 In System's Performance, Enterprise and the Cloud by Brendan Gregg (2021) the following mantras for performance are listed, ordered from most to least effective. I find these useful when considering optimization.
 </p>
@@ -376,17 +377,17 @@ We can refer to these during the post.
 </div>
 </div>
 
-<div id="outline-container-orgdf21769" class="outline-4">
-<h4 id="orgdf21769">Data structures</h4>
-<div class="outline-text-4" id="text-orgdf21769">
+<div id="outline-container-orgdf21769" class="outline-3">
+<h3 id="orgdf21769">Data structures</h3>
+<div class="outline-text-3" id="text-orgdf21769">
 <p>
 The first step to port the Python code and make it more efficient is to think about the data involved and how that data needs to accessed. 
 </p>
 </div>
 
-<div id="outline-container-orge5842ea" class="outline-5">
-<h5 id="orge5842ea">Data</h5>
-<div class="outline-text-5" id="text-orge5842ea">
+<div id="outline-container-orge5842ea" class="outline-4">
+<h4 id="orge5842ea">Data</h4>
+<div class="outline-text-4" id="text-orge5842ea">
 <ul class="org-ul">
 <li>Body text. We will store this as a vector (array) of numbers representing the input text for training.</li>
 <li>Pair frequencies. We need to keep track of all the pairs in the body text and their frequencies.</li>
@@ -394,9 +395,9 @@ The first step to port the Python code and make it more efficient is to think ab
 </div>
 </div>
 
-<div id="outline-container-orgee29ac0" class="outline-5">
-<h5 id="orgee29ac0">Access patterns</h5>
-<div class="outline-text-5" id="text-orgee29ac0">
+<div id="outline-container-orgee29ac0" class="outline-4">
+<h4 id="orgee29ac0">Access patterns</h4>
+<div class="outline-text-4" id="text-orgee29ac0">
 <ul class="org-ul">
 <li>Body text. We need sequential access to scan for pairs. The we need to be able to delete elements as part of the merge process.</li>
 <li>Pair frequencies. We need to be able to store the pairs and their frequencies and efficiently update them as we scan the body text. In addition we need fast access to the next most frequent pair.</li>
@@ -404,13 +405,13 @@ The first step to port the Python code and make it more efficient is to think ab
 </div>
 </div>
 
-<div id="outline-container-orgcfe6a9b" class="outline-5">
-<h5 id="orgcfe6a9b">Implementation</h5>
-<div class="outline-text-5" id="text-orgcfe6a9b">
+<div id="outline-container-orgcfe6a9b" class="outline-4">
+<h4 id="orgcfe6a9b">Implementation</h4>
+<div class="outline-text-4" id="text-orgcfe6a9b">
 </div>
-<ul class="org-ul">
-<li><a id="org6edd3b9"></a>Body text<br />
-<div class="outline-text-6" id="text-org6edd3b9">
+<div id="outline-container-org6edd3b9" class="outline-5">
+<h5 id="org6edd3b9">Body text</h5>
+<div class="outline-text-5" id="text-org6edd3b9">
 <p>
 Because the body text required sequential access and the ability to quickly remove elements I used a singly linked list, or <code>forward_list</code>. This has the desirable properties of sequential access and O(1) deletions.
 </p>
@@ -433,12 +434,13 @@ tricky implementation but perfectly feasible.</li>
 bandwidth and cpu for the copying but it is simple.</li>
 </ol>
 </div>
-</li>
+</div>
 
-<li><a id="org7c71903"></a>Pair frequencies<br />
-<div class="outline-text-6" id="text-org7c71903">
+<div id="outline-container-org7c71903" class="outline-5">
+<h5 id="org7c71903">Pair frequencies</h5>
+<div class="outline-text-5" id="text-org7c71903">
 <p>
-Ultimately I needed multiple structures here as I wanted to support more than one conflict resolution strategy. So first I made a virtual class with the required interface for both:
+Ultimately I needed multiple structures here as I wanted to support more than one conflict resolution strategy and since these are picked by the user at runtime we need dynamic dispatch. So first I made a virtual class with the required interface for both:
 </p>
 
 <div class="org-src-container">
@@ -473,7 +475,7 @@ Note that class has a template parameter, as the Tokenizer can be recompiled wit
 
 <ul class="org-ul">
 <li><a id="org007443d"></a>Conflict resolution strategy: First seen in input<br />
-<div class="outline-text-7" id="text-org007443d">
+<div class="outline-text-6" id="text-org007443d">
 <p>
 Imagine a sequence as follows:
 </p>
@@ -486,16 +488,17 @@ Imagine a sequence as follows:
 After counting all the pairs we find that [1,2] and [3,4] have the same frequency.
 </p>
 
-<p>
-a) [1,2] =&gt; 20 
-b) [3,4] =&gt; 20
-</p>
+<ol class="org-ol">
+<li>[1,2] =&gt; 20</li>
+<li>[3,4] =&gt; 20</li>
+</ol>
 
 <p>
 In this case we pick the one add first, which means the one first seen
 in the input text.
 </p>
 
+<blockquote>
 <p>
 In Python this insertion order comes for free because of Raymond
 Hettinger's 2012 redesign of the Python dictionary. Implemented in
@@ -506,6 +509,7 @@ as an implementation detail. This was later formalized as a language
 guarantee in Python 3.7 (released June 27, 2018), meaning dictionaries
 officially maintain the order of key-value pairs as they are inserted.
 </p>
+</blockquote>
 
 <p>
 In Karpathy's code you can see that he simply relies on this behaviour
@@ -539,49 +543,297 @@ class. As elements are added, new ones get the current count and the
 count is incremented.
 </p>
 </blockquote>
+
+<p>
+Picking a data structure here is tricky because we want to be able to
+quickly store and modify pair frequencies (unordered<sub>map</sub>), and a way
+to get the most frequent (priority<sub>queue</sub>). Furthermore, we want to
+keep track of insertion order?
+</p>
+
+<p>
+Sometimes you need to use multiple data structures to support a use case with conflicting requirements. For this purpose I used the <code>boost::multi_index</code>.
+</p>
+
+<p>
+<a href="https://www.boost.org/doc/libs/1_88_0/libs/multi_index/doc/index.html">https://www.boost.org/doc/libs/1_88_0/libs/multi_index/doc/index.html</a>
+</p>
+
+<p>
+There's nothing to stop you from using a set and a priority queue and
+tracking them yourself, but multi<sub>index</sub> handles that for you based on
+the declaration of which indexes and access patterns you need.
+</p>
+
+<p>
+Let's take a look at the implementation of <code>PairCountInsertOrder</code>:
+</p>
+
+<p>
+First the data; we need to store pair, the count and the insert order.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
+<span style="color: #b6a0ff;">struct</span> <span style="color: #6ae4b9;">PairCountOrder</span> {
+    ::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">pair</span>;
+    <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">count</span>;
+    <span style="color: #6ae4b9;">size_t</span> <span style="color: #00d3d0;">insert_order</span>;
+
+    <span style="color: #feacd0;">PairCountOrder</span>(::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">p</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">c</span>, <span style="color: #6ae4b9;">size_t</span> <span style="color: #00d3d0;">fo</span>) : pair(p), count(c), insert_order(fo) {}
+    <span style="color: #feacd0;">PairCountOrder</span>(::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">p</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">c</span>) : pair(p), count(c), insert_order(<span style="color: #00bcff;">std</span>::<span style="color: #00bcff;">numeric_limits</span>&lt;<span style="color: #6ae4b9;">size_t</span>&gt;::max()) {}
+};
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Comparison struct for sorting. Sorts by count (descending), then by insertion order (ascending).</span>
+<span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
+<span style="color: #b6a0ff;">struct</span> <span style="color: #6ae4b9;">CompareCountOrder</span> {
+    <span style="color: #6ae4b9;">bool</span> <span style="color: #b6a0ff;">operator</span><span style="color: #feacd0;">()</span>(<span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">a</span>, <span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">const</span> {
+        <span style="color: #b6a0ff;">if</span>(a.count == b.count) {
+            <span style="color: #b6a0ff;">return</span> a.insert_order &lt; b.insert_order;
+        } <span style="color: #b6a0ff;">else</span> {
+            <span style="color: #b6a0ff;">return</span> a.count &gt; b.count; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">higher count is greater</span>
+        }
+    }
+};
+</pre>
+</div>
+
+<p>
+Next we define the container itself. We just specify the indexes required and Boost takes care of picking the underlying data structures.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
+<span style="color: #b6a0ff;">using</span> <span style="color: #6ae4b9;">PairCountStore</span> = <span style="color: #00bcff;">boost</span>::<span style="color: #6ae4b9;">multi_index_container</span>&lt;
+    <span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;,
+    <span style="color: #6ae4b9;">indexed_by</span>&lt;
+        <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 0: Hashed unique index on the 'pair' member for fast lookups.</span>
+        <span style="color: #6ae4b9;">hashed_unique</span>&lt;<span style="color: #6ae4b9;">member</span>&lt;<span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;, <span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt;, &amp;<span style="color: #00bcff;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;::pair&gt;&gt;,
+        <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 1: Ordered non-unique index for sorting by count and insertion order.</span>
+        <span style="color: #6ae4b9;">ordered_non_unique</span>&lt;<span style="color: #6ae4b9;">identity</span>&lt;<span style="color: #6ae4b9;">PairCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;, <span style="color: #6ae4b9;">CompareCountOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;
+    &gt;
+&gt;;
+</pre>
+</div>
+
+<p>
+Index 0 explanation:
+It is hashed so we should get an O(1) lookup type, and unique meaning keys are unique, each pair can occur once only.
+The rest of the declaration explains how to get the key for this index (use the pair member).
+</p>
+
+<p>
+Index 1 explanation: 
+This needs to be an ordered collection so we can extract the highest
+frequency. It also needs to be non-unique (in its sort criteria),
+because we can have multiple elements with the same frequency.
+</p>
+
+<p>
+Now in our code we can grab the appropriate index depending on the
+current purpose and when we make modifications to the data the boost
+library will ensure the changes are synchronized across all the
+indexes in the container.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #b6a0ff;">auto</span>&amp; <span style="color: #00d3d0;">index_by_key</span> = pcs.<span style="color: #b6a0ff;">template</span> get&lt;0&gt;();
+<span style="color: #b6a0ff;">auto</span> <span style="color: #00d3d0;">f</span> = index_by_key.find(mp);
+<span style="color: #b6a0ff;">if</span>(f != pcs.end()) {
+    index_by_key.modify(f, [<span style="color: #00bcff;">freq</span>](<span style="color: #6ae4b9;">PairCountOrder</span>&lt;T&gt;&amp; <span style="color: #00d3d0;">pc</span>) { pc.count += freq; });
+    <span style="color: #b6a0ff;">return</span> <span style="color: #00bcff;">false</span>;
+} <span style="color: #b6a0ff;">else</span> {
+    pcs.insert(PairCountOrder&lt;T&gt;(mp, freq, next_insert++));
+    <span style="color: #b6a0ff;">return</span> <span style="color: #00bcff;">true</span>;
+}
+</pre>
+</div>
 </div>
 </li>
 
-
-
-
 <li><a id="org68fb120"></a>Conflict resolution strategy: Lexicographical<br />
-<div class="outline-text-7" id="text-org68fb120">
+<div class="outline-text-6" id="text-org68fb120">
 <p>
 Referred to as lexical in my implementation to save typing, this method means we pick from pairs based on which comes first. For example given the following two pairs:
 </p>
 
-<p>
-a) [1,2] =&gt; 20 
-b) [3,4] =&gt; 20
-</p>
+<ol class="org-ol">
+<li>[1,2] =&gt; 20</li>
+<li>[3,4] =&gt; 20</li>
+</ol>
 
 <p>
-They have the same frequency so we pick a) as 1 &lt; 3. The second member
+They have the same frequency so we pick pair 1) as 1 &lt; 3. The second member
 of the pair is used as the tie-breaker, and of course if both members
 are the same then they would be combined to a single entry in the
 PairCount.
 </p>
-</div>
-</li>
-</ul>
-</li>
-</ul>
-</div>
-</div>
 
-
-
-
-
-
-<div id="outline-container-orge16fdc5" class="outline-3">
-<h3 id="orge16fdc5">Conclusion</h3>
-<div class="outline-text-3" id="text-orge16fdc5">
 <p>
-This project was a fantastic learning experience. It solidified my understanding of tokenization and was a practical lesson in the art of performance optimization. It demonstrates the enduring value of C++ for high-performance computing and highlights how modern tools like Zig can make the development experience much more pleasant.
+Again a multi<sub>index</sub> container is needed here. Let's start with the data:
 </p>
 
+<div class="org-src-container">
+<pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
+<span style="color: #b6a0ff;">struct</span> <span style="color: #6ae4b9;">PairCountLexical</span> {
+    ::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">pair</span>;
+    <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">count</span>;
+
+    <span style="color: #feacd0;">PairCountLexical</span>(::<span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt; <span style="color: #00d3d0;">p</span>, <span style="color: #6ae4b9;">int</span> <span style="color: #00d3d0;">c</span>) : pair(p), count(c) {}
+};
+
+<span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Comparison struct for sorting. Sorts by count (descending), then by pair (lexical ascending).</span>
+<span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
+<span style="color: #b6a0ff;">struct</span> <span style="color: #6ae4b9;">CompareLexicalOrder</span> {
+    <span style="color: #6ae4b9;">bool</span> <span style="color: #b6a0ff;">operator</span><span style="color: #feacd0;">()</span>(<span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">a</span>, <span style="color: #b6a0ff;">const</span> <span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&amp; <span style="color: #00d3d0;">b</span>) <span style="color: #b6a0ff;">const</span> {
+        <span style="color: #b6a0ff;">if</span>(a.count == b.count) {
+            <span style="color: #b6a0ff;">if</span> (a.pair.first == b.pair.first) {
+                <span style="color: #b6a0ff;">return</span> a.pair.second &lt; b.pair.second;
+            } <span style="color: #b6a0ff;">else</span> {
+                <span style="color: #b6a0ff;">return</span> a.pair.first &lt; b.pair.first;
+            }
+        } <span style="color: #b6a0ff;">else</span> {
+            <span style="color: #b6a0ff;">return</span> a.count &gt; b.count; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">higher count is greater</span>
+        }
+    }
+};
+</pre>
+</div>
+
+<p>
+And the container looks like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++"><span style="color: #b6a0ff;">template</span>&lt;<span style="color: #b6a0ff;">typename</span> <span style="color: #6ae4b9;">T</span>&gt;
+<span style="color: #b6a0ff;">using</span> <span style="color: #6ae4b9;">PairCountLexicalStore</span> = <span style="color: #00bcff;">boost</span>::<span style="color: #6ae4b9;">multi_index_container</span>&lt;
+    <span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;,
+    <span style="color: #6ae4b9;">indexed_by</span>&lt;
+        <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 0: Hashed unique index on the 'pair' member for fast lookups.</span>
+        <span style="color: #6ae4b9;">hashed_unique</span>&lt;<span style="color: #6ae4b9;">member</span>&lt;<span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;, <span style="color: #6ae4b9;">pair</span>&lt;<span style="color: #6ae4b9;">T</span>,<span style="color: #6ae4b9;">T</span>&gt;, &amp;<span style="color: #00bcff;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;::pair&gt;&gt;,
+        <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Index 1: Ordered non-unique index for sorting by count and lexical order.</span>
+        <span style="color: #6ae4b9;">ordered_non_unique</span>&lt;<span style="color: #6ae4b9;">identity</span>&lt;<span style="color: #6ae4b9;">PairCountLexical</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;, <span style="color: #6ae4b9;">CompareLexicalOrder</span>&lt;<span style="color: #6ae4b9;">T</span>&gt;&gt;
+    &gt;
+&gt;;
+</pre>
+</div>
+
+<p>
+Index 0 explanation:
+Same as above this gives us fast insert, modify and lookup for the pair frequencies.
+</p>
+
+<p>
+Index 1 explanation:
+Same as above except the outcome is different because of the implementation of <code>CompareLexicalOrder</code>.
+</p>
+</div>
+</li>
+
+<li><a id="orgecc25d2"></a>Optimization of frequency counts<br />
+<div class="outline-text-6" id="text-orgecc25d2">
+<p>
+When running the code I see that the biggest cost is regenerating the
+frequency map each step. For example when churning through wikitext (a
+500mb text corpus) it takes the Python code 28 seconds on my Macbook
+to count all the pairs.
+</p>
+
+<p>
+Let's work through Brendan Gregg's impactful optimizations:
+</p>
+
+<ol class="org-ol">
+<li>Don’t do it.</li>
+<li>Do it, but don’t do it again.</li>
+<li>Do it less.</li>
+<li>Do it later.</li>
+<li>Do it when they’re not looking.</li>
+<li>Do it concurrently.</li>
+<li>Do it more cheaply.</li>
+</ol>
+
+<p>
+Don't do it is not an option, we need those updated counts each step. 
+Do it but not again is fruitful though. 
+</p>
+
+<p>
+The key insight here is that we only need to do a full frequency count
+one time. Then we can incrementally update the pair frequencies as we
+walk through doing the merge process. Essentially we are removing and
+adding a number of pairs on each replacement.
+</p>
+
+<p>
+I noticed that the authors of the paper mentioned this too: 
+</p>
+
+<p>
+"In practice, we increase efficiency by indexing all pairs, and updating data structures incrementally."
+</p>
+
+<p>
+You can see their incremental update code here:
+</p>
+
+<p>
+<a href="https://github.com/rsennrich/subword-nmt/blob/92d6139d07d30e12735a0af9e7f7f925ebe62c54/subword_nmt/learn_bpe.py#L159">https://github.com/rsennrich/subword-nmt/blob/92d6139d07d30e12735a0af9e7f7f925ebe62c54/subword_nmt/learn_bpe.py#L159</a>
+</p>
+
+<p>
+In addition to this optimization they use a pruning technique that
+drops frequencies of pairs below some threshold. This makes sense
+because the Python max function iterates the whole collection. In my
+case our data structures do not, so pruning is probably not worth the
+additional complexity. Worth trying maybe?
+</p>
+
+<p>
+In any case, for my lexicographical conflict strategy I do implement
+this optimization and it is a huge win on performance as shown in the
+charts.
+</p>
+
+<p>
+Crucially, it is not implemented for the first occuring strategy,
+because the current implementation gives now way to easily keep track
+of the first occurence of a pair in the input corpus.
+</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org3054bba" class="outline-2">
+<h2 id="org3054bba">Next steps</h2>
+<div class="outline-text-2" id="text-org3054bba">
+<p>
+For me the project is at a good point to move on to other things but there are some things I would do next otherwise:
+</p>
+<ol class="org-ol">
+<li>Port to Zig. Currently I'm using Zig for some other projects and would be interested in the porting experience and how the performance compares.</li>
+<li>Work on different data structures for the input text to support incremental frequency counting for the first strategy.</li>
+<li>Optimization of the encode and decode steps.</li>
+<li>Implement download and conversion of GTP merges like Karpathy does.</li>
+<li>Look at implementations of other Tokenization algorithms.</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-orge16fdc5" class="outline-2">
+<h2 id="orge16fdc5">Conclusion</h2>
+<div class="outline-text-2" id="text-orge16fdc5">
+<p>
+I had a lot of pain and a lot of fun working on the code. I highly recommend this kind of process to fully understand the nuances and implementation details required for AI engineering.
+</p>
+</div>
+</div>
+<div id="outline-container-org9d17545" class="outline-2">
+<h2 id="org9d17545">References</h2>
+<div class="outline-text-2" id="text-org9d17545">
 <p>
 If you want to dive into the code or run the benchmarks yourself, you can find the full project on GitHub.
 </p>
@@ -589,12 +841,24 @@ If you want to dive into the code or run the benchmarks yourself, you can find t
 <ul class="org-ul">
 <li><a href="https://github.com/justinhj/minbpe-cc">https://github.com/justinhj/minbpe-cc</a></li>
 </ul>
-</div>
-</div>
 
-<div id="outline-container-org9d17545" class="outline-3">
-<h3 id="org9d17545">References</h3>
-<div class="outline-text-3" id="text-org9d17545">
+<p>
+An early paper on bpe for tokenization is "Neural Machine Translation of Rare Words with Subword Units"
+</p>
+
+<p>
+<a href="https://arxiv.org/pdf/1508.07909">https://arxiv.org/pdf/1508.07909</a>
+</p>
+
+<p>
+The original source code from the paper.
+</p>
+
+<p>
+<a href="https://github.com/rsennrich/subword-nmt">https://github.com/rsennrich/subword-nmt</a>
+</p>
+
+
 <p>
 Thanks for reading!
 </p>
@@ -602,6 +866,5 @@ Thanks for reading!
 <p>
 &copy;2025 Justin Heyes-Jones. All Rights Reserved
 </p>
-</div>
 </div>
 </div>

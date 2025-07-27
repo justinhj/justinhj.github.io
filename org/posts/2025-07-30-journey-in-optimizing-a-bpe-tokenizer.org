@@ -1,4 +1,4 @@
-#+TITLE: Let's build the GPT Tokenizer in C++
+#+TITLE: Optimizing GPT style tokenizer training with C++
 #+AUTHOR: Justin Heyes-Jones
 #+DATE: 2025-07-30
 #+STARTUP: showall
@@ -7,7 +7,7 @@
 #+BEGIN_EXPORT html
 ---
 layout: post
-title: Let's build the GPT Tokenizer in C++
+title: Optimizing GPT style tokenizer training with C++
 tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
@@ -66,7 +66,7 @@ You can explore this tokenization here:
 https://platform.openai.com/tokenizer
 
 #+BEGIN_EXPORT html
-<p style="text-xl">
+<p class="text-4xl flex">
   <span style="background-color: #d1c4e9;">My </span>
   <span style="background-color: #c8e6c9;">cat</span>
   <span style="background-color: #f0f4c3;">, </span>
@@ -183,13 +183,12 @@ The final code here fully implements all the facets of Karpathy's minbpe includi
 https://github.com/justinhj/minbpe-cc
 
 ** Implementation tales
-
+*** Speed bumps
 Converting from Python to C++ is fairly straightforward although I hit some speed bumps on the way:
 
-1. Regex compatibility.
-2. Python dictionary behaviour. 
-3. CMake. 
-
+1. Python dictionary behaviour. The Python dictionary is designed to be flexible for multiple purposes rather than optimized, so getting the same behaviour from C++ containers required some additional thought.
+2. Polymorphism. I didn't really like Karpathy's polymorphic version and instead decided to use a single class design with flags and other parameters to handle whether special tokens are used, what the conflict strategy was, and whether to use a regex or not. It was quite easy to make this work with some tweaks to the original code. Ironically I did use polymorphism on the PairCount class so I can use different implementations at runtime depending on the users preferences.
+3. CMake. CMake is not casual tool. I found I could just about get my project to build and run using it, but after switching to Zig build instead I found it much easier to manage.
 *** Regex compatibility
 
 Firstly, what are regex's needed for? 
@@ -199,8 +198,8 @@ try and keep parts of text together, as such rather than run BPE on
 the whole input text, they first divide it up into sections by the
 following regular expressions:
 
-* GPT2 ~"'(?:[sdmt]|ll|ve|re)| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+"~
-* GPT4 ~"'(?i:[sdmt]|ll|ve|re)|[^\\r\\n\\p{L}\\p{N}]?+\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]++[\\r\\n]*|\\s*[\\r\\n]|\\s+(?!\\S)|\\s+"~
+- GPT2 ~"'(?:[sdmt]|ll|ve|re)| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+"~
+- GPT4 ~"'(?i:[sdmt]|ll|ve|re)|[^\\r\\n\\p{L}\\p{N}]?+\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]++[\\r\\n]*|\\s*[\\r\\n]|\\s+(?!\\S)|\\s+"~
 
 These expressions are designed to preserve various aspects of English text rather than allow them to be split up during the merge process.
 
@@ -308,8 +307,8 @@ Imagine a sequence as follows:
 
 After counting all the pairs we find that [1,2] and [3,4] have the same frequency.
 
-a) [1,2] => 20 
-b) [3,4] => 20
+1. [1,2] => 20 
+2. [3,4] => 20
 
 In this case we pick the one add first, which means the one first seen
 in the input text.
@@ -435,10 +434,10 @@ if(f != pcs.end()) {
 
 Referred to as lexical in my implementation to save typing, this method means we pick from pairs based on which comes first. For example given the following two pairs:
 
-a) [1,2] => 20 
-b) [3,4] => 20
+1. [1,2] => 20 
+2. [3,4] => 20
 
-They have the same frequency so we pick a) as 1 < 3. The second member
+They have the same frequency so we pick pair 1) as 1 < 3. The second member
 of the pair is used as the tie-breaker, and of course if both members
 are the same then they would be combined to a single entry in the
 PairCount.
@@ -492,17 +491,75 @@ Same as above this gives us fast insert, modify and lookup for the pair frequenc
 Index 1 explanation:
 Same as above except the outcome is different because of the implementation of ~CompareLexicalOrder~.
 
+****** Optimization of frequency counts
 
+When running the code I see that the biggest cost is regenerating the
+frequency map each step. For example when churning through wikitext (a
+500mb text corpus) it takes the Python code 28 seconds on my Macbook
+to count all the pairs.
 
+Let's work through Brendan Gregg's impactful optimizations:
+
+1. Don’t do it.
+2. Do it, but don’t do it again.
+3. Do it less.
+4. Do it later.
+5. Do it when they’re not looking.
+6. Do it concurrently.
+7. Do it more cheaply.
+
+Don't do it is not an option, we need those updated counts each step. 
+Do it but not again is fruitful though. 
+
+The key insight here is that we only need to do a full frequency count
+one time. Then we can incrementally update the pair frequencies as we
+walk through doing the merge process. Essentially we are removing and
+adding a number of pairs on each replacement.
+
+I noticed that the authors of the paper mentioned this too: 
+
+"In practice, we increase efficiency by indexing all pairs, and updating data structures incrementally."
+
+You can see their incremental update code here:
+
+https://github.com/rsennrich/subword-nmt/blob/92d6139d07d30e12735a0af9e7f7f925ebe62c54/subword_nmt/learn_bpe.py#L159
+
+In addition to this optimization they use a pruning technique that
+drops frequencies of pairs below some threshold. This makes sense
+because the Python max function iterates the whole collection. In my
+case our data structures do not, so pruning is probably not worth the
+additional complexity. Worth trying maybe?
+
+In any case, for my lexicographical conflict strategy I do implement
+this optimization and it is a huge win on performance as shown in the
+charts.
+
+Crucially, it is not implemented for the first occuring strategy,
+because the current implementation gives now way to easily keep track
+of the first occurence of a pair in the input corpus.
+
+** Next steps
+For me the project is at a good point to move on to other things but there are some things I would do next otherwise:
+1. Port to Zig. Currently I'm using Zig for some other projects and would be interested in the porting experience and how the performance compares.
+2. Work on different data structures for the input text to support incremental frequency counting for the first strategy.
+3. Optimization of the encode and decode steps.
+4. Implement download and conversion of GTP merges like Karpathy does.
+5. Look at implementations of other Tokenization algorithms.
 ** Conclusion
-This project was a fantastic learning experience. It solidified my understanding of tokenization and was a practical lesson in the art of performance optimization. It demonstrates the enduring value of C++ for high-performance computing and highlights how modern tools like Zig can make the development experience much more pleasant.
+I had a lot of pain and a lot of fun working on the code. I highly recommend this kind of process to fully understand the nuances and implementation details required for AI engineering.
+** References
 
 If you want to dive into the code or run the benchmarks yourself, you can find the full project on GitHub.
 
 - [[https://github.com/justinhj/minbpe-cc]]
 
-** References
+An early paper on bpe for tokenization is "Neural Machine Translation of Rare Words with Subword Units"
 
+https://arxiv.org/pdf/1508.07909
+
+The original source code from the paper.
+
+https://github.com/rsennrich/subword-nmt
 
 
 Thanks for reading!
