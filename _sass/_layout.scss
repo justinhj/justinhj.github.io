@@ -217,6 +217,12 @@
     color: $grey-color;
 }
 
+@media (prefers-color-scheme: light) {
+  .post-meta {
+      color: $grey-color-dark;
+  }
+}
+
 .post-link {
     display: block;
     font-size: 24px;

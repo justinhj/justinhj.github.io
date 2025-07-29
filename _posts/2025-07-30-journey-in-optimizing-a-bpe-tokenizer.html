@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Optimizing GPT style tokenizer training with C++
+title: Optimizing training a GPT style Tokenizer with C++
 tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
@@ -209,7 +209,7 @@ Ultimately, I was able to reduce the training time by a factor of 23 (for the la
 <h2 id="orgb8bea08">Optimization results</h2>
 <div class="outline-text-2" id="text-orgb8bea08">
 <div class="text-center mb-12">
-        <p class="mt-2 text-lg text-slate-600">The chart below shows the time taken to train a tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
+        <p class="mt-2 text-lg text-slate-600">The interactive chart below shows the time taken to train a Tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
     </div>
     <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm">
         <div class="flex flex-wrap justify-center items-center mb-6 space-x-2 space-y-2">
@@ -276,16 +276,16 @@ you can handle:
 </p>
 
 <ul class="org-ul">
-<li>Open-Vocabulary: Part of the token set is the basic characters of each language so you can represent every word.</li>
-<li>Rare words: Because the vocabulary set is open it means any rare word is handled.</li>
-<li>Enables Translation of Novel Words: The model can translate and generate words it has not encountered before by composing them from sub-word units.</li>
+<li><b>Open-Vocabulary</b> Part of the token set is the basic characters of each language so you can represent every word.</li>
+<li><b>Rare words</b> Because the vocabulary set is open it means any rare word is handled.</li>
+<li><b>Translation of Novel Words</b> The model can translate and generate words it has not encountered before by composing them from sub-word units.</li>
 </ul>
 
 <p>
 Here is a diagram showing how the fixed sized vocabulary of tokens maps to an array of learned embedding vectors that feed into the Transformer model underlying all LLMs.
 </p>
 
-<pre class="example" id="org3020aa7">
+<pre class="example" id="org631bd59">
       Input Text
           │
           ▼

@@ -1,4 +1,4 @@
-#+TITLE: Optimizing GPT style tokenizer training with C++
+#+TITLE: Optimizing training a GPT style Tokenizer with C++
 #+AUTHOR: Justin Heyes-Jones
 #+DATE: 2025-07-30
 #+STARTUP: showall
@@ -7,7 +7,7 @@
 #+BEGIN_EXPORT html
 ---
 layout: post
-title: Optimizing GPT style tokenizer training with C++
+title: Optimizing training a GPT style Tokenizer with C++
 tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
@@ -196,7 +196,7 @@ Ultimately, I was able to reduce the training time by a factor of 23 (for the la
 
 #+begin_export html
     <div class="text-center mb-12">
-            <p class="mt-2 text-lg text-slate-600">The chart below shows the time taken to train a tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
+            <p class="mt-2 text-lg text-slate-600">The interactive chart below shows the time taken to train a Tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
         </div>
         <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm">
             <div class="flex flex-wrap justify-center items-center mb-6 space-x-2 space-y-2">
@@ -241,9 +241,9 @@ The solution to these issues is sub-word tokenization; splitting words
 up into numbers representing components of words. Once you have that
 you can handle:
 
-- Open-Vocabulary: Part of the token set is the basic characters of each language so you can represent every word.
-- Rare words: Because the vocabulary set is open it means any rare word is handled.
-- Enables Translation of Novel Words: The model can translate and generate words it has not encountered before by composing them from sub-word units.
+- *Open-Vocabulary* Part of the token set is the basic characters of each language so you can represent every word.
+- *Rare words* Because the vocabulary set is open it means any rare word is handled.
+- *Translation of Novel Words* The model can translate and generate words it has not encountered before by composing them from sub-word units.
 
 Here is a diagram showing how the fixed sized vocabulary of tokens maps to an array of learned embedding vectors that feed into the Transformer model underlying all LLMs.
 
