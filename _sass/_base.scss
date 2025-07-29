@@ -82,12 +82,13 @@ a {
       text-decoration: none;
 
       &:visited {
-          color: darken($brand-color-light, 15%);
+          color: darken($brand-color-light, 25%);
       }
-
+// todo make this just invert a background
       &:hover {
-          color: $text-color-light;
-          text-decoration: underline;
+          // color: $text-color-light;
+          text-decoration: none;
+	  background-color: darken($background-color-light, 10%);
       }
   }
 }
@@ -216,14 +217,15 @@ h1, h2, h3, .accent-text {
   }
 }
 
-a {
-    color: $accent-color;
-    transition: color 0.2s ease-in-out;
-}
+// This messes with the above 
+// a {
+//     color: $accent-color;
+//     transition: color 0.2s ease-in-out;
+// }
 
-a:hover {
-    color: $accent-hover-color;
-}
+// a:hover {
+//     color: $accent-hover-color;
+// }
 
 /* Glassmorphism-inspired card effect for post previews */
 .post-card {
