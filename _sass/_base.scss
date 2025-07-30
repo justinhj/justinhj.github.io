@@ -289,10 +289,42 @@ h1, h2, h3, .accent-text {
 
 pre.src {
     background-color: $background-color-light;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+
+    /* --- Fixes --- */
+    overflow-x: auto;         /* Adds a horizontal scrollbar when needed */
+    margin: 2em 0;            /* Adds space above and below the block */
+    padding: 1em;             /* Adds space inside the block */
+    /* --- End Fixes --- */
+
+    border: 1px solid #444;   /* Optional: a subtle border */
+    border-radius: 8px;       /* Optional: rounded corners */
 }
 
 @media (prefers-color-scheme: light) {
   pre.src {
+      background-color: $background-color;
+  }
+}
+
+pre.example {
+    background-color: $background-color-light;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+
+    /* --- Fixes --- */
+    overflow-x: auto;         /* Adds a horizontal scrollbar when needed */
+    margin: 2em 0;            /* Adds space above and below the block */
+    padding: 1em;             /* Adds space inside the block */
+    /* --- End Fixes --- */
+
+    border: 1px solid #444;   /* Optional: a subtle border */
+    border-radius: 8px;       /* Optional: rounded corners */
+}
+
+@media (prefers-color-scheme: light) {
+  pre.example {
       background-color: $background-color;
   }
 }
