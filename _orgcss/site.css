@@ -1,6 +1,18 @@
+
+/* pre.src { */
+/*   background-color: red; */
+/*   color: white; /1* Or whatever color you want for the text *1/ */
+/*   font-size: 16px; */
+/*   font-family: 'JetBrains Mono', monospace; */
+/*   overflow-x: auto; */
+/*   padding: 1em; */
+/*   border: 1px solid #ccc; /1* Optional: adds a border *1/ */
+/*   border-radius: 5px; /1* Optional: rounds the corners *1/ */
+/* } */
+
 .footpara {
     width: 99%;
-    text-alignt: left;
+    text-align: left;
     float: right;
     padding: 0;
     margin: 0;
@@ -10,18 +22,19 @@
     line-height: 2em;
 }
 
-pre.src.src-c {
-    background-color: #000;
-    color: #fff;
-    font-size: 16px;
-    font-family: 'Sora', sans-serif;
-}
+/* pre.src.src-c { */
+/*     background-color: #000; */
+/*     color: #fff; */
+/*     font-size: 16px; */
+/*     font-family: 'Sora', sans-serif; */
+/* } */
 
-pre.src.src-scala {
-    background-color: #000;
-    color: #fff;
-    font-size: 16px;
-    font-family: 'JetBrains Mono', monospace;
-    overflow-x: auto;
-}
+/* pre.src.src-scala { */
+/*     background-color: #000; */
+/*     color: #fff; */
+/*     font-size: 16px; */
+/*     font-family: 'JetBrains Mono', monospace; */
+/*     overflow-x: auto; */
+/* } */
+
 

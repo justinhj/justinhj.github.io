@@ -287,3 +287,13 @@ h1, h2, h3, .accent-text {
   margin: 30px 0 30px 0;
 }
 
+pre.src {
+    background-color: $background-color-light;
+}
+
+@media (prefers-color-scheme: light) {
+  pre.src {
+      background-color: $background-color;
+  }
+}
+
