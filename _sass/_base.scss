@@ -72,7 +72,7 @@ a {
 
     &:hover {
         color: $text-color;
-        text-decoration: underline;
+        text-decoration: none;
     }
 }
 
@@ -85,13 +85,12 @@ a {
       &:visited {
           color: darken($brand-color-light, 25%);
       }
-// todo make this just invert a background
       &:hover {
-          // color: $text-color-light;
           text-decoration: none;
 	  background-color: darken($background-color-light, 10%);
       }
   }
+
 }
 
 /**
@@ -265,6 +264,25 @@ h1, h2, h3, .accent-text {
     background-color: #2071a8; /* A slightly darker blue on hover */
     color: #ffffff;
     text-decoration: none;
+}
+
+/* Light mode tags */
+
+@media (prefers-color-scheme: light) {
+
+  .tag a {
+      color: $background-color-light;
+      text-decoration: none;
+
+      &:visited {
+          color: darken($background-color-light, 5%);
+      }
+
+      &:hover {
+	  color: $background-color-light;
+          background-color: #268bd2;
+      }
+  }
 }
 
 /* Force override of margins */
