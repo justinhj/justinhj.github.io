@@ -268,7 +268,7 @@ h1, h2, h3, .accent-text {
 
 /* Light mode tags */
 
-@media (prefers-color-scheme: light) {
+//@media (prefers-color-scheme: light) {
 
   .tag a {
       color: $background-color-light;
@@ -283,7 +283,7 @@ h1, h2, h3, .accent-text {
           background-color: #268bd2;
       }
   }
-}
+//}
 
 /* Force override of margins */
 .home h1,
