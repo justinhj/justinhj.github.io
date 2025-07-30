@@ -67,6 +67,7 @@ tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
         };
 
         const ctx = document.getElementById('benchmarkChart').getContext('2d');
+        
         const benchmarkChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -98,7 +99,16 @@ tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
                         title: {
                             display: true,
                             text: 'Time in Seconds (Logarithmic Scale)'
+                        },
+                        grid: {
+                          display: false
                         }
+                    },
+                    y: {
+                        grid: {
+                          display: false
+                        }
+
                     }
                 },
                 plugins: {
@@ -120,7 +130,8 @@ tags: [ai, cpp, c++, python, optimization, performance, llm, tokenizer]
                         }
                     }
                 }
-            }
+            },
+            plugins: [],
         });
 
         const buttons = document.querySelectorAll('.chart-btn');
@@ -198,7 +209,7 @@ Ultimately, I was able to reduce the training time by a factor of 23 (for the la
     <div class="text-center mb-12">
             <p class="mt-2 text-lg text-slate-600">The interactive chart below shows the time taken to train a Tokenizer on different text corpora. Use the buttons to switch between datasets and see the performance difference.</p>
         </div>
-        <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm">
+        <div class="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm" style="padding: 0.5em; background-color: #fcfcfc;">
             <div class="flex flex-wrap justify-center items-center mb-6 space-x-2 space-y-2">
                 <button data-corpus="taylorswift" class="chart-btn">Taylor Swift</button>
                 <button data-corpus="shakespeare" class="chart-btn">Shakespeare</button>
@@ -780,9 +791,17 @@ As a refresher on modern C++ this was a great project. (I recommend (Tour of C++
 Apart from the complexity of CMake I found that using C++ today is a pleasant and safe experience as long as you carefully tread the recommended path.
 ** References
 
+Karpathy's youtube
+
+https://www.youtube.com/watch?v=zduSFxRajkE
+
+And his Python code
+
+https://github.com/karpathy/minbpe
+
 If you want to dive into the code or run the benchmarks yourself, you can find the full project on GitHub.
 
-- [[https://github.com/justinhj/minbpe-cc]]
+[[https://github.com/justinhj/minbpe-cc]]
 
 An early paper on bpe for tokenization is "Neural Machine Translation of Rare Words with Subword Units"
 
@@ -792,7 +811,6 @@ The original source code from the paper.
 
 https://github.com/rsennrich/subword-nmt
 
-
 Thanks for reading!
 
-\copy2025 Justin Heyes-Jones. All Rights Reser
+\copy2025 Justin Heyes-Jones. All Rights Reserved
