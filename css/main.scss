@@ -28,7 +28,8 @@ $grey-color-dark:  darken($grey-color, 25%);
 
 $accent-color: #7aa2f7;
 $accent-hover-color: #9eceff;
-$secondary-text-color: #5c6370;
+$secondary-text-color: lighten(#5c6370, 20%);
+$secondary-text-color-light: #5c6370;
 $border-color: #2c2e3b;
 $card-bg-color: #24283b;
 

@@ -197,6 +197,10 @@ body {
     --accent-color: #{$accent-color};
     --accent-hover-color: #{$accent-hover-color};
     --secondary-text-color: #{$secondary-text-color};
+    @media (prefers-color-scheme: light) {
+	--secondary-text-color: #{$secondary-text-color-light};
+    }
+    
     --border-color: #{$border-color};
     --card-bg-color: #{$card-bg-color};
 }
