@@ -4,7 +4,7 @@
   "description": "This is the Jekyll site source code for my technical blog",
   "main": "index.js",
   "scripts": {
-   "build:css": "tailwindcss -i ./_assets/css/input.css -o ./css/style.css",
+    "build:css": "tailwindcss -i ./_assets/css/input.css -o ./css/style.css",
     "watch:css": "tailwindcss -i ./_assets/css/input.css -o ./css/style.css --watch",
     "build": "jekyll build",
     "serve": "jekyll serve"
@@ -22,8 +22,9 @@
   },
   "homepage": "https://github.com/justinhj/justinhj.github.io#readme",
   "devDependencies": {
+    "@tailwindcss/cli": "^4.1.18",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.18"
   }
 }
