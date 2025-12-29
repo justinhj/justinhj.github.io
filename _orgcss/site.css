@@ -22,6 +22,10 @@
     line-height: 2em;
 }
 
+.outline-2, .outline-3, .outline-4, .outline-5, .outline-6 {
+    outline: none;
+}
+
 /* pre.src.src-c { */
 /*     background-color: #000; */
 /*     color: #fff; */
