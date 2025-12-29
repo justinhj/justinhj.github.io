@@ -1,22 +1,108 @@
-<p>
-#+BEGIN<sub>EXPORT</sub> html
-&#x2014;
+---
 layout: post
 title: Exploring Parallel Effects in Scala
 tags: [scala, functional-programming, effects, scalaz]
-&#x2014;
-&lt;link rel="stylesheet" type="text/css" href="../../../<sub>orgcss</sub>/site.css" /&gt;
-</p>
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 
+<style>
+.img.special {
+  width: 600px;
+  border:2px solid #fff;
+  box-shadow: 6px 6px 2px #ccc;
+  -moz-box-shadow: 6px 6px 2px #ccc;
+  -webkit-box-shadow: 6px 6px 2px #ccc;
+  -khtml-box-shadow: 6px 6px 2px #ccc;
+  margin-bottom: 40px;
+}
+</style>
+
+<figure>
+  <img class="img special" src="../../../images/jean-woloszczyk-MEcTY-zgnDY-unsplash.jpg" border="0" alt="Two trucks racing along in parallel" width="600"/>
+  <figcaption>
+Photo by <a href="https://unsplash.com/@jeanwolo?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Jean Woloszczyk</a> on <a href="https://unsplash.com/photos/a-couple-of-trucks-on-a-road-MEcTY-zgnDY?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+  <figcaption>
+</figure>
 
 <div id="outline-container-orgc63864a" class="outline-2">
 <h2 id="orgc63864a">Introduction</h2>
 <div class="outline-text-2" id="text-orgc63864a">
 <p>
-Scalaz Task Effects and so on
+It's been a while since I've written a blog post about Scala. Partly because a lot of my side projects and self learning have been focused on both understanding new developments in generative AI and how to use it, as well as learning a new language for system level code, <a href="https://ziglang.org/">Zig</a>. However, I have a few latent posts and videos that I would like to wrap up, in particular the <a href="https://github.com/functionaljustin/duct">Duct</a> category theory style Scala library is not really complete without an IO/Effect data type, nor some capability for streaming.
 </p>
 
+<p>
+I plan to work towards an effect type in Duct, but first I thought it would be fun to review the history of effects in Scala which looks something like this:
+</p>
 
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Library</th>
+<th scope="col" class="org-right">Approx. Year</th>
+<th scope="col" class="org-left">Primary Innovation</th>
+<th scope="col" class="org-left">&#xa0;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Scalaz Task</td>
+<td class="org-right">2013</td>
+<td class="org-left">First major functional IO/Task for Scala.</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">Monix Task</td>
+<td class="org-right">2016</td>
+<td class="org-left">Added cancellation, fine-grained control, and high performance.</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">Cats Effect</td>
+<td class="org-right">2017</td>
+<td class="org-left">Standardized the ecosystem with a shared IO and Typeclasses.</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">Zio</td>
+<td class="org-right">2018</td>
+<td class="org-left">Introduced the "Environment" (R), typed errors (E)</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+All these effects have different design goals and scope, so it is instructive to start at the beginning and see how effects evolved over time. In this post I will use the word effect to mean a potentially lazily evaluated computation. This is where Scala Effects diverge from Scala's standard library future, which can only represent eagerly evaluated computation.
+</p>
+
+<p>
+Before looking in detail at ScalaZ task which requires a post of its own, let's explore the mechanism by which you can execute code on a thread, which is a fundamental capability for effect systems. 
+</p>
+
+<p>
+A great source for this can be found in the "purely functional parallelism" chapter of <a href="https://www.manning.com/books/functional-programming-in-scala">Functional Programming in Scala</a>. In this post I will dig into that chapter as I think it's a great foundation to build on for a series about effect types in general.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge9c5344" class="outline-2">
+<h2 id="orge9c5344"></h2>
+<div class="outline-text-2" id="text-orge9c5344">
 <p>
 Thanks for reading!
 </p>

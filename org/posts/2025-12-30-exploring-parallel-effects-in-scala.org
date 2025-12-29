@@ -11,12 +11,49 @@ title: Exploring Parallel Effects in Scala
 tags: [scala, functional-programming, effects, scalaz]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+#+END_EXPORT
 
+#+BEGIN_EXPORT html
+<style>
+.img.special {
+  width: 600px;
+  border:2px solid #fff;
+  box-shadow: 6px 6px 2px #ccc;
+  -moz-box-shadow: 6px 6px 2px #ccc;
+  -webkit-box-shadow: 6px 6px 2px #ccc;
+  -khtml-box-shadow: 6px 6px 2px #ccc;
+  margin-bottom: 40px;
+}
+</style>
+
+<figure>
+  <img class="img special" src="../../../images/jean-woloszczyk-MEcTY-zgnDY-unsplash.jpg" border="0" alt="Two trucks racing along in parallel" width="600"/>
+  <figcaption>
+Photo by <a href="https://unsplash.com/@jeanwolo?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Jean Woloszczyk</a> on <a href="https://unsplash.com/photos/a-couple-of-trucks-on-a-road-MEcTY-zgnDY?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+  <figcaption>
+</figure>
+#+END_EXPORT
 
 ** Introduction
 
-Scalaz Task Effects and so on
+It's been a while since I've written a blog post about Scala. Partly because a lot of my side projects and self learning have been focused on both understanding new developments in generative AI and how to use it, as well as learning a new language for system level code, [[https://ziglang.org/][Zig]]. However, I have a few latent posts and videos that I would like to wrap up, in particular the [[https://github.com/functionaljustin/duct][Duct]] category theory style Scala library is not really complete without an IO/Effect data type, nor some capability for streaming.
 
+I plan to work towards an effect type in Duct, but first I thought it would be fun to review the history of effects in Scala which looks something like this:
+
+| Library     | Approx. Year | Primary Innovation                                              |   |
+|-------------+--------------+-----------------------------------------------------------------+---|
+| Scalaz Task |         2013 | First major functional IO/Task for Scala.                       |   |
+| Monix Task  |         2016 | Added cancellation, fine-grained control, and high performance. |   |
+| Cats Effect |         2017 | Standardized the ecosystem with a shared IO and Typeclasses.    |   |
+| Zio         |         2018 | Introduced the "Environment" (R), typed errors (E)              |   |
+
+All these effects have different design goals and scope, so it is instructive to start at the beginning and see how effects evolved over time. In this post I will use the word effect to mean a potentially lazily evaluated computation. This is where Scala Effects diverge from Scala's standard library future, which can only represent eagerly evaluated computation.
+
+Before looking in detail at ScalaZ task which requires a post of its own, let's explore the mechanism by which you can execute code on a thread, which is a fundamental capability for effect systems. 
+
+A great source for this can be found in the "purely functional parallelism" chapter of [[https://www.manning.com/books/functional-programming-in-scala][Functional Programming in Scala]]. In this post I will dig into that chapter as I think it's a great foundation to build on for a series about effect types in general.
+
+** 
 
 Thanks for reading!
 
