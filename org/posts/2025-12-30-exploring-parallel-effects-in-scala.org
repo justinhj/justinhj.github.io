@@ -40,12 +40,13 @@ It's been a while since I've written a blog post about Scala. Partly because a l
 
 I plan to work towards an effect type in Duct, but first I thought it would be fun to review the history of effects in Scala which looks something like this:
 
-| Library     | Approx. Year | Primary Innovation                                              |   |
-|-------------+--------------+-----------------------------------------------------------------+---|
-| Scalaz Task |         2013 | First major functional IO/Task for Scala.                       |   |
-| Monix Task  |         2016 | Added cancellation, fine-grained control, and high performance. |   |
-| Cats Effect |         2017 | Standardized the ecosystem with a shared IO and Typeclasses.    |   |
-| Zio         |         2018 | Introduced the "Environment" (R), typed errors (E)              |   |
+| Effect      | Approx. Year | Primary Innovation                                              |
+|             | <l>          |                                                                 |
+|-------------+--------------+-----------------------------------------------------------------|
+| Scalaz Task | 2013         | First major functional IO/Task for Scala.                       |
+| Monix Task  | 2016         | Added cancellation, fine-grained control, and high performance. |
+| Cats Effect | 2017         | Standardized the ecosystem with a shared IO and Typeclasses.    |
+| Zio         | 2018         | Introduced the "Environment" (R), typed errors (E)              |
 
 All these effects have different design goals and scope, so it is instructive to start at the beginning and see how effects evolved over time. In this post I will use the word effect to mean a potentially lazily evaluated computation. This is where Scala Effects diverge from Scala's standard library future, which can only represent eagerly evaluated computation.
 
@@ -53,7 +54,49 @@ Before looking in detail at ScalaZ task which requires a post of its own, let's 
 
 A great source for this can be found in the "purely functional parallelism" chapter of [[https://www.manning.com/books/functional-programming-in-scala][Functional Programming in Scala]]. In this post I will dig into that chapter as I think it's a great foundation to build on for a series about effect types in general.
 
-** 
+** Parallel execution basics
+
+In this section talk about how you can submit jobs to Java's ExecutorService. Show how Runnable and Callable work with examples. 
+
+Talk about and demonstrate threadpools and why they are useful.
+
+** Understanding Par
+
+Here you can talk a bit about the CPS style. How the Par type is structured. How we want pure functional programming to allow referentially transparent creation of calls and execution happens when you hit run.
+
+Section 7.3.4 A fully non-blocking Par implementation using actors
+
+talks about how to avoid calling get and blocking
+
+listing 7.6 shows the run implementation 
+
+the change is to use a continuation passing style. Future is defined as callback...
+
+#+BEGIN_SRC scala
+opaque type Future[+A] = (A => Unit) => Unit
+opaque type Par[+A] = ExecutorService => Future[A]
+
+extension [A](pa: Par[A]) def run(es: ExecutorService): A =
+  val ref = new AtomicReference[A]
+  val latch = new CountDownLatch(1)
+  pa(es) { a => ref.set(a); latch.countDown }
+  latch.await
+  ref.get
+#+END_SRC
+
+Talk about the design of map2 and how it must be lazy, and also how the choice is to explicitly fork if you want them to be in parallel 
+
+** Concrete example
+
+A parallel sort that works like this 
+
+split to n cpus 
+
+each cpu runs through and copies the data to a partition bucket
+each cpu sorts a bucket 
+
+compare the base sort
+
 
 Thanks for reading!
 
