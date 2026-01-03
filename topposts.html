@@ -6,7 +6,7 @@ comments: true
 <div class="home">
 
   <h2 class="text-2xl font-bold mb-8">Popular</h2>
-  <div class="post-content">
+  <div class="space-y-8">
 
 
   <ul class="post-list">
@@ -19,9 +19,9 @@ comments: true
                     <a href="{{ post.url | prepend: site.baseurl }}" class="hover:text-[var(--accent-color)] transition-colors duration-200">{{ post.title }}</a>
                 </h3>
             </header>
-            <p class="text-base mb-4">
-                {{ post.excerpt | strip_html | truncatewords: 30 }}
-            </p>
+            <!-- <p class="text-base mb-4"> -->
+            <!--     {{ post.excerpt | strip_html | truncatewords: 30 }} -->
+            <!-- </p> -->
             <footer class="flex flex-wrap items-center gap-2">
 
               {% for post_tag in post.tags %}

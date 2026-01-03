@@ -12,6 +12,7 @@ The site runs on localhost port 4003.
 1. In the pre src org-mode code blocks the text goes off to the right out of the dark background.
   + Fixed
 2. The popular posts screen does not use the same card layout as the posts screen.
+  + Fixed
 
 ## CSS Organization
 
