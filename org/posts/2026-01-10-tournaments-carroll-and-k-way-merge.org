@@ -34,7 +34,7 @@ To understand the use case and algorithms for k-way merge let's start with sorti
 
 Selection sort works by finding the largest element in the array to be sorted and moving it to the end. You repeat this process again, and put the second largest element just before the last element. Repeating this until you reach the first element yields a fully sorted array. This is not a cheap sort though with runtimes of O(n^2) (best case even), but it does guarantee a maximum of n swaps. It is also unstable.
 
-You can see Knuth's code here, converted to Python with the original MMIX code in the comments. [[https://github.com/justinhj/minbpe-cc/blob/main/code/include/Tokenizer.h][straightselectionsort.py]] TODO correct the link
+You can see Knuth's code here, converted to Python with the original MMIX code in the comments. [[https://gist.github.com/justinhj/c609bbb630722dafe26d5023802b1693][straightselectionsort.py]]
 
 You could go to quick sort and other sorts with better runtime, but as we will see, sorting by selection has its uses so let's explore further.
 
@@ -83,11 +83,104 @@ We find it is 8. So the next winner is the larger of 7, 6 or the others in 8's g
 
 Proceeding this way the sort needs n sqrt n comparisons, much better than the original n^2.
 
-Friend noted that you can continue this process of dividing the search into smaller groups based on the cubic root, the quartic, and ultimately into groups of two. Friend called this nth degree selecting. Knuth calls it tree selection. I will call it the tree of winners.
-*** Tree of Winners
+Friend noted that you can continue this process of dividing the search into smaller groups based on the cubic root, the quartic, and ultimately into groups of two. Friend called this nth degree selecting. Knuth calls it tree selection.
+*** Tree Selection
+Before Tree of Losers, which we will get to, there was the Tree of Winners
 
+In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 
+#+BEGIN_EXAMPLE
+                    Chris (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+          Chris                    Pat
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+     Kim        Chris        Pat        Robin
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+  Kim  Sandy Chris  Lou   Pat   Ray   Dale Robin
+#+END_EXAMPLE
 
+The result of a tournament can be thought of as a binary tree where the winner is at the root. The two children will be the two players that played the final, and so on. It is clear we can go down the tree starting at Chris and say that he was better than each of his opponents; Pat, Kim and Lou.
+
+The best player then, is Chris. But what if Chris had not shown up that day? Is Pat the best player? 
+
+Well all we know is that Pat beat all the opponents on her side of the tree, but we don't in fact know if she would have beaten the same opponents on Chris's side. So all we can say is that Chris was the best player overall, and Pat was the best player amongst the right subtree.
+
+How can we find out the second best player? We need to play more games. Specifically. Lou should play Kim and Pat should play the winner of that game. Notice that "only two additional matches are required to find the second-best player, because of the structure we have remembered from the earlier games."
+
+Tree selection, then, procedes by removing the winner of the tournament from our "Tree of Winners", then replaying the tournament without that player, and each replay requires lg N comparisons (log 2 N).
+
+To make this more concrete as a sort lets change the players to their numeric values that determines who will win. We want to sort in ascending order so the lowest values win, and are output first.
+
+Step 1 we remove 1 and output it as the first element.
+
+#+BEGIN_EXAMPLE
+Sort output: 1
+                    1 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            1                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      2           1           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   2     6     1     4     3     5     8     7
+#+END_EXAMPLE
+
+In step 2 we remove 1 from the tournament in preparation to replay without them.
+
+#+BEGIN_EXAMPLE
+Sort output: 1,2
+                        2 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            2                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      2           4           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   2     6     X     4     3     5     8     7
+#+END_EXAMPLE
+
+We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 beats 4 and moves up, 2 beats 3 and becomes the new winner.
+
+Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
+
+#+BEGIN_EXAMPLE
+Sort output: 1,2,3
+                        3 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            4                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      6           4           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   x     6     X     4     3     5     8     7
+#+END_EXAMPLE
+
+It's easy to see how this process can repeat until the tree is empty and we successfully completed our sort in n lg n time!
+
+For greater clarity check out this visualization that creates random trees of data and lets you step through the process!
+
+[[./treeofwinners.html][Tree of Winners]]
 
 ** k-way merge in modern database architecture
 In Knuth's 

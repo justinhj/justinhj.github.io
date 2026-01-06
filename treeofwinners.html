@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>K-Way Merge: Tree of Winners Visualization</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --node-bg: #333;
+            --node-border: #555;
+            --highlight-winner: #4caf50; /* Green */
+            --highlight-empty: #444;     /* Gray for cleared nodes */
+            --highlight-active: #2196f3; /* Blue */
+            --stream-bg: #2d2d2d;
+            --scrollbar-bg: #252525;
+            --scrollbar-thumb: #555;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 { margin-bottom: 20px; }
+        h3 { margin: 0 0 10px 0; color: #aaa; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Controls Grid */
+        .controls {
+            margin: 10px 0 20px 0;
+            width: 800px;
+            display: grid;
+            grid-template-columns: 100px 100px 160px 1fr 100px; 
+            gap: 15px;
+            align-items: center;
+            z-index: 10; 
+        }
+
+        button {
+            width: 100%;
+            height: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: var(--highlight-active);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover { background-color: #1976d2; }
+        button:disabled { background-color: #555; cursor: not-allowed; }
+        
+        button.play-btn { background-color: var(--highlight-winner); }
+        button.play-btn.paused { background-color: #ff9800; } 
+
+        .status-box {
+            background-color: #333;
+            height: 50px;
+            padding: 0 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            line-height: 1.2;
+        }
+        
+        /* Slider Control */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #333;
+            height: 50px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            padding: 0 10px;
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 10px;
+            color: #aaa;
+            margin-top: 2px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px; 
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Output Array */
+        .output-wrapper {
+            width: 800px;
+            height: 60px; 
+            background-color: #252525;
+            border: 1px dashed #444;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            overflow-x: auto; 
+            overflow-y: hidden;
+            display: flex;
+            align-items: center; 
+        }
+        
+        .output-wrapper::-webkit-scrollbar { height: 8px; }
+        .output-wrapper::-webkit-scrollbar-track { background: var(--scrollbar-bg); border-radius: 4px; }
+        .output-wrapper::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+        .output-wrapper::-webkit-scrollbar-thumb:hover { background: #777; }
+
+        .output-section {
+            display: flex;
+            gap: 5px;
+            flex-wrap: nowrap; 
+            padding-right: 10px; 
+        }
+        
+        .output-item {
+            padding: 5px 10px;
+            background-color: var(--highlight-winner);
+            color: white;
+            border-radius: 3px;
+            font-size: 14px;
+            flex-shrink: 0; 
+        }
+
+        /* Tree Visualization */
+        .tree-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 0; 
+        }
+
+        .node {
+            width: 50px;
+            height: 50px;
+            background-color: var(--node-bg);
+            border: 2px solid var(--node-border);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .node span.val { font-size: 14px; font-weight: bold; }
+        .node span.idx { font-size: 10px; color: #aaa; }
+
+        /* Styles for Winner Tree */
+        .node.winner { border-color: var(--highlight-winner); background-color: #1b5e20; }
+        
+        /* The "Empty" state when rebuilding the path */
+        .node.empty { 
+            border-color: #777; 
+            background-color: #222; 
+            border-style: dashed;
+            color: #777;
+        }
+
+        .node.active { 
+            border-color: var(--highlight-active); 
+            box-shadow: 0 0 15px var(--highlight-active); 
+            transform: scale(1.1); 
+            z-index: 10;
+        }
+
+        /* Connecting Lines */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        line {
+            stroke: #555;
+            stroke-width: 2;
+            transition: stroke 0.3s;
+        }
+        
+        /* Dim lines connecting to empty nodes */
+        line.dimmed { stroke: #333; stroke-dasharray: 4; }
+
+        /* Input Streams */
+        .streams-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: -10px; 
+            padding-top: 10px;
+            z-index: 2;
+        }
+        
+        .stream {
+            display: flex;
+            flex-direction: column;
+            width: 60px;
+            background-color: var(--stream-bg);
+            border: 1px solid #444;
+            padding: 5px;
+            align-items: center;
+        }
+
+        .stream-header { font-weight: bold; margin-bottom: 5px; font-size: 12px; }
+        
+        .stream-item {
+            width: 100%;
+            text-align: center;
+            padding: 2px 0;
+            border-bottom: 1px solid #444;
+            font-size: 14px;
+        }
+        .stream-item:first-child { background-color: #444; } /* The head */
+        .stream-item.popped { opacity: 0.3; text-decoration: line-through; }
+
+    </style>
+</head>
+<body>
+
+    <h1>K-Way Merge: Tree of Winners</h1>
+    
+    <div class="container">
+        <div>
+            <h3 style="text-align: center;">Output Sorted List</h3>
+            <div class="output-wrapper" id="outputWrapper">
+                <div class="output-section" id="output"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="stepBtn" onclick="step()">Step</button>
+            <button id="playBtn" class="play-btn" onclick="togglePlay()">Play</button>
+            
+            <div class="slider-container">
+                <input type="range" id="speedSlider" min="100" max="2000" value="1000" step="100">
+                <div class="slider-labels">
+                    <span>Fast</span>
+                    <span>Med</span>
+                    <span>Slow</span>
+                </div>
+            </div>
+
+            <div class="status-box" id="status">Ready to initialize...</div>
+            <button onclick="reset()">Reset</button>
+        </div>
+
+        <div class="tree-container" id="treeContainer" style="width: 800px; height: 320px;">
+            <svg id="lines"></svg>
+        </div>
+
+        <div class="streams-container" id="streams">
+            </div>
+    </div>
+
+<script>
+    // --- Configuration ---
+    const K = 8;
+    const STREAM_LENGTH = 5;
+    
+    // --- State ---
+    let streams = [];
+    // In a Winner Tree of size K, we conceptually have 2*K nodes.
+    // Indices 1 to K-1 are internal nodes.
+    // Indices K to 2K-1 are leaves (representing the streams).
+    let tree = []; 
+    let output = [];
+    let state = 'INIT'; 
+    let replayPath = []; 
+    let currentReplayIdx = 0;
+    
+    // Auto Play State
+    let isPlaying = false;
+    let playTimer = null;
+
+    // UI Coordinates for Tree
+    // Note: ID logic here maps to tree array index
+    const levels = [
+        [{id: 1, x: 400, y: 100}],            // Root
+        [{id: 2, x: 200, y: 180}, {id: 3, x: 600, y: 180}], 
+        [{id: 4, x: 100, y: 260}, {id: 5, x: 300, y: 260}, {id: 6, x: 500, y: 260}, {id: 7, x: 700, y: 260}] 
+    ];
+
+    function init() {
+        // 1. Generate Sorted Streams
+        streams = [];
+        for(let i=0; i<K; i++) {
+            let arr = [];
+            let base = Math.floor(Math.random() * 20);
+            for(let j=0; j<STREAM_LENGTH; j++) {
+                base += Math.floor(Math.random() * 10) + 1;
+                arr.push(base);
+            }
+            streams.push({ id: i, data: arr, headIdx: 0 });
+        }
+
+        // 2. Initialize Tree of Winners
+        // Size 2*K. 0 is unused. 
+        tree = new Array(2 * K).fill(-1);
+        
+        // Initialize Leaves (Indices K to 2K-1)
+        for(let i=0; i<K; i++) {
+            tree[K + i] = i; // Leaf nodes point to stream indices
+        }
+
+        // Build Tree (Bottom-Up)
+        // Compare children, winner moves to parent
+        for(let i = K - 1; i > 0; i--) {
+            let leftChild = 2 * i;
+            let rightChild = 2 * i + 1;
+            tree[i] = getWinner(tree[leftChild], tree[rightChild]);
+        }
+
+        output = [];
+        state = 'POP';
+        render();
+        updateStatus("Initialized! Root holds the global winner (smallest value).");
+    }
+
+    // Returns the stream index that has the smaller current value
+    function getWinner(streamIdxA, streamIdxB) {
+        if (streamIdxA === null) return streamIdxB; // For animation empty states
+        if (streamIdxB === null) return streamIdxA;
+
+        let valA = getVal(streamIdxA);
+        let valB = getVal(streamIdxB);
+
+        if (valA <= valB) return streamIdxA;
+        return streamIdxB;
+    }
+
+    function getVal(streamIdx) {
+        if (streamIdx === -1 || streamIdx === null) return Infinity;
+        let s = streams[streamIdx];
+        if (s.headIdx >= s.data.length) return Infinity;
+        return s.data[s.headIdx];
+    }
+
+    function step() {
+        if (state === 'INIT') {
+            init(); 
+            return true;
+        }
+
+        if (state === 'POP') {
+            let winnerStreamIdx = tree[1];
+            let val = getVal(winnerStreamIdx);
+            
+            if (val === Infinity) {
+                updateStatus("Merge Complete!");
+                stopPlay();
+                document.getElementById('stepBtn').disabled = true;
+                return false; 
+            }
+
+            // 1. Commit to Output
+            output.push(val);
+            
+            // 2. Clear path VISUALLY immediately
+            // We do this BEFORE incrementing headIdx to avoid showing the 
+            // stream's next value at the root position incorrectly.
+            let leafNodeIdx = K + winnerStreamIdx;
+            replayPath = [];
+            let curr = Math.floor(leafNodeIdx / 2); 
+            
+            while (curr >= 1) {
+                replayPath.push(curr);
+                tree[curr] = null; // This creates the '?' visual
+                curr = Math.floor(curr / 2);
+            }
+            
+            // 3. Advance the stream
+            streams[winnerStreamIdx].headIdx++;
+            
+            // 4. Set next state to Replay
+            state = 'REPLAY_STEP';
+            currentReplayIdx = 0;
+            
+            updateStatus(`Popped ${val} from S${winnerStreamIdx}. Path cleared. Replaying...`);
+            render();
+            return true;
+        }
+
+        if (state === 'REPLAY_STEP') {
+            if (currentReplayIdx >= replayPath.length) {
+                state = 'POP';
+                let winner = tree[1];
+                updateStatus(`Replay complete. New Winner: S${winner} (${getVal(winner)}).`);
+                render();
+                return true;
+            }
+
+            let nodeIdx = replayPath[currentReplayIdx];
+            
+            // Children are valid because we process bottom-up
+            let leftChild = nodeIdx * 2;
+            let rightChild = nodeIdx * 2 + 1;
+            
+            let winner = getWinner(tree[leftChild], tree[rightChild]);
+            tree[nodeIdx] = winner;
+            
+            updateStatus(`Node ${nodeIdx}: Comparing S${tree[leftChild]} vs S${tree[rightChild]} -> Winner S${winner}`);
+
+            currentReplayIdx++;
+            render();
+            return true;
+        }
+        return false;
+    }
+    
+    // --- Play / Pause Logic ---
+
+    function togglePlay() {
+        if (isPlaying) {
+            stopPlay();
+        } else {
+            startPlay();
+        }
+    }
+
+    function startPlay() {
+        if (document.getElementById('stepBtn').disabled) return; 
+        isPlaying = true;
+        const btn = document.getElementById('playBtn');
+        btn.innerText = "Pause";
+        btn.classList.add('paused');
+        document.getElementById('stepBtn').disabled = true;
+        runLoop();
+    }
+
+    function stopPlay() {
+        isPlaying = false;
+        clearTimeout(playTimer);
+        const btn = document.getElementById('playBtn');
+        btn.innerText = "Play";
+        btn.classList.remove('paused');
+        
+        if (state !== 'FINISHED' && tree[1] !== null && getVal(tree[1]) !== Infinity) {
+            document.getElementById('stepBtn').disabled = false;
+        }
+    }
+
+    function runLoop() {
+        if (!isPlaying) return;
+
+        const keepGoing = step();
+
+        if (keepGoing) {
+            const speed = parseInt(document.getElementById('speedSlider').value);
+            playTimer = setTimeout(runLoop, speed);
+        } else {
+            stopPlay();
+        }
+    }
+
+    // --- Rendering ---
+
+    function render() {
+        const treeContainer = document.getElementById('treeContainer');
+        const linesSvg = document.getElementById('lines');
+        const streamsContainer = document.getElementById('streams');
+        const outputDiv = document.getElementById('output');
+        const outputWrapper = document.getElementById('outputWrapper');
+
+        // Clear existing nodes
+        Array.from(document.querySelectorAll('.node')).forEach(e => e.remove());
+        linesSvg.innerHTML = '';
+
+        // Draw Lines
+        levels.forEach(lvl => {
+            lvl.forEach(node => {
+                if(node.id >= 4) return; // Don't draw lines from leaves (lines are from parent to child)
+                let leftChildId = node.id * 2;
+                let rightChildId = node.id * 2 + 1;
+                
+                let lNode = getNodeCoord(leftChildId);
+                let rNode = getNodeCoord(rightChildId);
+                
+                // Check if target is empty to dim the line
+                let lEmpty = (tree[leftChildId] === null);
+                let rEmpty = (tree[rightChildId] === null);
+                
+                drawLine(node.x, node.y, lNode.x, lNode.y, lEmpty);
+                drawLine(node.x, node.y, rNode.x, rNode.y, rEmpty);
+            });
+        });
+
+        // Draw Nodes (Indices 1 to K-1)
+        for(let i=1; i<K; i++) {
+            let coords = getNodeCoord(i);
+            let div = document.createElement('div');
+            div.className = 'node';
+            div.style.left = (coords.x - 25) + 'px';
+            div.style.top = (coords.y - 25) + 'px';
+            
+            let streamIdx = tree[i];
+            
+            if (streamIdx === null) {
+                div.classList.add('empty');
+                div.innerHTML = `<span class="val">?</span>`;
+            } else {
+                let val = getVal(streamIdx);
+                div.innerHTML = `<span class="val">${val === Infinity ? '∞' : val}</span><span class="idx">S${streamIdx}</span>`;
+                
+                // Highlight logic
+                if (i === 1) div.classList.add('winner'); // Root is global winner
+            }
+
+            // Highlight active node during replay
+            if (state === 'REPLAY_STEP' && replayPath[currentReplayIdx] === i) {
+                 div.classList.add('active'); 
+            }
+            
+            treeContainer.appendChild(div);
+        }
+
+        // Render Streams
+        streamsContainer.innerHTML = '';
+        streams.forEach(s => {
+            let sDiv = document.createElement('div');
+            sDiv.className = 'stream';
+            let header = document.createElement('div');
+            header.className = 'stream-header';
+            header.innerText = `S${s.id}`;
+            sDiv.appendChild(header);
+
+            s.data.forEach((val, idx) => {
+                let item = document.createElement('div');
+                item.className = 'stream-item';
+                item.innerText = val;
+                if (idx < s.headIdx) item.classList.add('popped');
+                sDiv.appendChild(item);
+            });
+            streamsContainer.appendChild(sDiv);
+        });
+
+        // Render Output
+        outputDiv.innerHTML = '';
+        output.forEach(val => {
+            let d = document.createElement('div');
+            d.className = 'output-item';
+            d.innerText = val;
+            outputDiv.appendChild(d);
+        });
+        
+        outputWrapper.scrollLeft = outputWrapper.scrollWidth;
+    }
+
+    function getNodeCoord(id) {
+        for(let lvl of levels) {
+            for(let n of lvl) {
+                if(n.id === id) return n;
+            }
+        }
+        return {x:0, y:0};
+    }
+
+    function drawLine(x1, y1, x2, y2, isDimmed) {
+        let line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        if(isDimmed) line.classList.add('dimmed');
+        document.getElementById('lines').appendChild(line);
+    }
+
+    function updateStatus(msg) {
+        document.getElementById('status').innerText = msg;
+    }
+
+    function reset() {
+        window.location.reload();
+    }
+
+    init();
+
+</script>
+</body>
+</html>

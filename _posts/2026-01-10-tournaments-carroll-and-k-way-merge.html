@@ -41,7 +41,7 @@ Selection sort works by finding the largest element in the array to be sorted an
 </p>
 
 <p>
-You can see Knuth's code here, converted to Python with the original MMIX code in the comments. <a href="https://github.com/justinhj/minbpe-cc/blob/main/code/include/Tokenizer.h">straightselectionsort.py</a> TODO correct the link
+You can see Knuth's code here, converted to Python with the original MMIX code in the comments. <a href="https://gist.github.com/justinhj/c609bbb630722dafe26d5023802b1693">straightselectionsort.py</a>
 </p>
 
 <p>
@@ -213,20 +213,287 @@ Note that straight selection sort does not have a way to terminate early, so the
 Quadratic selection (E H Friend, JACM 3, 1956) noted that instead of sorting the whole sequence at once you could divide into sqrt(n) groups.
 </p>
 
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-right">8</td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-right">9</td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+</tr>
+</tbody>
+</table>
+
 <p>
-8,4,3  
-7,5,2  
-9,1,6
+Once you have the three groups find the largest in each.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><code>8</code></td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>7</code></td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>9</code></td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+The largest elements is now the largest of the three "winners", 9.
+</p>
+
+<p>
+To find the second largest, it could be either of the two remaining winners or one of the others in 9's group.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><code>8</code></td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>7</code></td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">.</td>
+<td class="org-right">1</td>
+<td class="org-right"><code>6</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+We find it is 8. So the next winner is the larger of 7, 6 or the others in 8's group.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">.</td>
+<td class="org-right"><code>4</code></td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>7</code></td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">.</td>
+<td class="org-right">1</td>
+<td class="org-right"><code>6</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Proceeding this way the sort needs n sqrt n comparisons, much better than the original n<sup>2</sup>.
+</p>
+
+<p>
+Friend noted that you can continue this process of dividing the search into smaller groups based on the cubic root, the quartic, and ultimately into groups of two. Friend called this nth degree selecting. Knuth calls it tree selection.
+</p>
+</div>
+</div>
+<div id="outline-container-org09b62b6" class="outline-3">
+<h3 id="org09b62b6">Tree Selection</h3>
+<div class="outline-text-3" id="text-org09b62b6">
+<p>
+Before Tree of Losers, which we will get to, there was the Tree of Winners
+</p>
+
+<p>
+In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
+</p>
+
+<pre class="example" id="orge6fe7a8">
+                  Chris (Champion)
+                      |
+          +-----------+-----------+
+          |                       |
+        Chris                    Pat
+          |                       |
+    +-----+-----+           +-----+-----+
+    |           |           |           |
+   Kim        Chris        Pat        Robin
+    |           |           |           |
+ +--+--+     +--+--+     +--+--+     +--+--+
+ |     |     |     |     |     |     |     |
+Kim  Sandy Chris  Lou   Pat   Ray   Dale Robin
+</pre>
+
+<p>
+The result of a tournament can be thought of as a binary tree where the winner is at the root. The two children will be the two players that played the final, and so on. It is clear we can go down the tree starting at Chris and say that he was better than each of his opponents; Pat, Kim and Lou.
+</p>
+
+<p>
+The best player then, is Chris. But what if Chris had not shown up that day? Is Pat the best player? 
+</p>
+
+<p>
+Well all we know is that Pat beat all the opponents on her side of the tree, but we don't in fact know if she would have beaten the same opponents on Chris's side. So all we can say is that Chris was the best player overall, and Pat was the best player amongst the right subtree.
+</p>
+
+<p>
+How can we find out the second best player? We need to play more games. Specifically. Lou should play Kim and Pat should play the winner of that game. Notice that "only two additional matches are required to find the second-best player, because of the structure we have remembered from the earlier games."
+</p>
+
+<p>
+Tree selection, then, procedes by removing the winner of the tournament from our "Tree of Winners", then replaying the tournament without that player, and each replay requires lg N comparisons (log 2 N).
+</p>
+
+<p>
+To make this more concrete as a sort lets change the players to their numeric values that determines who will win. We want to sort in ascending order so the lowest values win, and are output first.
+</p>
+
+<p>
+Step 1 we remove 1 and output it as the first element.
+</p>
+
+<pre class="example" id="org8520f6f">
+Sort output: 1
+                    1 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            1                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      2           1           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   2     6     1     4     3     5     8     7
+</pre>
+
+<p>
+In step 2 we remove 1 from the tournament in preparation to replay without them.
+</p>
+
+<pre class="example" id="orgd6ce640">
+Sort output: 1,2
+                        2 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            2                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      2           4           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   2     6     X     4     3     5     8     7
+</pre>
+
+<p>
+We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 beats 4 and moves up, 2 beats 3 and becomes the new winner.
+</p>
+
+<p>
+Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
+</p>
+
+<pre class="example" id="org59eb520">
+Sort output: 1,2,3
+                        3 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            4                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      6           4           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   x     6     X     4     3     5     8     7
+</pre>
+
+<p>
+It's easy to see how this process can repeat until the tree is empty and we successfully completed our sort in n lg n time!
+</p>
+
+<p>
+For greater clarity check out this visualization that creates random trees of data and lets you step through the process!
+</p>
+
+<p>
+<a href="./treeofwinners.html">Tree of Winners</a>
 </p>
 </div>
 </div>
 </div>
-
-
-
-
-
-
 
 <div id="outline-container-orgff36392" class="outline-2">
 <h2 id="orgff36392">k-way merge in modern database architecture</h2>
@@ -280,9 +547,9 @@ branch mispredictions
 </p>
 </div>
 </div>
-<div id="outline-container-org3a55c64" class="outline-3">
-<h3 id="org3a55c64">Tree of Winners</h3>
-<div class="outline-text-3" id="text-org3a55c64">
+<div id="outline-container-orga9ce27d" class="outline-3">
+<h3 id="orga9ce27d">Tree of Winners</h3>
+<div class="outline-text-3" id="text-orga9ce27d">
 <p>
 This is where we start with the final tournament and all the winners at each level
 You take the champion then replay the tournament up from the champions leaf node
