@@ -1,3 +1,4 @@
+
 /* pre.src { */
 /*   background-color: red; */
 /*   color: white; /1* Or whatever color you want for the text *1/ */
@@ -54,4 +55,14 @@ th {
 
 .org-center {
   text-align: center;
+}
+
+table {
+  border-collapse: collapse;
+  margin-bottom: 1em;
+}
+
+td, th {
+  border: 1px solid #ccc;
+  padding: 8px;
 }

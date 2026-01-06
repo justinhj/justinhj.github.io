@@ -373,7 +373,7 @@ Before Tree of Losers, which we will get to, there was the Tree of Winners
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="org82466c9">
+<pre class="example" id="org58ca67d">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -417,7 +417,7 @@ To make this more concrete as a sort lets change the players to their numeric va
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="orgda94b71">
+<pre class="example" id="org543c009">
 Sort output: 1
                     1 (Champion)
                         |
@@ -438,7 +438,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="org656a90d">
+<pre class="example" id="org300ae03">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -463,7 +463,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="org24e1b45">
+<pre class="example" id="org8d2efbd">
 Sort output: 1,2,3
                         3 (Champion)
                         |
@@ -485,11 +485,7 @@ It's easy to see how this process can repeat until the tree is empty and we succ
 </p>
 
 <p>
-For greater clarity check out this visualization that creates random trees of data and lets you step through the process!
-</p>
-
-<p>
-<a href="https://heyes-jones.com/treeofwinners.html">Tree of Winners</a>
+For greater clarity check out this visualization that creates random trees of data and lets you step through the process.
 </p>
 
 <div style="text-align: center; margin: 20px 0;">
@@ -503,10 +499,41 @@ For greater clarity check out this visualization that creates random trees of da
         </p>
     </a>
 </div>
-</div>
+
+<p>
+As you can see the selection tree algorithm works nicely, it gives us n lg k runtime instead. But that's not the end of the story, we can do better.
+</p>
+
+<p>
+There are some downsides this approach:
+</p>
+
+<ul class="org-ul">
+<li>You must compare each sibling at each level, potential cache issue</li>
+<li>Same work as with a heap but without the efficient storage</li>
+</ul>
 </div>
 </div>
 
+
+<div id="outline-container-org7328bad" class="outline-3">
+<h3 id="org7328bad">min heap</h3>
+<div class="outline-text-3" id="text-org7328bad">
+<p>
+TODO 
+</p>
+</div>
+</div>
+
+<div id="outline-container-org73e457f" class="outline-3">
+<h3 id="org73e457f">Tree of Losers</h3>
+<div class="outline-text-3" id="text-org73e457f">
+<p>
+TODO
+</p>
+</div>
+</div>
+</div>
 <div id="outline-container-orgff36392" class="outline-2">
 <h2 id="orgff36392">k-way merge in modern database architecture</h2>
 <div class="outline-text-2" id="text-orgff36392">
