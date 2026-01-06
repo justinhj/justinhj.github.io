@@ -178,10 +178,26 @@ Sort output: 1,2,3
 
 It's easy to see how this process can repeat until the tree is empty and we successfully completed our sort in n lg n time!
 
-For greater clarity check out this visualization that creates random trees of data and lets you step through the process!
+For greater clarity check out this visualization that creates random trees of data and lets you step through the process.
 
-[[./treeofwinners.html][Tree of Winners]]
+#+BEGIN_EXPORT html
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/treeofwinners.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/tree-of-winners-thumbnail.png" 
+             alt="K-Way Merge Tree of Winners Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+#+END_EXPORT
+*** min heap
+TODO 
 
+*** Tree of Losers
+TODO
 ** k-way merge in modern database architecture
 In Knuth's 
 In database architectures such as LSM (Log Structured Merge Trees) and Tigerbeetle's own custom architecture 
