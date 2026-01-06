@@ -1,0 +1,334 @@
+---
+layout: post
+title: Tournaments, Lewis Carroll and efficient k-way merge
+tags: [algorithms, databases]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+<p>
+<img src="/../images/aleksandr-galichkin-AUae3_x_lDU-unsplash.jpg" alt="alt description" title="da title" />
+</p>
+<span>
+Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Aleksandr Galichkin</a> on <a href="https://unsplash.com/photos/aerial-view-of-three-empty-tennis-courts-AUae3_x_lDU?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+</span>
+<div id="outline-container-org856147a" class="outline-2">
+<h2 id="org856147a">What links a tennis tournament with efficient database internals?</h2>
+<div class="outline-text-2" id="text-org856147a">
+<p>
+The joy of learning is that as soon as you dig into a topic you will find yourself going down unexpected rabbit holes and making unexpected connections. For example going down a rabbit hole comes from the Lewis Carroll book "Alice’s Adventures in Wonderland", in which Alice starts her adventure by following a rabbit into his burrow. In this post Lewis Carroll himself will make an appearance. The inspiration for this post was a great video from the TigerBeetle developers discussing how they recently sped up their k-way merge algorithm. You can watch here:
+</p>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<p>
+In this post I will tie together the connections between Lewis Carroll, k-way merging and the Tree of Losers algorithm.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgcd528c4" class="outline-2">
+<h2 id="orgcd528c4">What is k-way merge</h2>
+<div class="outline-text-2" id="text-orgcd528c4">
+</div>
+<div id="outline-container-orge2c51ea" class="outline-3">
+<h3 id="orge2c51ea">Sorting by selection</h3>
+<div class="outline-text-3" id="text-orge2c51ea">
+<p>
+To understand the use case and algorithms for k-way merge let's start with sorting by selection, which is where Knuth begins in section 5.23. 
+</p>
+
+<p>
+Selection sort works by finding the largest element in the array to be sorted and moving it to the end. You repeat this process again, and put the second largest element just before the last element. Repeating this until you reach the first element yields a fully sorted array. This is not a cheap sort though with runtimes of O(n<sup>2</sup>) (best case even), but it does guarantee a maximum of n swaps. It is also unstable.
+</p>
+
+<p>
+You can see Knuth's code here, converted to Python with the original MMIX code in the comments. <a href="https://github.com/justinhj/minbpe-cc/blob/main/code/include/Tokenizer.h">straightselectionsort.py</a> TODO correct the link
+</p>
+
+<p>
+You could go to quick sort and other sorts with better runtime, but as we will see, sorting by selection has its uses so let's explore further.
+</p>
+
+<p>
+Let's sort the following 9 numbers by selection. Each step is shown a separate row.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-right">8</td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+<td class="org-right">7</td>
+<td class="org-right">5</td>
+<td class="org-left">2</td>
+<td class="org-left">9</td>
+<td class="org-left">1</td>
+<td class="org-left">6</td>
+</tr>
+
+<tr>
+<td class="org-right">8</td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+<td class="org-right">7</td>
+<td class="org-right">5</td>
+<td class="org-left">2</td>
+<td class="org-left">6</td>
+<td class="org-left">1</td>
+<td class="org-left"><code>9</code></td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+<td class="org-right">7</td>
+<td class="org-right">5</td>
+<td class="org-left">2</td>
+<td class="org-left">6</td>
+<td class="org-left"><code>8</code></td>
+<td class="org-left"><code>9</code></td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+<td class="org-right">6</td>
+<td class="org-right">5</td>
+<td class="org-left">2</td>
+<td class="org-left"><code>7</code></td>
+<td class="org-left"><code>8</code></td>
+<td class="org-left"><code>9</code></td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+<td class="org-right">2</td>
+<td class="org-right">5</td>
+<td class="org-left"><code>6</code></td>
+<td class="org-left"><code>7</code></td>
+<td class="org-left"><code>8</code></td>
+<td class="org-left"><code>9</code></td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">4</td>
+<td class="org-right"><code>5</code></td>
+<td class="org-left"><code>6</code></td>
+<td class="org-left"><code>7</code></td>
+<td class="org-left"><code>8</code></td>
+<td class="org-left"><code>9</code></td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right"><code>4</code></td>
+<td class="org-right"><code>5</code></td>
+<td class="org-left"><code>6</code></td>
+<td class="org-left"><code>7</code></td>
+<td class="org-left"><code>8</code></td>
+<td class="org-left"><code>9</code></td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right"><code>3</code></td>
+<td class="org-right"><code>4</code></td>
+<td class="org-right"><code>5</code></td>
+<td class="org-left"><code>6</code></td>
+<td class="org-left"><code>7</code></td>
+<td class="org-left"><code>8</code></td>
+<td class="org-left"><code>9</code></td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-right"><code>2</code></td>
+<td class="org-right"><code>3</code></td>
+<td class="org-right"><code>4</code></td>
+<td class="org-right"><code>5</code></td>
+<td class="org-left"><code>6</code></td>
+<td class="org-left"><code>7</code></td>
+<td class="org-left"><code>8</code></td>
+<td class="org-left"><code>9</code></td>
+</tr>
+
+<tr>
+<td class="org-right"><code>1</code></td>
+<td class="org-right"><code>2</code></td>
+<td class="org-right"><code>3</code></td>
+<td class="org-right"><code>4</code></td>
+<td class="org-right"><code>5</code></td>
+<td class="org-left"><code>6</code></td>
+<td class="org-left"><code>7</code></td>
+<td class="org-left"><code>8</code></td>
+<td class="org-left"><code>9</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+In the above we make n-1 comparisons at the first step to be sure of the maximum. We keep track of the maximum found until we get to the beginning then swap the biggest one with the last one. In the next row we have one less comparison to do, and this continues reducing all the way to the last row. 
+</p>
+
+<p>
+Note that straight selection sort does not have a way to terminate early, so the numbers are sorted at the 6th step but we still execute all 9.
+</p>
+</div>
+</div>
+<div id="outline-container-orga9901d5" class="outline-3">
+<h3 id="orga9901d5">Reducing comparisons</h3>
+<div class="outline-text-3" id="text-orga9901d5">
+<p>
+Quadratic selection (E H Friend, JACM 3, 1956) noted that instead of sorting the whole sequence at once you could divide into sqrt(n) groups.
+</p>
+
+<p>
+8,4,3  
+7,5,2  
+9,1,6
+</p>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+<div id="outline-container-orgff36392" class="outline-2">
+<h2 id="orgff36392">k-way merge in modern database architecture</h2>
+<div class="outline-text-2" id="text-orgff36392">
+<p>
+In Knuth's 
+In database architectures such as LSM (Log Structured Merge Trees) and Tigerbeetle's own custom architecture 
+</p>
+
+<p>
+What does this have to do with Tennis tournaments? The above video prompted me to look into the relavent chapters in Knuth's "Art of Computer Programming vol3 - Searching and Sorting", where he describes the k-way merge problem following on from selection sort in general.
+</p>
+
+
+<blockquote>
+<p>
+A quote.
+</p>
+</blockquote>
+</div>
+</div>
+
+<div id="outline-container-org2d5cf5a" class="outline-2">
+<h2 id="org2d5cf5a">Options for k-way merging</h2>
+<div class="outline-text-2" id="text-org2d5cf5a">
+</div>
+<div id="outline-container-org87554bb" class="outline-3">
+<h3 id="org87554bb">linear scan</h3>
+<div class="outline-text-3" id="text-org87554bb">
+<p>
+good when small numbers of k
+zero overhead 
+maybe vectorizable (simd AVX/NEON can compare 4/8 integers in a cpu cycle)
+does not scale to high values of k
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4f5cd45" class="outline-3">
+<h3 id="org4f5cd45">min-heap</h3>
+<div class="outline-text-3" id="text-org4f5cd45">
+<p>
+uses k space
+pop the min element (log K) then add the next element from its stream, then heapify (log K)
+</p>
+
+<p>
+sifting down requires two comparisons per level, left and right subtree, it goes top down
+large heap can be bad for the cache
+branch mispredictions
+</p>
+</div>
+</div>
+<div id="outline-container-org3a55c64" class="outline-3">
+<h3 id="org3a55c64">Tree of Winners</h3>
+<div class="outline-text-3" id="text-org3a55c64">
+<p>
+This is where we start with the final tournament and all the winners at each level
+You take the champion then replay the tournament up from the champions leaf node
+</p>
+
+<p>
+more natural representation but 
+</p>
+
+<p>
+you must compare each sibling at each level, potential cache issue
+same work as with a heap but without the efficient storage
+</p>
+</div>
+</div>
+<div id="outline-container-org7a2a8d6" class="outline-3">
+<h3 id="org7a2a8d6">tree of losers</h3>
+<div class="outline-text-3" id="text-org7a2a8d6">
+<p>
+go from leaf upwards when doing replay 
+you don't have to compare siblings only the next parent
+</p>
+
+<p>
+half as many nodes to check compared to winner tree
+fixed path, better prediction
+</p>
+
+<p>
+a bit more complexity (storing the offset logic)
+</p>
+
+
+
+
+
+
+
+
+<p>
+Thanks for reading!
+</p>
+
+<p>
+&copy;2026 Justin Heyes-Jones. All Rights Reserved
+</p>
+</div>
+</div>
+</div>

@@ -1,0 +1,144 @@
+#+AUTHOR: Justin Heyes-Jones
+#+TITLE: Tournaments, Lewis Carroll and efficient k-way merge
+#+DATE: 2026-01-10
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+HTML_HTML5_FANCY:
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: Tournaments, Lewis Carroll and efficient k-way merge
+tags: [algorithms, databases]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+<p>
+<img src="/../images/aleksandr-galichkin-AUae3_x_lDU-unsplash.jpg" alt="alt description" title="da title" />
+</p>
+<span>
+Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Aleksandr Galichkin</a> on <a href="https://unsplash.com/photos/aerial-view-of-three-empty-tennis-courts-AUae3_x_lDU?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+</span>
+#+END_EXPORT
+** What links a tennis tournament with efficient database internals?
+The joy of learning is that as soon as you dig into a topic you will find yourself going down unexpected rabbit holes and making unexpected connections. For example going down a rabbit hole comes from the Lewis Carroll book "Alice’s Adventures in Wonderland", in which Alice starts her adventure by following a rabbit into his burrow. In this post Lewis Carroll himself will make an appearance. The inspiration for this post was a great video from the TigerBeetle developers discussing how they recently sped up their k-way merge algorithm. You can watch here:
+
+#+BEGIN_EXPORT html
+<iframe width="560" height="315" src="https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+#+END_EXPORT
+
+In this post I will tie together the connections between Lewis Carroll, k-way merging and the Tree of Losers algorithm.
+
+** What is k-way merge
+*** Sorting by selection
+To understand the use case and algorithms for k-way merge let's start with sorting by selection, which is where Knuth begins in section 5.23. 
+
+Selection sort works by finding the largest element in the array to be sorted and moving it to the end. You repeat this process again, and put the second largest element just before the last element. Repeating this until you reach the first element yields a fully sorted array. This is not a cheap sort though with runtimes of O(n^2) (best case even), but it does guarantee a maximum of n swaps. It is also unstable.
+
+You can see Knuth's code here, converted to Python with the original MMIX code in the comments. [[https://github.com/justinhj/minbpe-cc/blob/main/code/include/Tokenizer.h][straightselectionsort.py]] TODO correct the link
+
+You could go to quick sort and other sorts with better runtime, but as we will see, sorting by selection has its uses so let's explore further.
+
+Let's sort the following 9 numbers by selection. Each step is shown a separate row.
+
+|   8 |   4 |   3 |   7 |   5 | 2   | 9   | 1   | 6   |
+|   8 |   4 |   3 |   7 |   5 | 2   | 6   | 1   | ~9~ |
+|   1 |   4 |   3 |   7 |   5 | 2   | 6   | ~8~ | ~9~ |
+|   1 |   4 |   3 |   6 |   5 | 2   | ~7~ | ~8~ | ~9~ |
+|   1 |   4 |   3 |   2 |   5 | ~6~ | ~7~ | ~8~ | ~9~ |
+|   1 |   2 |   3 |   4 | ~5~ | ~6~ | ~7~ | ~8~ | ~9~ |
+|   1 |   2 |   3 | ~4~ | ~5~ | ~6~ | ~7~ | ~8~ | ~9~ |
+|   1 |   2 | ~3~ | ~4~ | ~5~ | ~6~ | ~7~ | ~8~ | ~9~ |
+|   1 | ~2~ | ~3~ | ~4~ | ~5~ | ~6~ | ~7~ | ~8~ | ~9~ |
+| ~1~ | ~2~ | ~3~ | ~4~ | ~5~ | ~6~ | ~7~ | ~8~ | ~9~ |
+
+In the above we make n-1 comparisons at the first step to be sure of the maximum. We keep track of the maximum found until we get to the beginning then swap the biggest one with the last one. In the next row we have one less comparison to do, and this continues reducing all the way to the last row. 
+
+Note that straight selection sort does not have a way to terminate early, so the numbers are sorted at the 6th step but we still execute all 9.
+*** Reducing comparisons
+Quadratic selection (E H Friend, JACM 3, 1956) noted that instead of sorting the whole sequence at once you could divide into sqrt(n) groups.
+
+| 8 | 4 | 3 |
+| 7 | 5 | 2 |
+| 9 | 1 | 6 |
+
+Once you have the three groups find the largest in each.
+
+| ~8~ | 4 | 3 |
+| ~7~ | 5 | 2 |
+| ~9~ | 1 | 6 |
+
+The largest elements is now the largest of the three "winners", 9.
+
+To find the second largest, it could be either of the two remaining winners or one of the others in 9's group.
+
+| ~8~ | 4 |   3 |
+| ~7~ | 5 |   2 |
+| .   | 1 | ~6~ |
+
+We find it is 8. So the next winner is the larger of 7, 6 or the others in 8's group.
+
+| .   | ~4~ |   3 |
+| ~7~ | 5 |   2 |
+| .   | 1 | ~6~ |
+
+Proceeding this way the sort needs n sqrt n comparisons, much better than the original n^2.
+
+Friend noted that you can continue this process of dividing the search into smaller groups based on the cubic root, the quartic, and ultimately into groups of two. Friend called this nth degree selecting. Knuth calls it tree selection. I will call it the tree of winners.
+*** Tree of Winners
+
+
+
+
+** k-way merge in modern database architecture
+In Knuth's 
+In database architectures such as LSM (Log Structured Merge Trees) and Tigerbeetle's own custom architecture 
+
+What does this have to do with Tennis tournaments? The above video prompted me to look into the relavent chapters in Knuth's "Art of Computer Programming vol3 - Searching and Sorting", where he describes the k-way merge problem following on from selection sort in general.
+
+
+#+BEGIN_QUOTE
+A quote.
+#+END_QUOTE
+
+** Options for k-way merging
+*** linear scan
+good when small numbers of k
+zero overhead 
+maybe vectorizable (simd AVX/NEON can compare 4/8 integers in a cpu cycle)
+does not scale to high values of k
+
+*** min-heap 
+uses k space
+pop the min element (log K) then add the next element from its stream, then heapify (log K)
+
+sifting down requires two comparisons per level, left and right subtree, it goes top down
+large heap can be bad for the cache
+branch mispredictions
+*** Tree of Winners
+This is where we start with the final tournament and all the winners at each level
+You take the champion then replay the tournament up from the champions leaf node
+
+more natural representation but 
+
+you must compare each sibling at each level, potential cache issue
+same work as with a heap but without the efficient storage
+*** tree of losers
+go from leaf upwards when doing replay 
+you don't have to compare siblings only the next parent
+
+half as many nodes to check compared to winner tree
+fixed path, better prediction
+
+a bit more complexity (storing the offset logic)
+
+
+
+
+
+
+
+
+Thanks for reading!
+
+\copy2026 Justin Heyes-Jones. All Rights Reserved
+

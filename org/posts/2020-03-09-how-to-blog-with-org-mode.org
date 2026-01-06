@@ -1,4 +1,3 @@
-
 #+TITLE: Blogging with Emacs and Org-mode
 #+AUTHOR: Justin Heyes-Jones
 #+DATE: 2020
