@@ -333,6 +333,7 @@ pre.src {
 
 pre.example {
     background-color: $background-color-light;
+    color: $text-color-light;
     font-family: 'JetBrains Mono', monospace;
     font-size: 16px;
 
@@ -349,6 +350,7 @@ pre.example {
 @media (prefers-color-scheme: light) {
   pre.example {
       background-color: $background-color;
+      color: $text-color;
   }
 }
 

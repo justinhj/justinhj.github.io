@@ -57,6 +57,8 @@ Note that straight selection sort does not have a way to terminate early, so the
 *** Reducing comparisons
 Quadratic selection (E H Friend, JACM 3, 1956) noted that instead of sorting the whole sequence at once you could divide into sqrt(n) groups.
 
+|   8 |   4 |   3 |   7 |   5 | 2   | 9   | 1   | 6   |
+
 | 8 | 4 | 3 |
 | 7 | 5 | 2 |
 | 9 | 1 | 6 |
@@ -193,6 +195,15 @@ For greater clarity check out this visualization that creates random trees of da
     </a>
 </div>
 #+END_EXPORT
+
+As you can see the selection tree algorithm works nicely, it gives us n lg k runtime instead. But that's not the end of the story, we can do better.
+
+There are some downsides this approach:
+
+- You must compare each sibling at each level, potential cache issue
+- Same work as with a heap but without the efficient storage
+
+
 *** min heap
 TODO 
 

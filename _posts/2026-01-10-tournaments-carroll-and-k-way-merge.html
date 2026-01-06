@@ -222,6 +222,43 @@ Quadratic selection (E H Friend, JACM 3, 1956) noted that instead of sorting the
 <col  class="org-right" />
 
 <col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-right">8</td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+<td class="org-right">7</td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+<td class="org-right">9</td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+</tr>
+</tbody>
+</table>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
 </colgroup>
 <tbody>
 <tr>
@@ -373,7 +410,7 @@ Before Tree of Losers, which we will get to, there was the Tree of Winners
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="org58ca67d">
+<pre class="example" id="org368d1f1">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -417,7 +454,7 @@ To make this more concrete as a sort lets change the players to their numeric va
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="org543c009">
+<pre class="example" id="orgfb47b40">
 Sort output: 1
                     1 (Champion)
                         |
@@ -438,7 +475,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="org300ae03">
+<pre class="example" id="orga2d5275">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -463,7 +500,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="org8d2efbd">
+<pre class="example" id="orgdb7752b">
 Sort output: 1,2,3
                         3 (Champion)
                         |
