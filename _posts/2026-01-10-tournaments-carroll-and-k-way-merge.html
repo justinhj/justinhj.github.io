@@ -410,7 +410,7 @@ Before Tree of Losers, which we will get to, there was the Tree of Winners
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="org368d1f1">
+<pre class="example" id="org87f60b9">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -454,7 +454,7 @@ To make this more concrete as a sort lets change the players to their numeric va
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="orgfb47b40">
+<pre class="example" id="orgb5a1e2b">
 Sort output: 1
                     1 (Champion)
                         |
@@ -475,7 +475,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="orga2d5275">
+<pre class="example" id="org38634bf">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -500,7 +500,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="orgdb7752b">
+<pre class="example" id="orgaf318a3">
 Sort output: 1,2,3
                         3 (Champion)
                         |
@@ -540,6 +540,94 @@ For greater clarity check out this visualization that creates random trees of da
 <p>
 As you can see the selection tree algorithm works nicely, it gives us n lg k runtime instead. But that's not the end of the story, we can do better.
 </p>
+</div>
+</div>
+<div id="outline-container-org7328bad" class="outline-3">
+<h3 id="org7328bad">min heap</h3>
+<div class="outline-text-3" id="text-org7328bad">
+<p>
+The min-heap is often seen in applications, used as a priority queue, that is a queue where the elements are submitted in random order but can be retrieved efficiently in sorted order (smallest first, hence the name).
+</p>
+
+<p>
+What's nice about a heap is it can be stored as an array in memory, with the tree flattened out. For example the following tree&#x2026;
+</p>
+
+<pre class="example" id="org0a6d6b3">
+                  a
+                  |
+      +-----------+-----------+
+      |                       |
+      b                       c
+      |                       |
++-----+-----+           +-----+-----+
+|           |           |           |
+d           e           f           g
+</pre>
+
+<p>
+would be represented in the flat array&#x2026;
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">a</td>
+<td class="org-left">b</td>
+<td class="org-left">c</td>
+<td class="org-left">d</td>
+<td class="org-left">e</td>
+<td class="org-left">f</td>
+<td class="org-left">g</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+TODO advantages and disadvantages of the min-heap in general and in this use case. 
+</p>
+
+<p>
+We can use the min-heap to replace the tree selection method above, and it is often used for k-way merge applications. The heap has the size k (the number of merging streams) and you begin be initializing it with the first element in each stream. 
+</p>
+
+<p>
+Subsequently we can simply pop the next smallest element from the heap. Then we need a new one. Where do we get it? Similar to the selection tree method we must go to the stream where the winner came from. The reason for that is that when we initialized the tree, by defition we know that the winner was the smallest of all these elements. All we know now is the next smallest is either in the heap already, or it could be the next one in the winners stream.
+</p>
+
+<p>
+You can play with this interactively here.
+</p>
+
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/min-heap-merge-thumbnail.png" 
+             alt="K-Way Merge Tree of Losers Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+
 
 <p>
 There are some downsides this approach:
@@ -553,14 +641,6 @@ There are some downsides this approach:
 </div>
 
 
-<div id="outline-container-org7328bad" class="outline-3">
-<h3 id="org7328bad">min heap</h3>
-<div class="outline-text-3" id="text-org7328bad">
-<p>
-TODO 
-</p>
-</div>
-</div>
 
 <div id="outline-container-org73e457f" class="outline-3">
 <h3 id="org73e457f">Tree of Losers</h3>
@@ -568,9 +648,23 @@ TODO
 <p>
 TODO
 </p>
+
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/treeoflosers.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/tree-of-losers-thumbnail.png" 
+             alt="K-Way Merge Tree of Losers Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
 </div>
 </div>
 </div>
+</div>
+
+
 <div id="outline-container-orgff36392" class="outline-2">
 <h2 id="orgff36392">k-way merge in modern database architecture</h2>
 <div class="outline-text-2" id="text-orgff36392">

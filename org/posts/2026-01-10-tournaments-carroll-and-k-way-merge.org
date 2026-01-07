@@ -198,17 +198,77 @@ For greater clarity check out this visualization that creates random trees of da
 
 As you can see the selection tree algorithm works nicely, it gives us n lg k runtime instead. But that's not the end of the story, we can do better.
 
-There are some downsides this approach:
-
+TODO There are some downsides this approach:
 - You must compare each sibling at each level, potential cache issue
 - Same work as with a heap but without the efficient storage
 
-
 *** min heap
-TODO 
+The min-heap is often seen in applications, used as a priority queue, that is a queue where the elements are submitted in random order but can be retrieved efficiently in sorted order (smallest first, hence the name).
+
+What's nice about a heap is it can be stored as an array in memory, with the tree flattened out. For example the following tree...
+
+#+BEGIN_EXAMPLE
+                        a
+                        |
+            +-----------+-----------+
+            |                       |
+            b                       c
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      d           e           f           g
+#+END_EXAMPLE
+
+would be represented in the flat array...
+
+| a | b | c | d | e | f | g |
+
+TODO advantages and disadvantages of the min-heap in general and in this use case. 
+
+We can use the min-heap to replace the tree selection method above, and it is often used for k-way merge applications. The heap has the size k (the number of merging streams) and you begin be initializing it with the first element in each stream. 
+
+Subsequently we can simply pop the next smallest element from the heap. Then we need a new one. Where do we get it? Similar to the selection tree method we must go to the stream where the winner came from. The reason for that is that when we initialized the tree, by defition we know that the winner was the smallest of all these elements. All we know now is the next smallest is either in the heap already, or it could be the next one in the winners stream.
+
+You can play with this interactively here.
+
+
+
+#+BEGIN_EXPORT html
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/min-heap-merge-thumbnail.png" 
+             alt="K-Way Merge Tree of Losers Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+#+END_EXPORT
+
+
+
+
 
 *** Tree of Losers
-TODO
+
+
+#+BEGIN_EXPORT html
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/treeoflosers.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/tree-of-losers-thumbnail.png" 
+             alt="K-Way Merge Tree of Losers Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+#+END_EXPORT
+
+
 ** k-way merge in modern database architecture
 In Knuth's 
 In database architectures such as LSM (Log Structured Merge Trees) and Tigerbeetle's own custom architecture 
@@ -250,12 +310,6 @@ half as many nodes to check compared to winner tree
 fixed path, better prediction
 
 a bit more complexity (storing the offset logic)
-
-
-
-
-
-
 
 
 Thanks for reading!
