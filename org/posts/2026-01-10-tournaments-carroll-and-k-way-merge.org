@@ -19,6 +19,19 @@ tags: [algorithms, databases]
 Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Aleksandr Galichkin</a> on <a href="https://unsplash.com/photos/aerial-view-of-three-empty-tennis-courts-AUae3_x_lDU?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 </span>
 #+END_EXPORT
+The joy of learning is finding yourself going down rabbit holes, just like Alice when she curiously followed a rabbit into his burrow and began all her adventures in Wonderland. In my case this video by Tigerbeetle developers Tobias Ziegler (@toziegler) and Alex Kladov (@matklad) in which they walk through the Tree of Losers algorithm they used to speed up a merge process in their database.
+
+#+BEGIN_EXPORT html
+<iframe width="560" height="315" src="https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+#+END_EXPORT
+
+Tobias mentions that Knuth covers this topic extensively in vol3 of the Art of Computer Programming (Searching and Sorting), and so I scurried after the rabbit down the hole and this post is the result. I'll talk about the different algorithms used for k-way merge, why they are needed and where they are used, with some interative demos you can use to help fully understand the workings of these algorithns in an interative visual simulation. First though, let's talk about Tennis.
+
+** Fairness in tennis tournaments
+As Knuth brings up in section 5.3.3 - Minimum-Comparison Selection, in the aforementioned tome, 
+
+Rev. Charles Lutwidge Dodgson, better known by his pen name, Lewis Carroll, author of Alice's Adventures in Wonderland was also a mathematician and logician at Christ Church, Oxford, with a deep obsession for fairness in rules and voting systems.
+
 ** What links a tennis tournament with efficient database internals?
 The joy of learning is that as soon as you dig into a topic you will find yourself going down unexpected rabbit holes and making unexpected connections. For example going down a rabbit hole comes from the Lewis Carroll book "Alice’s Adventures in Wonderland", in which Alice starts her adventure by following a rabbit into his burrow. In this post Lewis Carroll himself will make an appearance. The inspiration for this post was a great video from the TigerBeetle developers discussing how they recently sped up their k-way merge algorithm. You can watch here:
 
@@ -280,16 +293,21 @@ What does this have to do with Tennis tournaments? The above video prompted me t
 A quote.
 #+END_QUOTE
 
-** Options for k-way merging
+** Notes on kway merge to add above
 *** linear scan
+k-1 minimum 
+k n complexity 
 good when small numbers of k
 zero overhead 
 maybe vectorizable (simd AVX/NEON can compare 4/8 integers in a cpu cycle)
 does not scale to high values of k
 
+has a visualization now!
+
 *** min-heap 
 uses k space
 pop the min element (log K) then add the next element from its stream, then heapify (log K)
+  note we replace the top element and sift down rather than pop and push 
 
 sifting down requires two comparisons per level, left and right subtree, it goes top down
 large heap can be bad for the cache
@@ -311,6 +329,10 @@ fixed path, better prediction
 
 a bit more complexity (storing the offset logic)
 
+*** comparison count notes
+tree of winners AND loser both take the same number of comparisons no matter the seed
+min heap is somewhat variable based on the number of sift down steps needed
+linear scan is variable based on the streams emptying
 
 Thanks for reading!
 
