@@ -10,6 +10,29 @@ tags: [algorithms, databases]
 <span>
 Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Aleksandr Galichkin</a> on <a href="https://unsplash.com/photos/aerial-view-of-three-empty-tennis-courts-AUae3_x_lDU?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 </span>
+<p>
+The joy of learning is finding yourself going down rabbit holes, just like Alice when she curiously followed a rabbit into his burrow and began all her adventures in Wonderland. In my case this video by Tigerbeetle developers Tobias Ziegler (@toziegler) and Alex Kladov (@matklad) in which they walk through the Tree of Losers algorithm they used to speed up a merge process in their database.
+</p>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<p>
+Tobias mentions that Knuth covers this topic extensively in vol3 of the Art of Computer Programming (Searching and Sorting), and so I scurried after the rabbit down the hole and this post is the result. I'll talk about the different algorithms used for k-way merge, why they are needed and where they are used, with some interative demos you can use to help fully understand the workings of these algorithns in an interative visual simulation. First though, let's talk about Tennis.
+</p>
+
+<div id="outline-container-orgc639e80" class="outline-2">
+<h2 id="orgc639e80">Fairness in tennis tournaments</h2>
+<div class="outline-text-2" id="text-orgc639e80">
+<p>
+As Knuth brings up in section 5.3.3 - Minimum-Comparison Selection, in the aforementioned tome, 
+</p>
+
+<p>
+Rev. Charles Lutwidge Dodgson, better known by his pen name, Lewis Carroll, author of Alice's Adventures in Wonderland was also a mathematician and logician at Christ Church, Oxford, with a deep obsession for fairness in rules and voting systems.
+</p>
+</div>
+</div>
+
 <div id="outline-container-org856147a" class="outline-2">
 <h2 id="org856147a">What links a tennis tournament with efficient database internals?</h2>
 <div class="outline-text-2" id="text-org856147a">
@@ -32,6 +55,19 @@ In this post I will tie together the connections between Lewis Carroll, k-way me
 <div id="outline-container-orge2c51ea" class="outline-3">
 <h3 id="orge2c51ea">Sorting by selection</h3>
 <div class="outline-text-3" id="text-orge2c51ea">
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/externalsort/linearscan.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/linear-scan-thumbnail.png" 
+             alt="K-Way Merge Tree of Winners Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+
+
 <p>
 To understand the use case and algorithms for k-way merge let's start with sorting by selection, which is where Knuth begins in section 5.23. 
 </p>
@@ -410,7 +446,7 @@ Before Tree of Losers, which we will get to, there was the Tree of Winners
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="org87f60b9">
+<pre class="example" id="org1491371">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -454,7 +490,7 @@ To make this more concrete as a sort lets change the players to their numeric va
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="orgb5a1e2b">
+<pre class="example" id="orgb3bbdd4">
 Sort output: 1
                     1 (Champion)
                         |
@@ -475,7 +511,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="org38634bf">
+<pre class="example" id="orgf957f8e">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -500,7 +536,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="orgaf318a3">
+<pre class="example" id="orga683c99">
 Sort output: 1,2,3
                         3 (Champion)
                         |
@@ -526,7 +562,7 @@ For greater clarity check out this visualization that creates random trees of da
 </p>
 
 <div style="text-align: center; margin: 20px 0;">
-    <a href="https://heyes-jones.com/treeofwinners.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+    <a href="https://heyes-jones.com/externalsort/treeofwinners.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
         <img src="../../../images/tree-of-winners-thumbnail.png" 
              alt="K-Way Merge Tree of Winners Visualization" 
              title="Click to launch interactive simulation"
@@ -540,8 +576,17 @@ For greater clarity check out this visualization that creates random trees of da
 <p>
 As you can see the selection tree algorithm works nicely, it gives us n lg k runtime instead. But that's not the end of the story, we can do better.
 </p>
+
+<p>
+TODO There are some downsides this approach:
+</p>
+<ul class="org-ul">
+<li>You must compare each sibling at each level, potential cache issue</li>
+<li>Same work as with a heap but without the efficient storage</li>
+</ul>
 </div>
 </div>
+
 <div id="outline-container-org7328bad" class="outline-3">
 <h3 id="org7328bad">min heap</h3>
 <div class="outline-text-3" id="text-org7328bad">
@@ -553,7 +598,7 @@ The min-heap is often seen in applications, used as a priority queue, that is a 
 What's nice about a heap is it can be stored as an array in memory, with the tree flattened out. For example the following tree&#x2026;
 </p>
 
-<pre class="example" id="org0a6d6b3">
+<pre class="example" id="org901952c">
                   a
                   |
       +-----------+-----------+
@@ -616,8 +661,10 @@ Subsequently we can simply pop the next smallest element from the heap. Then we 
 You can play with this interactively here.
 </p>
 
+
+
 <div style="text-align: center; margin: 20px 0;">
-    <a href="https://heyes-jones.com/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+    <a href="https://heyes-jones.com/externalsort/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
         <img src="../../../images/min-heap-merge-thumbnail.png" 
              alt="K-Way Merge Tree of Losers Visualization" 
              title="Click to launch interactive simulation"
@@ -627,30 +674,18 @@ You can play with this interactively here.
         </p>
     </a>
 </div>
-
-
-<p>
-There are some downsides this approach:
-</p>
-
-<ul class="org-ul">
-<li>You must compare each sibling at each level, potential cache issue</li>
-<li>Same work as with a heap but without the efficient storage</li>
-</ul>
 </div>
 </div>
+
+
 
 
 
 <div id="outline-container-org73e457f" class="outline-3">
 <h3 id="org73e457f">Tree of Losers</h3>
 <div class="outline-text-3" id="text-org73e457f">
-<p>
-TODO
-</p>
-
 <div style="text-align: center; margin: 20px 0;">
-    <a href="https://heyes-jones.com/treeoflosers.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+    <a href="https://heyes-jones.com/externalsort/treeoflosers.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
         <img src="../../../images/tree-of-losers-thumbnail.png" 
              alt="K-Way Merge Tree of Losers Visualization" 
              title="Click to launch interactive simulation"
@@ -686,18 +721,24 @@ A quote.
 </div>
 </div>
 
-<div id="outline-container-org2d5cf5a" class="outline-2">
-<h2 id="org2d5cf5a">Options for k-way merging</h2>
-<div class="outline-text-2" id="text-org2d5cf5a">
+<div id="outline-container-org74511d1" class="outline-2">
+<h2 id="org74511d1">Notes on kway merge to add above</h2>
+<div class="outline-text-2" id="text-org74511d1">
 </div>
 <div id="outline-container-org87554bb" class="outline-3">
 <h3 id="org87554bb">linear scan</h3>
 <div class="outline-text-3" id="text-org87554bb">
 <p>
+k-1 minimum 
+k n complexity 
 good when small numbers of k
 zero overhead 
 maybe vectorizable (simd AVX/NEON can compare 4/8 integers in a cpu cycle)
 does not scale to high values of k
+</p>
+
+<p>
+has a visualization now!
 </p>
 </div>
 </div>
@@ -708,6 +749,7 @@ does not scale to high values of k
 <p>
 uses k space
 pop the min element (log K) then add the next element from its stream, then heapify (log K)
+  note we replace the top element and sift down rather than pop and push 
 </p>
 
 <p>
@@ -751,13 +793,17 @@ fixed path, better prediction
 <p>
 a bit more complexity (storing the offset logic)
 </p>
+</div>
+</div>
 
-
-
-
-
-
-
+<div id="outline-container-orgd85cdb3" class="outline-3">
+<h3 id="orgd85cdb3">comparison count notes</h3>
+<div class="outline-text-3" id="text-orgd85cdb3">
+<p>
+tree of winners AND loser both take the same number of comparisons no matter the seed
+min heap is somewhat variable based on the number of sift down steps needed
+linear scan is variable based on the streams emptying
+</p>
 
 <p>
 Thanks for reading!

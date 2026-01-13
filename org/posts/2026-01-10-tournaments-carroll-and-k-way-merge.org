@@ -19,6 +19,9 @@ tags: [algorithms, databases]
 Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Aleksandr Galichkin</a> on <a href="https://unsplash.com/photos/aerial-view-of-three-empty-tennis-courts-AUae3_x_lDU?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 </span>
 #+END_EXPORT
+
+
+
 The joy of learning is finding yourself going down rabbit holes, just like Alice when she curiously followed a rabbit into his burrow and began all her adventures in Wonderland. In my case this video by Tigerbeetle developers Tobias Ziegler (@toziegler) and Alex Kladov (@matklad) in which they walk through the Tree of Losers algorithm they used to speed up a merge process in their database.
 
 #+BEGIN_EXPORT html
@@ -43,6 +46,22 @@ In this post I will tie together the connections between Lewis Carroll, k-way me
 
 ** What is k-way merge
 *** Sorting by selection
+
+#+BEGIN_EXPORT html
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/externalsort/linearscan.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/linear-scan-thumbnail.png" 
+             alt="K-Way Merge Tree of Winners Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+#+END_EXPORT
+
+
 To understand the use case and algorithms for k-way merge let's start with sorting by selection, which is where Knuth begins in section 5.23. 
 
 Selection sort works by finding the largest element in the array to be sorted and moving it to the end. You repeat this process again, and put the second largest element just before the last element. Repeating this until you reach the first element yields a fully sorted array. This is not a cheap sort though with runtimes of O(n^2) (best case even), but it does guarantee a maximum of n swaps. It is also unstable.
@@ -197,7 +216,7 @@ For greater clarity check out this visualization that creates random trees of da
 
 #+BEGIN_EXPORT html
 <div style="text-align: center; margin: 20px 0;">
-    <a href="https://heyes-jones.com/treeofwinners.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+    <a href="https://heyes-jones.com/externalsort/treeofwinners.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
         <img src="../../../images/tree-of-winners-thumbnail.png" 
              alt="K-Way Merge Tree of Winners Visualization" 
              title="Click to launch interactive simulation"
@@ -248,7 +267,7 @@ You can play with this interactively here.
 
 #+BEGIN_EXPORT html
 <div style="text-align: center; margin: 20px 0;">
-    <a href="https://heyes-jones.com/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+    <a href="https://heyes-jones.com/externalsort/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
         <img src="../../../images/min-heap-merge-thumbnail.png" 
              alt="K-Way Merge Tree of Losers Visualization" 
              title="Click to launch interactive simulation"
@@ -269,7 +288,7 @@ You can play with this interactively here.
 
 #+BEGIN_EXPORT html
 <div style="text-align: center; margin: 20px 0;">
-    <a href="https://heyes-jones.com/treeoflosers.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+    <a href="https://heyes-jones.com/externalsort/treeoflosers.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
         <img src="../../../images/tree-of-losers-thumbnail.png" 
              alt="K-Way Merge Tree of Losers Visualization" 
              title="Click to launch interactive simulation"
