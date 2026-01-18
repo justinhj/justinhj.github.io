@@ -20,9 +20,10 @@ Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=refe
 </span>
 #+END_EXPORT
 
+Recently I watched the video below from Tigerbeetle developers, Tobias Ziegler (@toziegler) and Alex Kladov (@matklad), who walk through the Tree of Losers algorithm for k-way merge. The video focuses on how the algorithm is used in the 
 
 
-The joy of learning is finding yourself going down rabbit holes, just like Alice when she curiously followed a rabbit into his burrow and began all her adventures in Wonderland. In my case this video by Tigerbeetle developers Tobias Ziegler (@toziegler) and Alex Kladov (@matklad) in which they walk through the Tree of Losers algorithm they used to speed up a merge process in their database.
+The joy of learning is finding yourself going down rabbit holes, just like Alice when she curiously followed a rabbit into his burrow and began all her adventures in Wonderland. In my case this video by Tigerbeetle developers  in which they walk through the Tree of Losers algorithm they used to speed up a merge process in their database.
 
 #+BEGIN_EXPORT html
 <iframe width="560" height="315" src="https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
@@ -304,6 +305,21 @@ You can play with this interactively here.
 ** k-way merge in modern database architecture
 In Knuth's 
 In database architectures such as LSM (Log Structured Merge Trees) and Tigerbeetle's own custom architecture 
+
+** Tigerbeetle
+how many streams do they merge
+
+in scan_tree.zig the kway is initialised 
+  const streams_count = constants.lsm_levels + 2;
+  /// The number of levels in an LSM tree.
+  /// A higher number of levels increases read amplification, as well as total storage capacity.
+  pub const lsm_levels = config.cluster.lsm_levels;
+  must fit in a u6 (max 64)
+  lsm_levels: u6 = 7, (starts at 7 but does it increase)
+
+
+** Tournaments
+
 
 What does this have to do with Tennis tournaments? The above video prompted me to look into the relavent chapters in Knuth's "Art of Computer Programming vol3 - Searching and Sorting", where he describes the k-way merge problem following on from selection sort in general.
 
