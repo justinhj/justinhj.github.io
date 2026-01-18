@@ -107,11 +107,11 @@ Make sure to understand that point as all the algorithms below will do the same.
 
 As mentioned above, you can explore each algorithm interactively, just click on the image below. Each one has the same controls:
 
-- Step. Go to the next step of the algorithm, updateing the step description and animation.
-- Play. To unleash the animation and run through the algorithm until you stop it or the runs are all empty.
-- Seed. Change the seed to try different data sets.
-- Speed slider. Change the speed of the animation.
-- Reset. Restart the simulation.
+- *Step*. Go to the next step of the algorithm, updateing the step description and animation.
+- *Play*. To unleash the animation and run through the algorithm until you stop it or the runs are all empty.
+- *Seed*. Change the seed to try different data sets.
+- *Speed* slider. Change the speed of the animation.
+- *Reset*. Restart the simulation.
 
 #+BEGIN_EXPORT html
 <div style="text-align: center; margin: 20px 0;">
