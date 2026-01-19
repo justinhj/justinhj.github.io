@@ -242,11 +242,195 @@ This costs $2 \cdot \log_2 k$ comparisons per element.
 Let's see how we can improve.
 
 ** Tournament Trees
+In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 
+#+BEGIN_EXAMPLE
+                    Chris (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+          Chris                    Pat
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+     Kim        Chris        Pat        Robin
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+  Kim  Sandy Chris  Lou   Pat   Ray   Dale Robin
+#+END_EXAMPLE
 
+The result of a tournament can be thought of as a binary tree where the winner is at the root. The two children will be the two players that played the final, and so on. It is clear we can go down the tree starting at Chris and say that he was better than each of his opponents; Pat, Kim and Lou.
 
+The best player then, is Chris. But what if Chris had not shown up that day? Is Pat the best player? 
 
-Thanks for reading!
+Well all we know is that Pat beat all the opponents on her side of the tree, but we don't in fact know if she would have beaten the same opponents on Chris's side. So all we can say is that Chris was the best player overall, and Pat was the best player amongst the right subtree.
+
+TODO insert a picture of Alice or something
+
+It is here that we take an interesting digression into Tennis Tournaments and why they are not particularly fair to 2nd place and beyond.
+
+Rev. Charles Lutwidge Dodgson, better known by his pen name, Lewis Carroll, author of Alice's Adventures in Wonderland was also a mathematician and logician at Christ Church, Oxford, with a deep obsession for fairness in rules and voting systems.
+
+“At a Lawn Tennis Tournament, where I chanced, some while ago, to be a spectator, the present method of assigning prizes was brought to my notice by the lamentations of one of the Players, who had been beaten (and had thus lost all chance of a prize) early in the contest, and who had had the mortification of seeing the 2nd prize carried off by a Player whom he knew to be quite inferior to himself.” - Charles Dodgson
+
+Dodgson came up with a scheme, not quite an algorithm as it was not precisely specified, to play the Tennis Tournament in a way that was more fair. His idea was that the losers could replay each other so that they get a second chance. In the tournament above, Lou lost to Chris, but he could get a chance to play Sandy, for example, and win a chance to play for second place. 
+
+If you want to read more about this I found an excellent blog post which includes an implementation of Dodgson's idea in the R language, with the missing specifications figured out.
+
+[[https://freerangestats.info/blog/2020/02/01/tennis-carroll][Lewis Carroll's proposed rules for Tennis Tournaments]]
+
+For the tree of winners algorithm we will work slightly differently. Our job is to continously replay the tournament by removing the winner and bringing in a new candidate from winners run.
+
+In the tournament above, Lou should play Kim and Pat should play the winner of that game. Notice that "only two additional matches are required to find the second-best player, because of the structure we have remembered from the earlier games."
+
+Tree selection, then, procedes by removing the winner of the tournament from our "Tree of Winners", then replaying the tournament without that player, and each replay requires lg N comparisons $(\log_2 n)$.
+
+To make this more concrete as a sort lets change the players to their numeric values that determines who will win. We want to sort in ascending order so the lowest values win, and are output first.
+
+Step 1 we remove 1 and output it as the first element.
+
+#+BEGIN_EXAMPLE
+Sort output: 1
+                    1 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            1                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      2           1           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   2     6     1     4     3     5     8     7
+#+END_EXAMPLE
+
+In step 2 we remove 1 from the tournament in preparation to replay without them.
+
+#+BEGIN_EXAMPLE
+Sort output: 1,2
+                        2 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            2                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      2           4           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   2     6     X     4     3     5     8     7
+#+END_EXAMPLE
+
+We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 beats 4 and moves up, 2 beats 3 and becomes the new winner.
+
+Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
+
+#+BEGIN_EXAMPLE
+Sort output: 1,2,3
+                        3 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            4                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      6           4           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   x     6     X     4     3     5     8     7
+#+END_EXAMPLE
+
+It's easy to see how this process can repeat until the tree is empty and we successfully completed our sort in n lg n time!
+
+Check out this interactive visualization to fully understand the algorithm.
+
+#+BEGIN_EXPORT html
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/externalsort/treeofwinners.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/tree-of-winners-thumbnail.png" 
+             alt="K-Way Merge Tree of Winners Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+#+END_EXPORT
+
+Analysis.
+
+Again we find the asympotic complexity is $O(n \log_2 k)$. However, it is expected to perform better than the min-heap for larger k for the following reasons:
+
+1. You traverse from a single leaf at the bottom up to the root of the tree to replace the winner.
+2. At each level you need compare only with the current sibling.
+3. The number of comparisons is cut to $\log_2 k$, half that of the worse case min-heap.
+4. Hardware Sympathy: Tournament trees have a fixed path from leaf to root. There are no conditional checks to see "which child is smaller" before deciding which path to take down; you always move up from the leaf. This can be friendlier to CPU branch prediction.
+
+There is still some room for improvement thanks to an interesting idea we can trace back to TODO who's idea was it?
+
+** Tree of Losers
+In Knuth's Sorting and Searching (specifically Section 5.4.1), Donald Knuth attributes the origin of the "tree of losers" (also known as a loser tree) to H. B. Demuth. Demuth introduced the concept in his 1956 PhD thesis, Electronic Data Sorting, as a refinement of the standard tournament (winner) tree.
+
+His idea once again reduces the amount of comparisons needed. In the tree of winners to recalculate the path to the root, you must compare the new item against its sibling at every level. This requires keeping track of which child (left or right) the path came from so you can locate the sibling.
+
+Demuth's idea was to store the losers at each level instead of the winners. Similar to the linear scan algorithm we started with, the winner can be stored in a register helping with performance. 
+
+The algorithm looks like this:
+
+1. Populate the tree of losers in a similar way to the tree of winners, but store the loser in each node.
+2. Remove the winner.
+3. Take the next candidate from the winners run.
+4. Starting from its leaf compare with each loser. If the winner loses in this comparison then swap it, otherwise continue moving up the tree. 
+5. When you get to the top, whoever is stored in the winner register gets output.
+6. Repeat until the runs are empty.
+
+Interactive tree of losers:
+
+#+BEGIN_EXPORT html
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/externalsort/treeoflosers.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/tree-of-losers-thumbnail.png" 
+             alt="K-Way Merge Tree of Losers Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+#+END_EXPORT
+
+Analysis.
+
+Asympotic complexity is $O(n \log_2 k)$ again.
+
+We have performance improvements for larger values of k primarily due to efficiency in memory access and branch prediction during the "replay" phase.
+
+Memory access:
+
+Remember in the winner tree we have to gather two siblings from memory and compare them with the current winner. In the tree of losers we have the winner in a register and we only fetch the parent "loser" from memory at each step.
+
+Branch prediction:
+
+While replaying the Winner tree we execute the conditional logic  ~if (came_from_left) compare(new_val, right_child) else compare(new_val, left_child)~ whilst in the tree of losers we always just go to the parent of the current node. 
+
+** Conclusion 
+- K-Way merge is ubiquitous in database technology.
+- For small k (merging 4-16 runs) you can often use simple select and consider using SIMD.
+- Otherwise Tree of Losers is likely to be the best performance.
+
+You can view the Tigerbeetle current implementation here.
+[[https://github.com/tigerbeetle/tigerbeetle/blob/main/src/lsm/k_way_merge.zig][Tigerbeetle K-Way merge]]
+
+Thanks for reading, please contact me using the email and social links above with any comments and corrections.
 
 \copy2026 Justin Heyes-Jones. All Rights Reserved
 

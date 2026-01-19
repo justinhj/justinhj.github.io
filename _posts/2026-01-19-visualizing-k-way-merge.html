@@ -495,7 +495,7 @@ With a min-heap the push and pop operations are both \(O(\log_2 k)\) giving a ru
 because a min-heap is stored in a flat array structure. For example:
 </p>
 
-<pre class="example" id="org48f85c9">
+<pre class="example" id="org75512f2">
                   a
                   |
       +-----------+-----------+
@@ -573,6 +573,163 @@ Let's see how we can improve.
 <div id="outline-container-org222126e" class="outline-2">
 <h2 id="org222126e">Tournament Trees</h2>
 <div class="outline-text-2" id="text-org222126e">
+<p>
+In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
+</p>
+
+<pre class="example" id="orge492030">
+                  Chris (Champion)
+                      |
+          +-----------+-----------+
+          |                       |
+        Chris                    Pat
+          |                       |
+    +-----+-----+           +-----+-----+
+    |           |           |           |
+   Kim        Chris        Pat        Robin
+    |           |           |           |
+ +--+--+     +--+--+     +--+--+     +--+--+
+ |     |     |     |     |     |     |     |
+Kim  Sandy Chris  Lou   Pat   Ray   Dale Robin
+</pre>
+
+<p>
+The result of a tournament can be thought of as a binary tree where the winner is at the root. The two children will be the two players that played the final, and so on. It is clear we can go down the tree starting at Chris and say that he was better than each of his opponents; Pat, Kim and Lou.
+</p>
+
+<p>
+The best player then, is Chris. But what if Chris had not shown up that day? Is Pat the best player? 
+</p>
+
+<p>
+Well all we know is that Pat beat all the opponents on her side of the tree, but we don't in fact know if she would have beaten the same opponents on Chris's side. So all we can say is that Chris was the best player overall, and Pat was the best player amongst the right subtree.
+</p>
+
+<p>
+How can we find out the second best player? We need to play more games. Specifically. Lou should play Kim and Pat should play the winner of that game. Notice that "only two additional matches are required to find the second-best player, because of the structure we have remembered from the earlier games."
+</p>
+
+<p>
+Tree selection, then, procedes by removing the winner of the tournament from our "Tree of Winners", then replaying the tournament without that player, and each replay requires lg N comparisons (log 2 N).
+</p>
+
+<p>
+To make this more concrete as a sort lets change the players to their numeric values that determines who will win. We want to sort in ascending order so the lowest values win, and are output first.
+</p>
+
+<p>
+Step 1 we remove 1 and output it as the first element.
+</p>
+
+<pre class="example" id="org6e6e057">
+Sort output: 1
+                    1 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            1                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      2           1           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   2     6     1     4     3     5     8     7
+</pre>
+
+<p>
+In step 2 we remove 1 from the tournament in preparation to replay without them.
+</p>
+
+<pre class="example" id="org84e54f9">
+Sort output: 1,2
+                        2 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            2                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      2           4           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   2     6     X     4     3     5     8     7
+</pre>
+
+<p>
+We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 beats 4 and moves up, 2 beats 3 and becomes the new winner.
+</p>
+
+<p>
+Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
+</p>
+
+<pre class="example" id="orga5012da">
+Sort output: 1,2,3
+                        3 (Champion)
+                        |
+            +-----------+-----------+
+            |                       |
+            4                       3
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      6           4           3           7
+      |           |           |           |
+   +--+--+     +--+--+     +--+--+     +--+--+
+   |     |     |     |     |     |     |     |
+   x     6     X     4     3     5     8     7
+</pre>
+
+<p>
+It's easy to see how this process can repeat until the tree is empty and we successfully completed our sort in n lg n time!
+</p>
+
+<p>
+For greater clarity check out this visualization that creates random trees of data and lets you step through the process.
+</p>
+
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/externalsort/treeofwinners.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/tree-of-winners-thumbnail.png" 
+             alt="K-Way Merge Tree of Winners Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+
+<p>
+As you can see the selection tree algorithm works nicely, it gives us n lg k runtime instead. But that's not the end of the story, we can do better.
+</p>
+
+<p>
+Analysis.
+</p>
+
+<p>
+Again we find the asympotic complexity is \(O(n \log_2 k)\). However, it is expected to perform better than the min-heap for larger k for the following reasons:
+</p>
+
+<ol class="org-ol">
+<li>You traverse from a single leaf at the bottom up to the root of the tree to replace the winner.</li>
+<li>At each level you need compare only with the current sibling.</li>
+<li>The number of comparisons is cut to \(\log_2 k\), half that of the worse case min-heap.</li>
+<li>Hardware Sympathy: Tournament trees have a fixed path from leaf to root. There are no conditional checks to see "which child is smaller" before deciding which path to take down; you always move up from the leaf. This can be friendlier to CPU branch prediction.</li>
+</ol>
+
+
+
+
+
+
+
+
 <p>
 Thanks for reading!
 </p>
