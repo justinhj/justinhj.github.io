@@ -40,23 +40,32 @@ In particular I talk about k-way merge, a type of external sort, and four differ
 
 If you're wondering what that has to do with the tennis court image above, read on!
 
-** External sort
+** External sort and k-way merge
 Whilst most engineers are familiar with a number of sorting algorithms that work with data sets that fit entirely in memory, there are use cases, both historical and current, that do not. In these cases you must pull in small chunks of memory and sort them before outputting to a larger sorted output. 
 
-Historically this was a key function of transaction processing. Banks would update a daily transaction log, and after closing would need to merge those transactions into a master file where all the accounts are kept sorted by account id.
+As an extreme example take the 1960 USA Census for example. The Census Bureau's UNIVAC 1105 was a supercomputer of the day, with up to 18 attached tape drives. Even so, it had a limited memory (less than 300kb) and so there is no way to sort the data in memory.
 
-TODO having trouble making above sound like k-way merge...
+Instead the process used was called Balanced k-way merge. Input data was put onto one set of tapes, and another set of tapes are used as output. The computer read as many records as it could fit in memory, sorted them and wrote them to tape. The tape was then filled with these sorted runs. 
 
-This process was time critical; if it did not complete before the bank opened in the morning then the bank's business would be delayed until it did. Clever algorithms were invented for this purpose, in particular polyphase merge, which makes clever use of the Fibonacci numbers to work around the capabilities of magnetic tape storage. TODO add a link. Not wikipedia. 
+The k-way merge part comes from k (the number of runs being handled at once, in this case the number of tapes, let's assume 4). At the first step the computer reads the first records from each tape and outputs the smallest one to the output tape. Next, it gets the next record from the tape where the smallest record came from. This process continues until the records on all 4 tapes have been exported to a single sorted run on the output tape.
+
+#+BEGIN_EXPORT html
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2YnydcjlLPg?si=IKNFMKHE5TMEels4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+#+END_EXPORT
 
 ** External sort in modern databases
-External sort is needed in modern databases for various purposes, for example:
+Modern databases use essentially the same logic. An LSM tree (see next section) flushes "SSTables" (sorted runs) to disk (which are modern "tapes") and then performs a background k-way merge (compaction) to combine them. The physics changed (seek times vs. linear scan), but the math of the k-way merge remains exactly the same.
+
+External sort is used for various purposes:
 
 | Databases                                                  | Purpose                                            | Algorithm                    |
 | LSM-Tree Databases (RocksDB, Cassandra, ScyllaDB, LevelDB) | Compaction                                         | min-heap                     |
 | Search Engines (Apache Lucene / Elasticsearch / Solr)      | Segment merging                                    | min-heap                     |
 | Analytical & Columnar Databases (ClickHouse, DuckDB)       | Part Merging: Maintaining column blocks sort order | Linear scan/Vectorized merge |
 | Relational Databases (PostgreSQL)                          | Queries that exceed work_mem/Merging joins         | Tree of Losers/Polyphase     |
+
+** LSM trees
+LSM-Trees (Log-Structured Merge-Trees) are a data structure that achieves fast writes by buffering changes in memory and periodically merging them with sorted on-disk tables. I won't go into much detail on them in this post, it's only important to know that the typical implementation requires taking multiple sorted runs of records and merge sorting them into a single sorted run.
 
 ** Tigerbeetle 
 Like DuckDB and others, Tigerbeetle's storage engine is also using LSM-Trees. Let's dig into that a little:
@@ -69,7 +78,7 @@ Like DuckDB and others, Tigerbeetle's storage engine is also using LSM-Trees. Le
 
 In order to accept new transactions very quickly, Tigerbeetle writes new transactions into an unsorted mutable memory buffer (each transaction was safely written into a write ahead log on a quorum of nodes before this step, so it cannot be lost at this point). 
 
-The memory buffer has a fixed size and once it is full it becomes an immutable buffer and is flushed to disk. LSM trees store data into internally sorted tables, and these tables are merged into larger ones as you get further down the tree. 
+The memory buffer has a fixed size and once it is full it becomes an immutable buffer and is flushed to disk. As noted above, LSM trees store data into internally sorted tables, and these tables are merged into larger ones as you get further down the tree. 
 
 To better explain the mechanism play with the following toy Tigerbeetle database: 
 
@@ -210,9 +219,7 @@ Once again, you can step through the algorithm using the interactive visualizati
 
 Analysis.
 
-With a min-heap the push and pop operations are both $O(\log_2 k)$ giving a runtime complexity of $O(k \log n)$.
-
-because a min-heap is stored in a flat array structure. For example:
+With a min-heap the push and pop operations are both $O(\log_2 k)$ giving a runtime complexity of $O(n \log k)$.
 
 #+BEGIN_EXAMPLE
                         a
@@ -226,7 +233,7 @@ because a min-heap is stored in a flat array structure. For example:
       d           e           f           g
 #+END_EXAMPLE
 
-Usually represented in the flat array as follows:
+min-heaps are represented as a flat array. For example the tree above would be stored in memory like this:
 
 | a | b | c | d | e | f | g |
 
@@ -433,6 +440,5 @@ You can view the Tigerbeetle current implementation here.
 [[https://github.com/tigerbeetle/tigerbeetle/blob/main/src/lsm/k_way_merge.zig][Tigerbeetle K-Way merge]]
 
 Thanks for reading, please contact me using the email and social links above with any comments and corrections.
-
-\copy2026 Justin Heyes-Jones. All Rights Reserved
+\copy 2026 Justin Heyes-Jones. All Rights Reserved
 
