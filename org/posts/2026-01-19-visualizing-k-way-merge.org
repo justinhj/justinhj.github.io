@@ -36,7 +36,7 @@ This post is inspired by a video by Tigerbeetle engineers Tobias Ziegler (@tozie
 <iframe width="560" height="315" src="https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 #+END_EXPORT
 
-In particular I talk about k-way merge, a type of external sort, and four different algorithms and data structures, each having its own interative application you can use to step through the algorithm and get a good understanding of its operation.
+In particular I talk about k-way merge, a type of external sort, and four different algorithms and data structures, each having its own interactive application you can use to step through the algorithm and get a good understanding of its operation.
 
 If you're wondering what that has to do with the tennis court image above, read on!
 
@@ -47,7 +47,7 @@ Historically this was a key function of transaction processing. Banks would upda
 
 TODO having trouble making above sound like k-way merge...
 
-This process was time critical; if it did not complete before the bank opened in the morning then the bank's business would be delayed until it did. Clever algorithms were invented for this purpose, in particular polyphase merge, which makes clever use of the Fibonacci numbers to work around the capablities of magnetic tape storage. TODO add a link. Not wikipedia. 
+This process was time critical; if it did not complete before the bank opened in the morning then the bank's business would be delayed until it did. Clever algorithms were invented for this purpose, in particular polyphase merge, which makes clever use of the Fibonacci numbers to work around the capabilities of magnetic tape storage. TODO add a link. Not wikipedia. 
 
 ** External sort in modern databases
 External sort is needed in modern databases for various purposes, for example:
@@ -89,7 +89,7 @@ To better explain the mechanism play with the following toy Tigerbeetle database
 
 TODO explain which points here use the merging process. 
 
-Apart from this compaction step, Tigerbeetle also has the same problem when doing range based query scans; it will scan the tables in the various levels of the LSM tree and will need to combine each one into a single sorted result,
+Apart from this compaction step, Tigerbeetle also has the same problem when doing range based query scans; it will scan the tables in the various levels of the LSM tree and will need to combine each one into a single sorted result.
 
 ** K-Way merges
 The process of taking multiple sorted runs and outputting a new single sorted run of data is called k-way merging. k is the number of runs we are merging, so we are merging it in k-ways.
@@ -111,7 +111,7 @@ Make sure to understand that point as all the algorithms below will do the same.
 
 As mentioned above, you can explore each algorithm interactively, just click on the image below. Each one has the same controls:
 
-- *Step*. Go to the next step of the algorithm, updateing the step description and animation.
+- *Step*. Go to the next step of the algorithm, updating the step description and animation.
 - *Play*. To unleash the animation and run through the algorithm until you stop it or the runs are all empty.
 - *Seed*. Change the seed to try different data sets.
 - *Speed* slider. Change the speed of the animation.
@@ -135,18 +135,20 @@ Analysis.
 
 Since we must do k comparisons per output, with n total data items in all the runs the complexity is: $O(kn)$
 
-Whilst not bad, we can do better. However, for small values of k it may well be good enough, or even faster than the other solutions below, despite the asymomptic complexity saying otherwise. 
+Whilst not bad, we can do better. However, for small values of k it may well be good enough, or even faster than the other solutions below, despite the asymptotic complexity saying otherwise. 
 
 In addition, on modern CPUs you can use SIMD instructions (AVX2 or AVX-512) to handle up to k=16 assuming 32 bit integers. However, since Tigerbeetle can have up to 64 (I think) runs and uses 128 bit identifiers, this is not a useful option.
 
 ** Going faster with Tree Selection
-As mentioned above we do $O(k)$ comparisons per output, can we do better? Well to be more precise for the first output we need do k-1 comparisons, since we start with the first element and that iterate them all, swapping out the first element with the first smaller one and so on. In order to speed things up we need to think about doing less comparisons.
+As mentioned above we do $O(k)$ comparisons per output, can we do better? Well, to be more precise for the first output we need do k-1 comparisons, since we start with the first element and that iterate them all, swapping out the first element with the first smaller one and so on. In order to speed things up we need to think about doing less comparisons.
 
 Although we need to do k-1 comparisons to get the 1st item, with some thought we can do far fewer to find the 2nd item, 3rd item and so on. 
 
-In Knuth (Art of Computer ProgrSearching and Sorting) we find the discussion on selection sort which helps here...
+In Knuth (Art of Computer Programming vol3: Searching and Sorting) we find the discussion on selection sort which helps here...
 
 Quadratic selection (E H Friend, JACM 3, 1956) noted that we can do better by first grouping the sort items into the root of n items. For example sorting 9 items we divide into groups of 3.
+
+~Note: in selection sort you find the largest element at each step and move it to the end of the array. In k-way merge we output smallest first. Don't be confused by finding the largest element in this section.~
 
 | 8 | 4 | 3 | 7 | 5 | 2 | 9 | 1 | 6 |
 
@@ -185,12 +187,12 @@ As we saw above, modern databases make use of the min-heap for k-way merge. As a
 
 In order to use the min-heap for k-way merge we do the following:
 
-1. Populate a fixed size min-heap with the first (smalled) elements from the k runs.
+1. Populate a fixed size min-heap with the first (smallest) elements from the k runs.
 2. Pop the top item from the heap (the smallest) and replace it with the next from the same run.
 3. Sift the heap down to make the heap valid again.
 4. Repeat until the sort is complete.
 
-Once again, you can step through the algorithm using the interative visualization below.
+Once again, you can step through the algorithm using the interactive visualization below.
 
 #+BEGIN_EXPORT html
 <div style="text-align: center; margin: 20px 0;">
@@ -374,7 +376,7 @@ Again we find the asympotic complexity is $O(n \log_2 k)$. However, it is expect
 3. The number of comparisons is cut to $\log_2 k$, half that of the worse case min-heap.
 4. Hardware Sympathy: Tournament trees have a fixed path from leaf to root. There are no conditional checks to see "which child is smaller" before deciding which path to take down; you always move up from the leaf. This can be friendlier to CPU branch prediction.
 
-There is still some room for improvement thanks to an interesting idea we can trace back to TODO who's idea was it?
+There is still some room for improvement thanks to an ingenius idea from the 1950's.
 
 ** Tree of Losers
 In Knuth's Sorting and Searching (specifically Section 5.4.1), Donald Knuth attributes the origin of the "tree of losers" (also known as a loser tree) to H. B. Demuth. Demuth introduced the concept in his 1956 PhD thesis, Electronic Data Sorting, as a refinement of the standard tournament (winner) tree.
