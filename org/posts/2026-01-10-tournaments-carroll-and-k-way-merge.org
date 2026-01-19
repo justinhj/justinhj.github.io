@@ -90,7 +90,7 @@ Note that straight selection sort does not have a way to terminate early, so the
 *** Reducing comparisons
 Quadratic selection (E H Friend, JACM 3, 1956) noted that instead of sorting the whole sequence at once you could divide into sqrt(n) groups.
 
-|   8 |   4 |   3 |   7 |   5 | 2   | 9   | 1   | 6   |
+| 8 | 4 | 3 | 7 | 5 | 2 | 9 | 1 | 6 |
 
 | 8 | 4 | 3 |
 | 7 | 5 | 2 |

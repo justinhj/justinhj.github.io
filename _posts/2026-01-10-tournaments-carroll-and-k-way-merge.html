@@ -452,7 +452,7 @@ Before Tree of Losers, which we will get to, there was the Tree of Winners
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="orgaa988fa">
+<pre class="example" id="org335fcc0">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -496,7 +496,7 @@ To make this more concrete as a sort lets change the players to their numeric va
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="org7c4c8ba">
+<pre class="example" id="org1939c2a">
 Sort output: 1
                     1 (Champion)
                         |
@@ -517,7 +517,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="org8f6844d">
+<pre class="example" id="orgb12b5bc">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -542,7 +542,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="org6fe9b25">
+<pre class="example" id="org3e70a63">
 Sort output: 1,2,3
                         3 (Champion)
                         |
@@ -604,7 +604,7 @@ The min-heap is often seen in applications, used as a priority queue, that is a 
 What's nice about a heap is it can be stored as an array in memory, with the tree flattened out. For example the following tree&#x2026;
 </p>
 
-<pre class="example" id="org3ca19c8">
+<pre class="example" id="org2cc7da2">
                   a
                   |
       +-----------+-----------+

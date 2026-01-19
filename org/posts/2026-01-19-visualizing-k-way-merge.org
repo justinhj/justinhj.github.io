@@ -3,6 +3,7 @@
 #+DATE: 2026-01-19
 #+STARTUP: showall
 #+OPTIONS: toc:nil
+#+OPTIONS: tex:mathjax
 #+HTML_HTML5_FANCY:
 #+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.3 (<a href="http://orgmode.org">Org</a> mode 9.4)
 #+BEGIN_EXPORT html
@@ -12,6 +13,7 @@ title: Visualizing K-Way Merge&#58 An Interactive Guide to Database Sorting
 tags: [algorithms, databases]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
 <p>
 <img src="/../images/aleksandr-galichkin-AUae3_x_lDU-unsplash.jpg" alt="alt description" title="da title" />
 </p>
@@ -43,7 +45,7 @@ Whilst most engineers are familiar with a number of sorting algorithms that work
 
 Historically this was a key function of transaction processing. Banks would update a daily transaction log, and after closing would need to merge those transactions into a master file where all the accounts are kept sorted by account id.
 
-TODO having trouble making above sound like k-way merge.
+TODO having trouble making above sound like k-way merge...
 
 This process was time critical; if it did not complete before the bank opened in the morning then the bank's business would be delayed until it did. Clever algorithms were invented for this purpose, in particular polyphase merge, which makes clever use of the Fibonacci numbers to work around the capablities of magnetic tape storage. TODO add a link. Not wikipedia. 
 
@@ -97,6 +99,8 @@ Implementing k-way merging is not super complicated, but as we will see there ar
 ** Linear scan
 As always, let's start with the simplest solution possible. In linear scan you take the smallest elements from each of the k runs, and that is your starting set. Each iteration we do the following:
 
+Algorithm.
+
 1. Run through all k current candidates tracking the smallest one found.
 2. Output the smallest element.
 3. Replace the smallest element with the next element ~from the run it came from~.
@@ -127,8 +131,89 @@ As mentioned above, you can explore each algorithm interactively, just click on 
 </div>
 #+END_EXPORT
 
+Analysis.
 
+Since we must do k comparisons per output, with n total data items in all the runs the complexity is: $O(kn)$
 
+Whilst not bad, we can do better. However, for small values of k it may well be good enough, or even faster than the other solutions below, despite the asymomptic complexity saying otherwise. 
+
+In addition, on modern CPUs you can use SIMD instructions (AVX2 or AVX-512) to handle up to k=16 assuming 32 bit integers. However, since Tigerbeetle can have up to 64 (I think) runs and uses 128 bit identifiers, this is not a useful option.
+
+** Going faster with Tree Selection
+As mentioned above we do $O(k)$ comparisons per output, can we do better? Well to be more precise for the first output we need do k-1 comparisons, since we start with the first element and that iterate them all, swapping out the first element with the first smaller one and so on. In order to speed things up we need to think about doing less comparisons.
+
+Although we need to do k-1 comparisons to get the 1st item, with some thought we can do far fewer to find the 2nd item, 3rd item and so on. 
+
+In Knuth (Art of Computer ProgrSearching and Sorting) we find the discussion on selection sort which helps here...
+
+Quadratic selection (E H Friend, JACM 3, 1956) noted that we can do better by first grouping the sort items into the root of n items. For example sorting 9 items we divide into groups of 3.
+
+| 8 | 4 | 3 | 7 | 5 | 2 | 9 | 1 | 6 |
+
+| 8 | 4 | 3 |
+| 7 | 5 | 2 |
+| 9 | 1 | 6 |
+
+Once you have the three groups find the largest in each.
+
+| ~8~ | 4 | 3 |
+| ~7~ | 5 | 2 |
+| ~9~ | 1 | 6 |
+
+The largest elements is now the largest of the three "winners", 9.
+
+To find the second largest, it could be either of the two remaining winners or one of the others in 9's group. (Note that I replace removed elements with infinity so they can be ignored in subsequent steps.
+
+| ~8~      | 4 |   3 |
+| ~7~      | 5 |   2 |
+| $\infty$ | 1 | ~6~ |
+
+We find it is 8. So the next winner is the larger of 7, 6 or the others in 8's group.
+
+| $\infty$ | ~4~ |   3 |
+| ~7~      |   5 |   2 |
+| $\infty$ |   1 | ~6~ |
+
+Proceeding this way the sort needs n sqrt n comparisons, much better than the original n^2.
+
+Friend noted that you can continue this process of dividing the search into smaller groups based on the cubic root, the quartic, and ultimately into groups of two. Friend called this nth degree selecting. Knuth calls it tree selection.
+
+This is what leads to the next three solutions to k-way merge, using tree structures essentially gives us a way to cache comparisons so we don't have to repeat them.
+
+*** min heap
+As we saw above, modern databases make use of the min-heap for k-way merge. As a binary tree structure it's an obvious choice.
+
+What's nice about a heap is it can be stored as an array in memory, with the tree flattened out. For example the following tree...
+
+#+BEGIN_EXAMPLE
+                        a
+                        |
+            +-----------+-----------+
+            |                       |
+            b                       c
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      d           e           f           g
+#+END_EXAMPLE
+
+would be represented in the flat array...
+
+| a | b | c | d | e | f | g |
+
+#+BEGIN_EXPORT html
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/externalsort/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/min-heap-merge-thumbnail.png" 
+             alt="K-Way Merge Tree of Losers Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+#+END_EXPORT
 
 
 

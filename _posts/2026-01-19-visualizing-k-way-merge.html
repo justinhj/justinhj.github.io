@@ -4,6 +4,7 @@ title: Visualizing K-Way Merge&#58 An Interactive Guide to Database Sorting
 tags: [algorithms, databases]
 ---
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
 <p>
 <img src="/../images/aleksandr-galichkin-AUae3_x_lDU-unsplash.jpg" alt="alt description" title="da title" />
 </p>
@@ -53,7 +54,7 @@ Historically this was a key function of transaction processing. Banks would upda
 </p>
 
 <p>
-TODO having trouble making above sound like k-way merge.
+TODO having trouble making above sound like k-way merge&#x2026;
 </p>
 
 <p>
@@ -179,6 +180,10 @@ Implementing k-way merging is not super complicated, but as we will see there ar
 As always, let's start with the simplest solution possible. In linear scan you take the smallest elements from each of the k runs, and that is your starting set. Each iteration we do the following:
 </p>
 
+<p>
+Algorithm.
+</p>
+
 <ol class="org-ol">
 <li>Run through all k current candidates tracking the smallest one found.</li>
 <li>Output the smallest element.</li>
@@ -217,8 +222,302 @@ As mentioned above, you can explore each algorithm interactively, just click on 
     </a>
 </div>
 
+<p>
+Analysis.
+</p>
+
+<p>
+Since we must do k comparisons per output, with n total data items in all the runs the complexity is: \(O(kn)\)
+</p>
+
+<p>
+Whilst not bad, we can do better. However, for small values of k it may well be good enough, or even faster than the other solutions below, despite the asymomptic complexity saying otherwise. 
+</p>
+
+<p>
+In addition, on modern CPUs you can use SIMD instructions (AVX2 or AVX-512) to handle up to k=16 assuming 32 bit integers. However, since Tigerbeetle can have up to 64 (I think) runs and uses 128 bit identifiers, this is not a useful option.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3c1a975" class="outline-2">
+<h2 id="org3c1a975">Going faster with Tree Selection</h2>
+<div class="outline-text-2" id="text-org3c1a975">
+<p>
+As mentioned above we do \(O(k)\) comparisons per output, can we do better? Well to be more precise for the first output we need do k-1 comparisons, since we start with the first element and that iterate them all, swapping out the first element with the first smaller one and so on. In order to speed things up we need to think about doing less comparisons.
+</p>
+
+<p>
+Although we need to do k-1 comparisons to get the 1st item, with some thought we can do far fewer to find the 2nd item, 3rd item and so on. 
+</p>
+
+<p>
+In Knuth (Art of Computer ProgrSearching and Sorting) we find the discussion on selection sort which helps here&#x2026;
+</p>
+
+<p>
+Quadratic selection (E H Friend, JACM 3, 1956) noted that we can do better by first grouping the sort items into the root of n items. For example sorting 9 items we divide into groups of 3.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-right">8</td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+<td class="org-right">7</td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+<td class="org-right">9</td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+</tr>
+</tbody>
+</table>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-right">8</td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-right">9</td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Once you have the three groups find the largest in each.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><code>8</code></td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>7</code></td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>9</code></td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+The largest elements is now the largest of the three "winners", 9.
+</p>
+
+<p>
+To find the second largest, it could be either of the two remaining winners or one of the others in 9's group. (Note that I replace removed elements with infinity so they can be ignored in subsequent steps.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><code>8</code></td>
+<td class="org-right">4</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>7</code></td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">\(\infty\)</td>
+<td class="org-right">1</td>
+<td class="org-right"><code>6</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+We find it is 8. So the next winner is the larger of 7, 6 or the others in 8's group.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">\(\infty\)</td>
+<td class="org-right"><code>4</code></td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>7</code></td>
+<td class="org-right">5</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">\(\infty\)</td>
+<td class="org-right">1</td>
+<td class="org-right"><code>6</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Proceeding this way the sort needs n sqrt n comparisons, much better than the original n<sup>2</sup>.
+</p>
+
+<p>
+Friend noted that you can continue this process of dividing the search into smaller groups based on the cubic root, the quartic, and ultimately into groups of two. Friend called this nth degree selecting. Knuth calls it tree selection.
+</p>
+
+<p>
+This is what leads to the next three solutions to k-way merge, using tree structures essentially gives us a way to cache comparisons so we don't have to repeat them.
+</p>
+</div>
+
+<div id="outline-container-orgc32f994" class="outline-3">
+<h3 id="orgc32f994">min heap</h3>
+<div class="outline-text-3" id="text-orgc32f994">
+<p>
+As we saw above, modern databases make use of the min-heap for k-way merge. As a binary tree structure it's an obvious choice.
+</p>
+
+<p>
+What's nice about a heap is it can be stored as an array in memory, with the tree flattened out. For example the following tree&#x2026;
+</p>
+
+<pre class="example" id="orga0d40a2">
+                  a
+                  |
+      +-----------+-----------+
+      |                       |
+      b                       c
+      |                       |
++-----+-----+           +-----+-----+
+|           |           |           |
+d           e           f           g
+</pre>
+
+<p>
+would be represented in the flat array&#x2026;
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">a</td>
+<td class="org-left">b</td>
+<td class="org-left">c</td>
+<td class="org-left">d</td>
+<td class="org-left">e</td>
+<td class="org-left">f</td>
+<td class="org-left">g</td>
+</tr>
+</tbody>
+</table>
+
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/externalsort/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/min-heap-merge-thumbnail.png" 
+             alt="K-Way Merge Tree of Losers Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
 
 
 
@@ -231,5 +530,6 @@ Thanks for reading!
 <p>
 &copy;2026 Justin Heyes-Jones. All Rights Reserved
 </p>
+</div>
 </div>
 </div>
