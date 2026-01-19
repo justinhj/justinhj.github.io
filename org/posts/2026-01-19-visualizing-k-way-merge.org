@@ -181,25 +181,16 @@ Friend noted that you can continue this process of dividing the search into smal
 This is what leads to the next three solutions to k-way merge, using tree structures essentially gives us a way to cache comparisons so we don't have to repeat them.
 
 *** min heap
-As we saw above, modern databases make use of the min-heap for k-way merge. As a binary tree structure it's an obvious choice.
+As we saw above, modern databases make use of the min-heap for k-way merge. As a binary tree structure it's an obvious choice since elements are stored in partially sorted order and we can always remove the minimum element which is the one we want to emit next.
 
-What's nice about a heap is it can be stored as an array in memory, with the tree flattened out. For example the following tree...
+In order to use the min-heap for k-way merge we do the following:
 
-#+BEGIN_EXAMPLE
-                        a
-                        |
-            +-----------+-----------+
-            |                       |
-            b                       c
-            |                       |
-      +-----+-----+           +-----+-----+
-      |           |           |           |
-      d           e           f           g
-#+END_EXAMPLE
+1. Populate a fixed size min-heap with the first (smalled) elements from the k runs.
+2. Pop the top item from the heap (the smallest) and replace it with the next from the same run.
+3. Sift the heap down to make the heap valid again.
+4. Repeat until the sort is complete.
 
-would be represented in the flat array...
-
-| a | b | c | d | e | f | g |
+Once again, you can step through the algorithm using the interative visualization below.
 
 #+BEGIN_EXPORT html
 <div style="text-align: center; margin: 20px 0;">
@@ -215,6 +206,42 @@ would be represented in the flat array...
 </div>
 #+END_EXPORT
 
+Analysis.
+
+With a min-heap the push and pop operations are both $O(\log_2 k)$ giving a runtime complexity of $O(k \log n)$.
+
+because a min-heap is stored in a flat array structure. For example:
+
+#+BEGIN_EXAMPLE
+                        a
+                        |
+            +-----------+-----------+
+            |                       |
+            b                       c
+            |                       |
+      +-----+-----+           +-----+-----+
+      |           |           |           |
+      d           e           f           g
+#+END_EXAMPLE
+
+Usually represented in the flat array as follows:
+
+| a | b | c | d | e | f | g |
+
+This is known as the Eytzinger Layout. A node at index $i$ has children at $2i+1$ and $2i+2$. For a small tree size it is a cache friendly structure since it will fit in a few cache lines.
+
+In addition our use case allows us to do the push and pop in one move.
+
+During the sift down process after adding the new winner you need to:
+
+1. Compare Left Child vs. Right Child (to find the smaller one).
+2. Compare the Smaller Child vs. The Current Node (to see if you swap).
+
+This costs $2 \cdot \log_2 k$ comparisons per element.
+
+Let's see how we can improve.
+
+** Tournament Trees
 
 
 

@@ -453,14 +453,49 @@ This is what leads to the next three solutions to k-way merge, using tree struct
 <h3 id="orgc32f994">min heap</h3>
 <div class="outline-text-3" id="text-orgc32f994">
 <p>
-As we saw above, modern databases make use of the min-heap for k-way merge. As a binary tree structure it's an obvious choice.
+As we saw above, modern databases make use of the min-heap for k-way merge. As a binary tree structure it's an obvious choice since elements are stored in partially sorted order and we can always remove the minimum element which is the one we want to emit next.
 </p>
 
 <p>
-What's nice about a heap is it can be stored as an array in memory, with the tree flattened out. For example the following tree&#x2026;
+In order to use the min-heap for k-way merge we do the following:
 </p>
 
-<pre class="example" id="orga0d40a2">
+<ol class="org-ol">
+<li>Populate a fixed size min-heap with the first (smalled) elements from the k runs.</li>
+<li>Pop the top item from the heap (the smallest) and replace it with the next from the same run.</li>
+<li>Sift the heap down to make the heap valid again.</li>
+<li>Repeat until the sort is complete.</li>
+</ol>
+
+<p>
+Once again, you can step through the algorithm using the interative visualization below.
+</p>
+
+<div style="text-align: center; margin: 20px 0;">
+    <a href="https://heyes-jones.com/externalsort/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+        <img src="../../../images/min-heap-merge-thumbnail.png" 
+             alt="K-Way Merge Tree of Losers Visualization" 
+             title="Click to launch interactive simulation"
+             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+            👆 <em>Click to try the interactive simulation</em>
+        </p>
+    </a>
+</div>
+
+<p>
+Analysis.
+</p>
+
+<p>
+With a min-heap the push and pop operations are both \(O(\log_2 k)\) giving a runtime complexity of \(O(k \log n)\).
+</p>
+
+<p>
+because a min-heap is stored in a flat array structure. For example:
+</p>
+
+<pre class="example" id="org48f85c9">
                   a
                   |
       +-----------+-----------+
@@ -473,7 +508,7 @@ d           e           f           g
 </pre>
 
 <p>
-would be represented in the flat array&#x2026;
+Usually represented in the flat array as follows:
 </p>
 
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
@@ -507,22 +542,37 @@ would be represented in the flat array&#x2026;
 </tbody>
 </table>
 
-<div style="text-align: center; margin: 20px 0;">
-    <a href="https://heyes-jones.com/externalsort/minheapmerge.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
-        <img src="../../../images/min-heap-merge-thumbnail.png" 
-             alt="K-Way Merge Tree of Losers Visualization" 
-             title="Click to launch interactive simulation"
-             style="width: 100%; max-width: 800px; height: auto; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-        <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
-            👆 <em>Click to try the interactive simulation</em>
-        </p>
-    </a>
+<p>
+This is known as the Eytzinger Layout. A node at index \(i\) has children at \(2i+1\) and \(2i+2\). For a small tree size it is a cache friendly structure since it will fit in a few cache lines.
+</p>
+
+<p>
+In addition our use case allows us to do the push and pop in one move.
+</p>
+
+<p>
+During the sift down process after adding the new winner you need to:
+</p>
+
+<ol class="org-ol">
+<li>Compare Left Child vs. Right Child (to find the smaller one).</li>
+<li>Compare the Smaller Child vs. The Current Node (to see if you swap).</li>
+</ol>
+
+<p>
+This costs \(2 \cdot \log_2 k\) comparisons per element.
+</p>
+
+<p>
+Let's see how we can improve.
+</p>
+</div>
+</div>
 </div>
 
-
-
-
-
+<div id="outline-container-org222126e" class="outline-2">
+<h2 id="org222126e">Tournament Trees</h2>
+<div class="outline-text-2" id="text-org222126e">
 <p>
 Thanks for reading!
 </p>
@@ -530,6 +580,5 @@ Thanks for reading!
 <p>
 &copy;2026 Justin Heyes-Jones. All Rights Reserved
 </p>
-</div>
 </div>
 </div>
