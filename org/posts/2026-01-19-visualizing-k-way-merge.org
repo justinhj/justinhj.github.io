@@ -155,7 +155,7 @@ Although we need to do k-1 comparisons to get the 1st item, with some thought we
 
 In Knuth (Art of Computer Programming vol3: Searching and Sorting) we find the discussion on selection sort which helps here...
 
-Quadratic selection (E H Friend, JACM 3, 1956) noted that we can do better by first grouping the sort items into the root of n items. For example sorting 9 items we divide into groups of 3.
+Quadratic selection (E H Friend, JACM 3, 1956) noted that we can do better by first grouping the sort items into groups based on the square root of n. For example, sorting 9 items we divide into groups of 3.
 
 ~Note: in selection sort you find the largest element at each step and move it to the end of the array. In k-way merge we output smallest first. Don't be confused by finding the largest element in this section.~
 
@@ -171,9 +171,9 @@ Once you have the three groups find the largest in each.
 | ~7~ | 5 | 2 |
 | ~9~ | 1 | 6 |
 
-The largest elements is now the largest of the three "winners", 9.
+The largest element is now the largest of the three "winners", 9.
 
-To find the second largest, it could be either of the two remaining winners or one of the others in 9's group. (Note that I replace removed elements with infinity so they can be ignored in subsequent steps.
+To find the second largest, it could be either of the two remaining winners or one of the others in 9's group. (Note that I replace removed elements with infinity so they can be ignored in subsequent steps.)
 
 | ~8~      | 4 |   3 |
 | ~7~      | 5 |   2 |
@@ -289,11 +289,11 @@ If you want to read more about this I found an excellent blog post which include
 
 [[https://freerangestats.info/blog/2020/02/01/tennis-carroll][Lewis Carroll's proposed rules for Tennis Tournaments]]
 
-For the tree of winners algorithm we will work slightly differently. Our job is to continously replay the tournament by removing the winner and bringing in a new candidate from winners run.
+For the tree of winners algorithm we will work slightly differently. Our job is to continuously replay the tournament by removing the winner and bringing in a new candidate from winners run.
 
 In the tournament above, Lou should play Kim and Pat should play the winner of that game. Notice that "only two additional matches are required to find the second-best player, because of the structure we have remembered from the earlier games."
 
-Tree selection, then, procedes by removing the winner of the tournament from our "Tree of Winners", then replaying the tournament without that player, and each replay requires lg N comparisons $(\log_2 n)$.
+Tree selection, then, proceeds by removing the winner of the tournament from our "Tree of Winners", then replaying the tournament without that player, and each replay requires $\log_2 k$ comparisons.
 
 To make this more concrete as a sort lets change the players to their numeric values that determines who will win. We want to sort in ascending order so the lowest values win, and are output first.
 
@@ -383,7 +383,7 @@ Again we find the asympotic complexity is $O(n \log_2 k)$. However, it is expect
 3. The number of comparisons is cut to $\log_2 k$, half that of the worse case min-heap.
 4. Hardware Sympathy: Tournament trees have a fixed path from leaf to root. There are no conditional checks to see "which child is smaller" before deciding which path to take down; you always move up from the leaf. This can be friendlier to CPU branch prediction.
 
-There is still some room for improvement thanks to an ingenius idea from the 1950's.
+There is still some room for improvement thanks to an ingenious idea from the 1950's.
 
 ** Tree of Losers
 In Knuth's Sorting and Searching (specifically Section 5.4.1), Donald Knuth attributes the origin of the "tree of losers" (also known as a loser tree) to H. B. Demuth. Demuth introduced the concept in his 1956 PhD thesis, Electronic Data Sorting, as a refinement of the standard tournament (winner) tree.
@@ -440,5 +440,6 @@ You can view the Tigerbeetle current implementation here.
 [[https://github.com/tigerbeetle/tigerbeetle/blob/main/src/lsm/k_way_merge.zig][Tigerbeetle K-Way merge]]
 
 Thanks for reading, please contact me using the email and social links above with any comments and corrections.
-\copy 2026 Justin Heyes-Jones. All Rights Reserved
+
+©2026 Justin Heyes-Jones. All Rights Reserved
 
