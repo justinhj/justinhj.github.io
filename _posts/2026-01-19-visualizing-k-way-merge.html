@@ -6,7 +6,7 @@ tags: [algorithms, databases]
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
 <p>
-<img src="/../images/aleksandr-galichkin-AUae3_x_lDU-unsplash.jpg" alt="alt description" title="da title" />
+<img src="/../images/aleksandr-galichkin-AUae3_x_lDU-unsplash.jpg" alt="aerial view of three empty tennis courts" title="" />
 </p>
 <span>
 Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Aleksandr Galichkin</a> on <a href="https://unsplash.com/photos/aerial-view-of-three-empty-tennis-courts-AUae3_x_lDU?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
@@ -42,24 +42,26 @@ If you're wondering what that has to do with the tennis court image above, read 
 </div>
 </div>
 
-<div id="outline-container-orge56e1ce" class="outline-2">
-<h2 id="orge56e1ce">External sort</h2>
-<div class="outline-text-2" id="text-orge56e1ce">
+<div id="outline-container-orga70713b" class="outline-2">
+<h2 id="orga70713b">External sort and k-way merge</h2>
+<div class="outline-text-2" id="text-orga70713b">
 <p>
 Whilst most engineers are familiar with a number of sorting algorithms that work with data sets that fit entirely in memory, there are use cases, both historical and current, that do not. In these cases you must pull in small chunks of memory and sort them before outputting to a larger sorted output. 
 </p>
 
 <p>
-Historically this was a key function of transaction processing. Banks would update a daily transaction log, and after closing would need to merge those transactions into a master file where all the accounts are kept sorted by account id.
+As an extreme example take the 1960 USA Census for example. The Census Bureau's UNIVAC 1105 was a supercomputer of the day, with up to 18 attached tape drives. Even so, it had a limited memory (less than 300kb) and so there is no way to sort the data in memory.
 </p>
 
 <p>
-TODO having trouble making above sound like k-way merge&#x2026;
+Instead the process used was called Balanced k-way merge. Input data was put onto one set of tapes, and another set of tapes are used as output. The computer read as many records as it could fit in memory, sorted them and wrote them to tape. The tape was then filled with these sorted runs. 
 </p>
 
 <p>
-This process was time critical; if it did not complete before the bank opened in the morning then the bank's business would be delayed until it did. Clever algorithms were invented for this purpose, in particular polyphase merge, which makes clever use of the Fibonacci numbers to work around the capabilities of magnetic tape storage. TODO add a link. Not wikipedia. 
+The k-way merge part comes from k (the number of runs being handled at once, in this case the number of tapes, let's assume 4). At the first step the computer reads the first records from each tape and outputs the smallest one to the output tape. Next, it gets the next record from the tape where the smallest record came from. This process continues until the records on all 4 tapes have been exported to a single sorted run on the output tape.
 </p>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2YnydcjlLPg?si=IKNFMKHE5TMEels4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 </div>
 </div>
 
@@ -67,7 +69,11 @@ This process was time critical; if it did not complete before the bank opened in
 <h2 id="org7b156e7">External sort in modern databases</h2>
 <div class="outline-text-2" id="text-org7b156e7">
 <p>
-External sort is needed in modern databases for various purposes, for example:
+Modern databases use essentially the same logic. An LSM tree (see next section) flushes "SSTables" (sorted runs) to disk (which are modern "tapes") and then performs a background k-way merge (compaction) to combine them. The physics changed (seek times vs. linear scan), but the math of the k-way merge remains exactly the same.
+</p>
+
+<p>
+External sort is used for various purposes:
 </p>
 
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
@@ -115,6 +121,15 @@ External sort is needed in modern databases for various purposes, for example:
 </div>
 </div>
 
+<div id="outline-container-org712f4b8" class="outline-2">
+<h2 id="org712f4b8">LSM trees</h2>
+<div class="outline-text-2" id="text-org712f4b8">
+<p>
+LSM-Trees (Log-Structured Merge-Trees) are a data structure that achieves fast writes by buffering changes in memory and periodically merging them with sorted on-disk tables. I won't go into much detail on them in this post, it's only important to know that the typical implementation requires taking multiple sorted runs of records and merge sorting them into a single sorted run.
+</p>
+</div>
+</div>
+
 <div id="outline-container-orgbeb8019" class="outline-2">
 <h2 id="orgbeb8019">Tigerbeetle</h2>
 <div class="outline-text-2" id="text-orgbeb8019">
@@ -131,7 +146,7 @@ In order to accept new transactions very quickly, Tigerbeetle writes new transac
 </p>
 
 <p>
-The memory buffer has a fixed size and once it is full it becomes an immutable buffer and is flushed to disk. LSM trees store data into internally sorted tables, and these tables are merged into larger ones as you get further down the tree. 
+The memory buffer has a fixed size and once it is full it becomes an immutable buffer and is flushed to disk. As noted above, LSM trees store data into internally sorted tables, and these tables are merged into larger ones as you get further down the tree. 
 </p>
 
 <p>
@@ -256,7 +271,7 @@ In Knuth (Art of Computer Programming vol3: Searching and Sorting) we find the d
 </p>
 
 <p>
-Quadratic selection (E H Friend, JACM 3, 1956) noted that we can do better by first grouping the sort items into the root of n items. For example sorting 9 items we divide into groups of 3.
+Quadratic selection (E H Friend, JACM 3, 1956) noted that we can do better by first grouping the sort items into groups based on the square root of n. For example, sorting 9 items we divide into groups of 3.
 </p>
 
 <p>
@@ -367,11 +382,11 @@ Once you have the three groups find the largest in each.
 </table>
 
 <p>
-The largest elements is now the largest of the three "winners", 9.
+The largest element is now the largest of the three "winners", 9.
 </p>
 
 <p>
-To find the second largest, it could be either of the two remaining winners or one of the others in 9's group. (Note that I replace removed elements with infinity so they can be ignored in subsequent steps.
+To find the second largest, it could be either of the two remaining winners or one of the others in 9's group. (Note that I replace removed elements with infinity so they can be ignored in subsequent steps.)
 </p>
 
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
@@ -492,14 +507,10 @@ Analysis.
 </p>
 
 <p>
-With a min-heap the push and pop operations are both \(O(\log_2 k)\) giving a runtime complexity of \(O(k \log n)\).
+With a min-heap the push and pop operations are both \(O(\log_2 k)\) giving a runtime complexity of \(O(n \log k)\).
 </p>
 
-<p>
-because a min-heap is stored in a flat array structure. For example:
-</p>
-
-<pre class="example" id="orgf05b44e">
+<pre class="example" id="orgf362896">
                   a
                   |
       +-----------+-----------+
@@ -512,7 +523,7 @@ d           e           f           g
 </pre>
 
 <p>
-Usually represented in the flat array as follows:
+min-heaps are represented as a flat array. For example the tree above would be stored in memory like this:
 </p>
 
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
@@ -581,7 +592,7 @@ Let's see how we can improve.
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="org460a924">
+<pre class="example" id="org7461ec9">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -610,11 +621,14 @@ Well all we know is that Pat beat all the opponents on her side of the tree, but
 </p>
 
 <p>
-TODO insert a picture of Alice or something
+<img src="/../images/pure-julia-E4fNq7wYE2w-unsplash.jpg" alt="book image of a page from alice in wonderland" title="" />
 </p>
+<span>
+Photo by <a href="https://unsplash.com/@purejulia?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">pure julia</a> on <a href="https://unsplash.com/photos/white-book-page-with-man-and-woman-print-E4fNq7wYE2w?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+</span>
 
 <p>
-It is here that we take an interesting digression into Tennis Tournaments and why they are not particularly fair to 2nd place and beyond.
+It is here that we take an interesting digression into Tennis Tournaments and whilst they are fair to the winner, they are not quite so fair when it comes to picking the runner up, third place and so on.
 </p>
 
 <p>
@@ -638,7 +652,11 @@ If you want to read more about this I found an excellent blog post which include
 </p>
 
 <p>
-For the tree of winners algorithm we will work slightly differently. Our job is to continously replay the tournament by removing the winner and bringing in a new candidate from winners run.
+Whilst the idea was good, it did not catch on because tournaments would take a variable amount of time depending on who won which games, and it's a bit more complex for the audience to follow. Besides, modern day tournaments use the seeding system which avoids top players playing each other in the early stages.
+</p>
+
+<p>
+For the tree of winners algorithm we will work slightly differently. Our job is to continuously replay the tournament by removing the winner and bringing in a new candidate from winners run.
 </p>
 
 <p>
@@ -646,7 +664,7 @@ In the tournament above, Lou should play Kim and Pat should play the winner of t
 </p>
 
 <p>
-Tree selection, then, procedes by removing the winner of the tournament from our "Tree of Winners", then replaying the tournament without that player, and each replay requires lg N comparisons \((\log_2 n)\).
+Tree selection, then, proceeds by removing the winner of the tournament from our "Tree of Winners", then replaying the tournament without that player, and each replay requires \(\log_2 k\) comparisons.
 </p>
 
 <p>
@@ -657,7 +675,7 @@ To make this more concrete as a sort lets change the players to their numeric va
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="org6622a50">
+<pre class="example" id="orgb3af9c0">
 Sort output: 1
                     1 (Champion)
                         |
@@ -678,7 +696,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="org24ea2f9">
+<pre class="example" id="org22275b7">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -703,7 +721,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="org16fd49a">
+<pre class="example" id="orgca027b1">
 Sort output: 1,2,3
                         3 (Champion)
                         |
@@ -756,7 +774,7 @@ Again we find the asympotic complexity is \(O(n \log_2 k)\). However, it is expe
 </ol>
 
 <p>
-There is still some room for improvement thanks to an ingenius idea from the 1950's.
+There is still some room for improvement thanks to an ingenious idea from the 1950's.
 </p>
 </div>
 </div>
@@ -854,7 +872,7 @@ Thanks for reading, please contact me using the email and social links above wit
 </p>
 
 <p>
-&copy;2026 Justin Heyes-Jones. All Rights Reserved
+©2026 Justin Heyes-Jones. All Rights Reserved
 </p>
 </div>
 </div>

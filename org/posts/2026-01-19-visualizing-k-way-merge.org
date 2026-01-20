@@ -15,7 +15,7 @@ tags: [algorithms, databases]
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
 <p>
-<img src="/../images/aleksandr-galichkin-AUae3_x_lDU-unsplash.jpg" alt="alt description" title="da title" />
+<img src="/../images/aleksandr-galichkin-AUae3_x_lDU-unsplash.jpg" alt="aerial view of three empty tennis courts" title="" />
 </p>
 <span>
 Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Aleksandr Galichkin</a> on <a href="https://unsplash.com/photos/aerial-view-of-three-empty-tennis-courts-AUae3_x_lDU?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
@@ -96,14 +96,14 @@ To better explain the mechanism play with the following toy Tigerbeetle database
 </div>
 #+END_EXPORT
 
-TODO explain which points here use the merging process. 
-
 Apart from this compaction step, Tigerbeetle also has the same problem when doing range based query scans; it will scan the tables in the various levels of the LSM tree and will need to combine each one into a single sorted result.
 
 ** K-Way merges
 The process of taking multiple sorted runs and outputting a new single sorted run of data is called k-way merging. k is the number of runs we are merging, so we are merging it in k-ways.
 
 Implementing k-way merging is not super complicated, but as we will see there are some different options depending on your use case, with the usual engineering trade offs.
+
+Contary to some LSM implementations that might use k-way merge for all compactions, TigerBeetle uses it selectively. For example the mutable table actually consists of 32 sorted runs and when they are flushed to the immutable table they are all merged to a single sorted run before being flushed to the first disk level.
 
 ** Linear scan
 As always, let's start with the simplest solution possible. In linear scan you take the smallest elements from each of the k runs, and that is your starting set. Each iteration we do the following:
@@ -275,9 +275,16 @@ The best player then, is Chris. But what if Chris had not shown up that day? Is 
 
 Well all we know is that Pat beat all the opponents on her side of the tree, but we don't in fact know if she would have beaten the same opponents on Chris's side. So all we can say is that Chris was the best player overall, and Pat was the best player amongst the right subtree.
 
-TODO insert a picture of Alice or something
+#+BEGIN_EXPORT html
+<p>
+<img src="/../images/pure-julia-E4fNq7wYE2w-unsplash.jpg" alt="book image of a page from alice in wonderland" title="" />
+</p>
+<span>
+Photo by <a href="https://unsplash.com/@purejulia?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">pure julia</a> on <a href="https://unsplash.com/photos/white-book-page-with-man-and-woman-print-E4fNq7wYE2w?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+</span>
+#+END_EXPORT
 
-It is here that we take an interesting digression into Tennis Tournaments and why they are not particularly fair to 2nd place and beyond.
+It is here that we take an interesting digression into Tennis Tournaments and whilst they are fair to the winner, they are not quite so fair when it comes to picking the runner up, third place and so on.
 
 Rev. Charles Lutwidge Dodgson, better known by his pen name, Lewis Carroll, author of Alice's Adventures in Wonderland was also a mathematician and logician at Christ Church, Oxford, with a deep obsession for fairness in rules and voting systems.
 
@@ -288,6 +295,8 @@ Dodgson came up with a scheme, not quite an algorithm as it was not precisely sp
 If you want to read more about this I found an excellent blog post which includes an implementation of Dodgson's idea in the R language, with the missing specifications figured out.
 
 [[https://freerangestats.info/blog/2020/02/01/tennis-carroll][Lewis Carroll's proposed rules for Tennis Tournaments]]
+
+Whilst the idea was good, it did not catch on because tournaments would take a variable amount of time depending on who won which games, and it's a bit more complex for the audience to follow. Besides, modern day tournaments use the seeding system which avoids top players playing each other in the early stages.
 
 For the tree of winners algorithm we will work slightly differently. Our job is to continuously replay the tournament by removing the winner and bringing in a new candidate from winners run.
 
