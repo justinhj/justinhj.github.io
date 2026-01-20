@@ -161,7 +161,7 @@ Implementing k-way merging is not super complicated, but as we will see there ar
 </p>
 
 <p>
-Contary to some LSM implementations that might use k-way merge for all compactions, TigerBeetle uses it selectively. For example the mutable table actually consists of 32 sorted runs and when they are flushed to the immutable table they are all merged to a single sorted run before being flushed to the first disk level.
+Contrary to some LSM implementations that might use k-way merge for all compactions, TigerBeetle uses it selectively. For example the mutable table actually consists of 32 sorted runs and when they are flushed to the immutable table they are all merged to a single sorted run before being flushed to the first disk level.
 </p>
 </div>
 </div>
@@ -488,7 +488,7 @@ Analysis.
 With a min-heap the push and pop operations are both \(O(\log_2 k)\) giving a runtime complexity of \(O(n \log k)\).
 </p>
 
-<pre class="example" id="org11be896">
+<pre class="example" id="orgcadc8c7">
                   a
                   |
       +-----------+-----------+
@@ -570,7 +570,7 @@ Let's see how we can improve.
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="orgf49ca1a">
+<pre class="example" id="org7373326">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -646,14 +646,14 @@ Tree selection, then, proceeds by removing the winner of the tournament from our
 </p>
 
 <p>
-To make this more concrete as a sort lets change the players to their numeric values that determines who will win. We want to sort in ascending order so the lowest values win, and are output first.
+To make this more concrete as a sort let's change the players to their numeric values that determine who will win. We want to sort in ascending order so the lowest values win, and are output first.
 </p>
 
 <p>
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="org1b6f127">
+<pre class="example" id="orgb384384">
 Sort output: 1
                     1 (Champion)
                         |
@@ -674,7 +674,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="org9a52f3f">
+<pre class="example" id="org270dfbc">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -699,7 +699,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="org279d937">
+<pre class="example" id="orga6c19fa">
 Sort output: 1,2,3
                         3 (Champion)
                         |
@@ -741,7 +741,7 @@ Analysis.
 </p>
 
 <p>
-Again we find the asympotic complexity is \(O(n \log_2 k)\). However, it is expected to perform better than the min-heap for larger k for the following reasons:
+Again we find the asymptotic complexity is \(O(n \log_2 k)\). However, it is expected to perform better than the min-heap for larger k for the following reasons:
 </p>
 
 <ol class="org-ol">
@@ -806,7 +806,7 @@ Analysis.
 </p>
 
 <p>
-Asympotic complexity is \(O(n \log_2 k)\) again.
+Asymptotic complexity is \(O(n \log_2 k)\) again.
 </p>
 
 <p>

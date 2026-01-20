@@ -89,7 +89,7 @@ The process of taking multiple sorted runs and outputting a new single sorted ru
 
 Implementing k-way merging is not super complicated, but as we will see there are some different options depending on your use case, with the usual engineering trade offs.
 
-Contary to some LSM implementations that might use k-way merge for all compactions, TigerBeetle uses it selectively. For example the mutable table actually consists of 32 sorted runs and when they are flushed to the immutable table they are all merged to a single sorted run before being flushed to the first disk level.
+Contrary to some LSM implementations that might use k-way merge for all compactions, TigerBeetle uses it selectively. For example the mutable table actually consists of 32 sorted runs and when they are flushed to the immutable table they are all merged to a single sorted run before being flushed to the first disk level.
 
 ** Linear scan
 As always, let's start with the simplest solution possible. In linear scan you take the smallest elements from each of the k runs, and that is your starting set. Each iteration we do the following:
@@ -290,7 +290,7 @@ In the tournament above, Lou should play Kim and Pat should play the winner of t
 
 Tree selection, then, proceeds by removing the winner of the tournament from our "Tree of Winners", then replaying the tournament without that player, and each replay requires $\log_2 k$ comparisons.
 
-To make this more concrete as a sort lets change the players to their numeric values that determines who will win. We want to sort in ascending order so the lowest values win, and are output first.
+To make this more concrete as a sort let's change the players to their numeric values that determine who will win. We want to sort in ascending order so the lowest values win, and are output first.
 
 Step 1 we remove 1 and output it as the first element.
 
@@ -371,7 +371,7 @@ Check out this interactive visualization to fully understand the algorithm.
 
 Analysis.
 
-Again we find the asympotic complexity is $O(n \log_2 k)$. However, it is expected to perform better than the min-heap for larger k for the following reasons:
+Again we find the asymptotic complexity is $O(n \log_2 k)$. However, it is expected to perform better than the min-heap for larger k for the following reasons:
 
 1. You traverse from a single leaf at the bottom up to the root of the tree to replace the winner.
 2. At each level you need compare only with the current sibling.
@@ -414,7 +414,7 @@ Interactive tree of losers:
 
 Analysis.
 
-Asympotic complexity is $O(n \log_2 k)$ again.
+Asymptotic complexity is $O(n \log_2 k)$ again.
 
 We have performance improvements for larger values of k primarily due to efficiency in memory access and branch prediction during the "replay" phase.
 
