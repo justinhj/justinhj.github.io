@@ -166,10 +166,6 @@ To better explain the mechanism play with the following toy Tigerbeetle database
 </div>
 
 <p>
-TODO explain which points here use the merging process. 
-</p>
-
-<p>
 Apart from this compaction step, Tigerbeetle also has the same problem when doing range based query scans; it will scan the tables in the various levels of the LSM tree and will need to combine each one into a single sorted result.
 </p>
 </div>
@@ -184,6 +180,10 @@ The process of taking multiple sorted runs and outputting a new single sorted ru
 
 <p>
 Implementing k-way merging is not super complicated, but as we will see there are some different options depending on your use case, with the usual engineering trade offs.
+</p>
+
+<p>
+Contary to some LSM implementations that might use k-way merge for all compactions, TigerBeetle uses it selectively. For example the mutable table actually consists of 32 sorted runs and when they are flushed to the immutable table they are all merged to a single sorted run before being flushed to the first disk level.
 </p>
 </div>
 </div>
@@ -510,7 +510,7 @@ Analysis.
 With a min-heap the push and pop operations are both \(O(\log_2 k)\) giving a runtime complexity of \(O(n \log k)\).
 </p>
 
-<pre class="example" id="orgf362896">
+<pre class="example" id="orgbaa2b41">
                   a
                   |
       +-----------+-----------+
@@ -592,7 +592,7 @@ Let's see how we can improve.
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="org7461ec9">
+<pre class="example" id="orgc82b041">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -675,7 +675,7 @@ To make this more concrete as a sort lets change the players to their numeric va
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="orgb3af9c0">
+<pre class="example" id="org28b8210">
 Sort output: 1
                     1 (Champion)
                         |
@@ -696,7 +696,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="org22275b7">
+<pre class="example" id="orgd960d07">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -721,7 +721,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="orgca027b1">
+<pre class="example" id="org3e71a4a">
 Sort output: 1,2,3
                         3 (Champion)
                         |
