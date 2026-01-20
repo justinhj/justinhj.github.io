@@ -12,35 +12,13 @@ tags: [algorithms, databases]
 Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Aleksandr Galichkin</a> on <a href="https://unsplash.com/photos/aerial-view-of-three-empty-tennis-courts-AUae3_x_lDU?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 </span>
 
-<div id="outline-container-orgca4492e" class="outline-2">
-<h2 id="orgca4492e">Intro</h2>
-<div class="outline-text-2" id="text-orgca4492e">
 <p>
-Recently I have been spending some time learning about Tigerbeetle's open source financial transactions database. There are a number of reasons for that:
-</p>
-
-<ol class="org-ol">
-<li>It is fully open <a href="https://youtu.be/Z0kzYlCTUuc?si=T72VwrmCjiN_hDcK">source</a>.</li>
-<li>The documentation is excellent.</li>
-<li>It's written in Zig, one of my favourite new languages.</li>
-<li>Tigerbeetle's engineering team put a lot of good content out.</li>
-</ol>
-
-<p>
-This post is inspired by a video by Tigerbeetle engineers Tobias Ziegler (@toziegler) and Alex Kladov (@matklad) about the "Tree of Losers" algorithm recently adopted for some of the database's internal operations, which they discuss and walkthrough here:
-</p>
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
-<p>
-In particular I talk about k-way merge, a type of external sort, and four different algorithms and data structures, each having its own interactive application you can use to step through the algorithm and get a good understanding of its operation.
+In this post, inspired by a <a href="https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr">video</a> by Tigerbeetle engineers Tobias Ziegler (@toziegler) and Alex Kladov (@matklad), I'll walk through four algorithms for merging multiple sorted runs of data; a problem that shows up in modern database internals. You will be able to use an interactive web application to explore and understand each one. 
 </p>
 
 <p>
-If you're wondering what that has to do with the tennis court image above, read on!
+The title image isn't just a pretty picture of tennis courts; it's the inspiration for the most efficient external sorting algorithm: The Tournament Tree.
 </p>
-</div>
-</div>
 
 <div id="outline-container-orga70713b" class="outline-2">
 <h2 id="orga70713b">External sort and k-way merge</h2>
@@ -250,7 +228,7 @@ Whilst not bad, we can do better. However, for small values of k it may well be 
 </p>
 
 <p>
-In addition, on modern CPUs you can use SIMD instructions (AVX2 or AVX-512) to handle up to k=16 assuming 32 bit integers. However, since Tigerbeetle can have up to 64 (I think) runs and uses 128 bit identifiers, this is not a useful option.
+In addition, on modern CPUs you can use SIMD instructions (AVX2 or AVX-512) to handle up to k=16 assuming 32 bit integers. However, since Tigerbeetle can have up to 32 runs and uses 128 bit identifiers, this is not a useful option.
 </p>
 </div>
 </div>
@@ -510,7 +488,7 @@ Analysis.
 With a min-heap the push and pop operations are both \(O(\log_2 k)\) giving a runtime complexity of \(O(n \log k)\).
 </p>
 
-<pre class="example" id="orgbaa2b41">
+<pre class="example" id="org11be896">
                   a
                   |
       +-----------+-----------+
@@ -592,7 +570,7 @@ Let's see how we can improve.
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="orgc82b041">
+<pre class="example" id="orgf49ca1a">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -675,7 +653,7 @@ To make this more concrete as a sort lets change the players to their numeric va
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="org28b8210">
+<pre class="example" id="org1b6f127">
 Sort output: 1
                     1 (Champion)
                         |
@@ -696,7 +674,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="orgd960d07">
+<pre class="example" id="org9a52f3f">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -721,7 +699,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="org3e71a4a">
+<pre class="example" id="org279d937">
 Sort output: 1,2,3
                         3 (Champion)
                         |
@@ -848,7 +826,7 @@ Branch prediction:
 </p>
 
 <p>
-While replaying the Winner tree we execute the conditional logic  <code>if (came_from_left) compare(new_val, right_child) else compare(new_val, left_child)</code> whilst in the tree of losers we always just go to the parent of the current node. 
+While replaying the Winner tree we execute the conditional logic  <code>if (came_from_left) compare(new_val, right_child) else compare(new_val, left_child)</code> whilst in the tree of losers we always just go to the parent of the current node. In addition the winning node is always in a register.
 </p>
 </div>
 </div>
@@ -861,6 +839,71 @@ While replaying the Winner tree we execute the conditional logic  <code>if (came
 <li>For small k (merging 4-16 runs) you can often use simple select and consider using SIMD.</li>
 <li>Otherwise Tree of Losers is likely to be the best performance.</li>
 </ul>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Algorithm</th>
+<th scope="col" class="org-left">Complexity (per item)</th>
+<th scope="col" class="org-left">Comparisons (approx)</th>
+<th scope="col" class="org-left">Key Characteristic</th>
+<th scope="col" class="org-left">Pros</th>
+<th scope="col" class="org-left">Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><b>Linear Scan</b></td>
+<td class="org-left">\(O(k)\)</td>
+<td class="org-left">\(k\)</td>
+<td class="org-left">Iterates all candidates</td>
+<td class="org-left">CPU Prefetch &amp; SIMD friendly for small \(k\)</td>
+<td class="org-left">Scales poorly as \(k\) increases (&gt;16)</td>
+</tr>
+
+<tr>
+<td class="org-left"><b>Min-Heap</b></td>
+<td class="org-left">\(O(\log k)\)</td>
+<td class="org-left">\(2 \log k\)</td>
+<td class="org-left">Sift-down (swap with smallest child)</td>
+<td class="org-left">Standard library; Compact memory layout</td>
+<td class="org-left">Conditional branches (left vs right child); Higher comparison count</td>
+</tr>
+
+<tr>
+<td class="org-left"><b>Winner Tree</b></td>
+<td class="org-left">\(O(\log k)\)</td>
+<td class="org-left">\(\log k\)</td>
+<td class="org-left">Replay path from leaf to root</td>
+<td class="org-left">Fewer comparisons than Heap</td>
+<td class="org-left">Requires sibling checks at every level (branch mispredictions)</td>
+</tr>
+
+<tr>
+<td class="org-left"><b>Tree of Losers</b></td>
+<td class="org-left">\(O(\log k)\)</td>
+<td class="org-left">\(\log k\)</td>
+<td class="org-left">Compare with parent (loser)</td>
+<td class="org-left"><b>Winner stays in register</b>; Fixed memory path (always parent)</td>
+<td class="org-left">Slightly more complex implementation</td>
+</tr>
+</tbody>
+</table>
 
 <p>
 You can view the Tigerbeetle current implementation here.

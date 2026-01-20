@@ -22,23 +22,9 @@ Photo by <a href="https://unsplash.com/@axga?utm_source=unsplash&utm_medium=refe
 </span>
 #+END_EXPORT
 
-** Intro
-Recently I have been spending some time learning about Tigerbeetle's open source financial transactions database. There are a number of reasons for that:
+In this post, inspired by a [[https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr][video]] by Tigerbeetle engineers Tobias Ziegler (@toziegler) and Alex Kladov (@matklad), I'll walk through four algorithms for merging multiple sorted runs of data; a problem that shows up in modern database internals. You will be able to use an interactive web application to explore and understand each one. 
 
-1. It is fully open [[https://youtu.be/Z0kzYlCTUuc?si=T72VwrmCjiN_hDcK][source]]. 
-2. The documentation is excellent.
-3. It's written in Zig, one of my favourite new languages. 
-4. Tigerbeetle's engineering team put a lot of good content out.
-
-This post is inspired by a video by Tigerbeetle engineers Tobias Ziegler (@toziegler) and Alex Kladov (@matklad) about the "Tree of Losers" algorithm recently adopted for some of the database's internal operations, which they discuss and walkthrough here:
-
-#+BEGIN_EXPORT html
-<iframe width="560" height="315" src="https://www.youtube.com/embed/agjVihO6IPM?si=gBBtRn744A5A2Wqr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-#+END_EXPORT
-
-In particular I talk about k-way merge, a type of external sort, and four different algorithms and data structures, each having its own interactive application you can use to step through the algorithm and get a good understanding of its operation.
-
-If you're wondering what that has to do with the tennis court image above, read on!
+The title image isn't just a pretty picture of tennis courts; it's the inspiration for the most efficient external sorting algorithm: The Tournament Tree.
 
 ** External sort and k-way merge
 Whilst most engineers are familiar with a number of sorting algorithms that work with data sets that fit entirely in memory, there are use cases, both historical and current, that do not. In these cases you must pull in small chunks of memory and sort them before outputting to a larger sorted output. 
@@ -146,7 +132,7 @@ Since we must do k comparisons per output, with n total data items in all the ru
 
 Whilst not bad, we can do better. However, for small values of k it may well be good enough, or even faster than the other solutions below, despite the asymptotic complexity saying otherwise. 
 
-In addition, on modern CPUs you can use SIMD instructions (AVX2 or AVX-512) to handle up to k=16 assuming 32 bit integers. However, since Tigerbeetle can have up to 64 (I think) runs and uses 128 bit identifiers, this is not a useful option.
+In addition, on modern CPUs you can use SIMD instructions (AVX2 or AVX-512) to handle up to k=16 assuming 32 bit integers. However, since Tigerbeetle can have up to 32 runs and uses 128 bit identifiers, this is not a useful option.
 
 ** Going faster with Tree Selection
 As mentioned above we do $O(k)$ comparisons per output, can we do better? Well, to be more precise for the first output we need do k-1 comparisons, since we start with the first element and that iterate them all, swapping out the first element with the first smaller one and so on. In order to speed things up we need to think about doing less comparisons.
@@ -438,12 +424,19 @@ Remember in the winner tree we have to gather two siblings from memory and compa
 
 Branch prediction:
 
-While replaying the Winner tree we execute the conditional logic  ~if (came_from_left) compare(new_val, right_child) else compare(new_val, left_child)~ whilst in the tree of losers we always just go to the parent of the current node. 
+While replaying the Winner tree we execute the conditional logic  ~if (came_from_left) compare(new_val, right_child) else compare(new_val, left_child)~ whilst in the tree of losers we always just go to the parent of the current node. In addition the winning node is always in a register.
 
 ** Conclusion 
 - K-Way merge is ubiquitous in database technology.
 - For small k (merging 4-16 runs) you can often use simple select and consider using SIMD.
 - Otherwise Tree of Losers is likely to be the best performance.
+
+| Algorithm        | Complexity (per item) | Comparisons (approx) | Key Characteristic                   | Pros                                                          | Cons                                                                |
+|------------------+-----------------------+----------------------+--------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------------|
+| *Linear Scan*    | $O(k)$                | $k$                  | Iterates all candidates              | CPU Prefetch & SIMD friendly for small $k$                    | Scales poorly as $k$ increases (>16)                                |
+| *Min-Heap*       | $O(\log k)$           | $2 \log k$           | Sift-down (swap with smallest child) | Standard library; Compact memory layout                       | Conditional branches (left vs right child); Higher comparison count |
+| *Winner Tree*    | $O(\log k)$           | $\log k$             | Replay path from leaf to root        | Fewer comparisons than Heap                                   | Requires sibling checks at every level (branch mispredictions)      |
+| *Tree of Losers* | $O(\log k)$           | $\log k$             | Compare with parent (loser)          | *Winner stays in register*; Fixed memory path (always parent) | Slightly more complex implementation                                |
 
 You can view the Tigerbeetle current implementation here.
 [[https://github.com/tigerbeetle/tigerbeetle/blob/main/src/lsm/k_way_merge.zig][Tigerbeetle K-Way merge]]
