@@ -1,3 +1,51 @@
+@mixin light-theme-vars {
+    --background-color: #{$background-color-light};
+    --text-color: #{$text-color-light};
+    --brand-color: #{$brand-color-light};
+    --brand-visited: #{darken($brand-color-light, 25%)};
+    --brand-hover-bg: #{darken($background-color-light, 10%)};
+    --secondary-text-color: #{$secondary-text-color-light};
+    --border-color: #{$border-color-light};
+    --card-bg-color: #{$card-bg-color-light};
+    --accent-text: #{$accent-text-light};
+    --pre-bg-color: #{$background-color};
+    --pre-text-color: #{$text-color};
+}
+
+@mixin dark-theme-vars {
+  --background-color: #{$background-color};
+  --text-color: #{$text-color};
+  --brand-color: #{$brand-color};
+  --brand-visited: #{darken($brand-color, 15%)};
+  --brand-hover-bg: transparent;
+  --accent-color: #{$accent-color};
+  --accent-hover-color: #{$accent-hover-color};
+  --secondary-text-color: #{$secondary-text-color};
+  --border-color: #{$border-color};
+  --card-bg-color: #{$card-bg-color};
+  --accent-text: #{$accent-text};
+  --pre-bg-color: #{$background-color-light};
+  --pre-text-color: #{$text-color-light};
+}
+
+:root {
+    @include dark-theme-vars;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    @include light-theme-vars;
+  }
+}
+
+html.light {
+    @include light-theme-vars;
+}
+
+html.dark {
+    @include dark-theme-vars;
+}
+
 /**
  * Reset some basic elements
  */
@@ -63,34 +111,18 @@ h1, h2, h3, h4, h5, h6 {
  * Links
  */
 a {
-    color: $brand-color;
+    color: var(--brand-color);
     text-decoration: none;
 
     &:visited {
-        color: darken($brand-color, 15%);
+        color: var(--brand-visited);
     }
 
     &:hover {
-        color: $text-color;
+        color: var(--text-color);
         text-decoration: none;
+        background-color: var(--brand-hover-bg);
     }
-}
-
-
-@media (prefers-color-scheme: light) {
-  a {
-      color: $brand-color-light;
-      text-decoration: none;
-
-      &:visited {
-          color: darken($brand-color-light, 25%);
-      }
-      &:hover {
-          text-decoration: none;
-	  background-color: darken($background-color-light, 10%);
-      }
-  }
-
 }
 
 /**
@@ -178,31 +210,11 @@ code {
 /* Custom styles to extend Tailwind */
 body {
     /* Using a deep, modern dark color palette */
-    background-color: $background-color; /* A deep, modern dark background */
-    color: $text-color; /* Soft off-white for body text */
+    background-color: var(--background-color);
+    color: var(--text-color);
     font-family: $base-font-family;
     -webkit-text-size-adjust: 100%;
     font-kerning: auto;
-}
-
-@media (prefers-color-scheme: light) {
-  body {
-    background-color: $background-color-light;
-    color: $text-color-light;
-  }
-}
-
-/* Custom accent color variables for easy theme changes */
-:root {
-    --accent-color: #{$accent-color};
-    --accent-hover-color: #{$accent-hover-color};
-    --secondary-text-color: #{$secondary-text-color};
-    @media (prefers-color-scheme: light) {
-	--secondary-text-color: #{$secondary-text-color-light};
-    }
-    
-    --border-color: #{$border-color};
-    --card-bg-color: #{$card-bg-color};
 }
 
 /* Applying the monospaced font for a "coder" feel on specific elements */
@@ -212,13 +224,7 @@ body {
 
 /* Styling for headings and links with the accent color */
 h1, h2, h3, .accent-text {
-    color: $accent-text; /* A slightly brighter white for important text */
-}
-
-@media (prefers-color-scheme: light) {
-  h1, h2, h3, .accent-text {
-    color: $accent-text-light;
-  }
+    color: var(--accent-text);
 }
 
 // This messes with the above 
@@ -233,18 +239,11 @@ h1, h2, h3, .accent-text {
 
 /* Glassmorphism-inspired card effect for post previews */
 .post-card {
-    background-color: $card-bg-color;
-    border: 1px solid $border-color;
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 1.5rem;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-@media (prefers-color-scheme: light) {
-  .post-card {
-    background-color: $card-bg-color-light;
-    border: 1px solid $border-color-light;
-  }
 }
 
 .post-card:hover {
@@ -275,15 +274,15 @@ h1, h2, h3, .accent-text {
 //@media (prefers-color-scheme: light) {
 
   .tag a {
-      color: $background-color-light;
+      color: var(--background-color);
       text-decoration: none;
 
       &:visited {
-          color: darken($background-color-light, 5%);
+          color: var(--background-color);
       }
 
       &:hover {
-	  color: $background-color-light;
+	  color: var(--background-color);
           background-color: #268bd2;
       }
   }
@@ -311,7 +310,7 @@ h1, h2, h3, .accent-text {
 }
 
 pre.src {
-    background-color: $background-color-light;
+    background-color: var(--pre-bg-color);
     font-family: 'JetBrains Mono', monospace;
     font-size: 16px;
 
@@ -323,17 +322,11 @@ pre.src {
 
     border: 1px solid #444;   /* Optional: a subtle border */
     border-radius: 8px;       /* Optional: rounded corners */
-}
-
-@media (prefers-color-scheme: light) {
-  pre.src {
-      background-color: $background-color;
-  }
 }
 
 pre.example {
-    background-color: $background-color-light;
-    color: $text-color-light;
+    background-color: var(--pre-bg-color);
+    color: var(--pre-text-color);
     font-family: 'JetBrains Mono', monospace;
     font-size: 16px;
 
@@ -345,12 +338,5 @@ pre.example {
 
     border: 1px solid #444;   /* Optional: a subtle border */
     border-radius: 8px;       /* Optional: rounded corners */
-}
-
-@media (prefers-color-scheme: light) {
-  pre.example {
-      background-color: $background-color;
-      color: $text-color;
-  }
 }
 

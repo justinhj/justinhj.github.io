@@ -1,5 +1,13 @@
 <!-- <header class="site-header"> -->
-<header class="flex flex-col md:flex-row items-start gap-8 mb-16">
+<header class="relative flex flex-col md:flex-row items-start gap-8 mb-16">
+    <!-- Theme Toggle -->
+    <div class="absolute top-0 right-0 p-4 z-50">
+      <button id="theme-toggle" class="p-2 rounded-lg hover:bg-[var(--brand-hover-bg)] focus:outline-none transition-colors" aria-label="Toggle Theme">
+        <svg id="theme-icon" class="w-6 h-6 text-[var(--text-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <!-- Icon will be set by JS -->
+        </svg>
+      </button>
+    </div>
     <!-- <div class="wrapper"> -->
     <div class="flex-shrink-0">
       <img class="w-28 h-28 rounded-full border-4 border-[var(--border-color)] shadow-lg" src="{{ site.profile_image }}" alt="justinhj's profile picture">
@@ -37,6 +45,43 @@
    </div>
 
 </header>
+
+<script>
+  (function() {
+    const toggle = document.getElementById('theme-toggle');
+    const icon = document.getElementById('theme-icon');
+    
+    const icons = {
+      system: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>',
+      light: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>',
+      dark: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>'
+    };
+
+    function updateTheme() {
+      const theme = localStorage.getItem('theme') || 'system';
+      document.documentElement.classList.remove('light', 'dark');
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else if (theme === 'light') {
+        document.documentElement.classList.add('light');
+      }
+      icon.innerHTML = icons[theme];
+    }
+
+    toggle.addEventListener('click', () => {
+      const current = localStorage.getItem('theme') || 'system';
+      let next;
+      if (current === 'system') next = 'light';
+      else if (current === 'light') next = 'dark';
+      else next = 'system';
+      
+      localStorage.setItem('theme', next);
+      updateTheme();
+    });
+
+    updateTheme();
+  })();
+</script>
 
   <!-- Navigation Bar -->
   <nav class="border-b border-[var(--border-color)] mb-2">

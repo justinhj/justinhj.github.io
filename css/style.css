@@ -26,6 +26,7 @@
     --text-4xl: 2.25rem;
     --text-4xl--line-height: calc(2.5 / 2.25);
     --font-weight-bold: 700;
+    --radius-lg: 0.5rem;
     --radius-xl: 0.75rem;
     --ease-in: cubic-bezier(0.4, 0, 1, 1);
     --ease-out: cubic-bezier(0, 0, 0.2, 1);
@@ -203,8 +204,17 @@
   .sticky {
     position: sticky;
   }
+  .top-0 {
+    top: calc(var(--spacing) * 0);
+  }
+  .right-0 {
+    right: calc(var(--spacing) * 0);
+  }
   .isolate {
     isolation: isolate;
+  }
+  .z-50 {
+    z-index: 50;
   }
   .container {
     width: 100%;
@@ -287,6 +297,9 @@
   .h-5 {
     height: calc(var(--spacing) * 5);
   }
+  .h-6 {
+    height: calc(var(--spacing) * 6);
+  }
   .h-28 {
     height: calc(var(--spacing) * 28);
   }
@@ -295,6 +308,9 @@
   }
   .w-5 {
     width: calc(var(--spacing) * 5);
+  }
+  .w-6 {
+    width: calc(var(--spacing) * 6);
   }
   .w-28 {
     width: calc(var(--spacing) * 28);
@@ -393,6 +409,9 @@
   .rounded-full {
     border-radius: calc(infinity * 1px);
   }
+  .rounded-lg {
+    border-radius: var(--radius-lg);
+  }
   .rounded-xl {
     border-radius: var(--radius-xl);
   }
@@ -423,6 +442,12 @@
   }
   .bg-white {
     background-color: var(--color-white);
+  }
+  .p-2 {
+    padding: calc(var(--spacing) * 2);
+  }
+  .p-4 {
+    padding: calc(var(--spacing) * 4);
   }
   .p-6 {
     padding: calc(var(--spacing) * 6);
@@ -472,6 +497,9 @@
   }
   .text-\[var\(--secondary-text-color\)\] {
     color: var(--secondary-text-color);
+  }
+  .text-\[var\(--text-color\)\] {
+    color: var(--text-color);
   }
   .text-slate-500 {
     color: var(--color-slate-500);
@@ -588,6 +616,13 @@
       }
     }
   }
+  .hover\:bg-\[var\(--brand-hover-bg\)\] {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--brand-hover-bg);
+      }
+    }
+  }
   .hover\:text-\[var\(--accent-color\)\] {
     &:hover {
       @media (hover: hover) {
@@ -600,6 +635,12 @@
       @media (hover: hover) {
         color: var(--color-white);
       }
+    }
+  }
+  .focus\:outline-none {
+    &:focus {
+      --tw-outline-style: none;
+      outline-style: none;
     }
   }
   .sm\:px-6 {
