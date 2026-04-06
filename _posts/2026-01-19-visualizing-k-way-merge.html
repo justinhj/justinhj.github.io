@@ -488,7 +488,7 @@ Analysis.
 With a min-heap the push and pop operations are both \(O(\log_2 k)\) giving a runtime complexity of \(O(n \log k)\).
 </p>
 
-<pre class="example" id="orgcadc8c7">
+<pre class="example" id="orgdbf335b">
                   a
                   |
       +-----------+-----------+
@@ -570,7 +570,7 @@ Let's see how we can improve.
 In Knuth we see the following diagram of a ping pong tournament. (section 5.2.3, Fig 22). Any sport works here really, the important thing is that when two people or teams compete the idea is that the best one will win. We will be dealing with sorting unchanging records so the analogy is not perfect. If Chris beats Pat on Sunday, he may still lose to Pat on Monday, but we can ignore that for the purposes of the algorithm.
 </p>
 
-<pre class="example" id="org7373326">
+<pre class="example" id="org9d0cd52">
                   Chris (Champion)
                       |
           +-----------+-----------+
@@ -653,7 +653,7 @@ To make this more concrete as a sort let's change the players to their numeric v
 Step 1 we remove 1 and output it as the first element.
 </p>
 
-<pre class="example" id="orgb384384">
+<pre class="example" id="org8555b4b">
 Sort output: 1
                     1 (Champion)
                         |
@@ -674,7 +674,7 @@ Sort output: 1
 In step 2 we remove 1 from the tournament in preparation to replay without them.
 </p>
 
-<pre class="example" id="org270dfbc">
+<pre class="example" id="org2086dae">
 Sort output: 1,2
                         2 (Champion)
                         |
@@ -699,7 +699,7 @@ We started at the bottom of the tree, 4 has nobody to play so it moves up, 2 bea
 Now we remove 2. Replaying from the bottom gives the tree below and we output the 3.
 </p>
 
-<pre class="example" id="orga6c19fa">
+<pre class="example" id="orgae2d0ba">
 Sort output: 1,2,3
                         3 (Champion)
                         |
