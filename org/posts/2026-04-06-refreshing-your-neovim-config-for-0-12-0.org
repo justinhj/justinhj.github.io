@@ -1,0 +1,41 @@
+#+TITLE: Refreshing your Neovim config for 0.12.0
+#+AUTHOR: Justin Heyes-Jones
+#+DATE: 2026-04-06
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+#+CREATOR: <a href="https://www.gnu.org/software/emacs/">Emacs</a> 29.1 (<a href="http://orgmode.org">Org</a> mode 9.6)
+#+BEGIN_EXPORT html
+---
+layout: post
+title: Refreshing your Neovim config for 0.12.0
+date: 2026-04-06
+tags: [neovim, vim, command-line]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+#+END_EXPORT
+
+* Introduction
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+* What's new in 0.12.0
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+* My configuration structure
+
+Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.
+
+#+BEGIN_SRC lua
+-- Sample Neovim configuration snippet
+vim.opt.number = true
+vim.opt.relativenumber = true
+#+END_SRC
+
+* Key changes for this version
+
+Integer in sapien. Vivamus egestas. Sed sed libero. Mauris consequat, felis vitae semper porta, magna felis tempus mauris, ac porttitor elit nisl sed lorem.
+
+* Conclusion
+
+Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris ut leo. Ut tellus.
