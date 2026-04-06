@@ -78,6 +78,11 @@ Note that at any point you can use the #+BEGIN_EXPORT html and #+END_EXPORT synt
 
 Typically when creating a new post the user will ask you to do the above as well as make a sample framework of just the headings for each section with some sample latin text as a placeholder in each.
 
+Finally make sure to always add a copyright message in this format at the end of the post. (use the current year).
+
+©2026 Justin Heyes-Jones. All Rights Reserved
+
+
 ## Publishing and testing
 
 Usually the testing flow is like this:
