@@ -60,7 +60,7 @@ NVIM_APPNAME=nvim-next nvim -O ~/.config/nvim-next/init.lua ~/.config/nvim/init.
 
 * Replicating the config
 
-I needed some method to migrate this without missing anything so I went through the init.lua file and copied over anything that was obviously needed and unchanged. In particular the vim options have not changed.
+I needed some method to migrate this without missing anything so I went through the init.lua file and copied over anything that was obviously needed and unchanged. In particular, the vim options have not changed.
 
 #+BEGIN_SRC lua
 vim.g.mapleader = ","
@@ -152,7 +152,7 @@ One more thing I like about vim.pack is it uses simple buffers as its user inter
 
 I ran into some issues with Treesitter as I ended up with a mix of different tree-sitter compiled grammars and different versions of Treesitter. It all worked after doing the following:
 
-Install the tree-sitter-cli
+Install the tree-sitter-cli, which is required by newer versions of treesitter-nvim.
 
 #+BEGIN_SRC bash
 brew install tree-sitter-cli
@@ -167,7 +167,7 @@ vim.pack.add({
 })
 #+END_SRC
 
-After that I was able to TSUpdate and TSInstall whatever I needed without any issues and syntax highlighting worked along with it.
+After that I was able to TSUpdate and TSInstall whatever I needed without any issues providing perfect syntax highlighting.
 
 * LSP and completion
 
@@ -177,7 +177,7 @@ As mentioned, the bulk of my config complexity was coming from completion and LS
 2. Use native completion
 3. Modular lsp configuration
 
-Since completion is now built-in I can able with the following global settings, and a special function required to enable it for each lsp server, if it supports it.
+Since completion is now built-in I can turn it on with the following global settings and an LspAttach autocmd to enable it for each lsp server after checking if it is supported.
 
 #+BEGIN_SRC lua
 vim.opt.completeopt = "menu,menuone,noselect,popup" -- Ensures the menu appears even for a single match and uses the native popup window.
@@ -217,8 +217,8 @@ return {
   filetypes = { 'python' },
   settings = {
     pylsp = {
-          plugins = {
-            mccabe = { enabled = false },
+      plugins = {
+        mccabe = { enabled = false },
         pycodestyle = { enabled = false },
         flake8 = {
           enabled = true,

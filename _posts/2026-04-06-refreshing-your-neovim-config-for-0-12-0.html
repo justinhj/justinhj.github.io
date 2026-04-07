@@ -87,7 +87,7 @@ During development of the new config I used this command to open them both up to
 <h2 id="org0367c42">Replicating the config</h2>
 <div class="outline-text-2" id="text-org0367c42">
 <p>
-I needed some method to migrate this without missing anything so I went through the init.lua file and copied over anything that was obviously needed and unchanged. In particular the vim options have not changed.
+I needed some method to migrate this without missing anything so I went through the init.lua file and copied over anything that was obviously needed and unchanged. In particular, the vim options have not changed.
 </p>
 
 <div class="org-src-container">
@@ -215,7 +215,7 @@ I ran into some issues with Treesitter as I ended up with a mix of different tre
 </p>
 
 <p>
-Install the tree-sitter-cli
+Install the tree-sitter-cli, which is required by newer versions of treesitter-nvim.
 </p>
 
 <div class="org-src-container">
@@ -236,7 +236,7 @@ Ensure to switch to the main branch of treesitter-nvim (main is more up to date 
 </div>
 
 <p>
-After that I was able to TSUpdate and TSInstall whatever I needed without any issues and syntax highlighting worked along with it.
+After that I was able to TSUpdate and TSInstall whatever I needed without any issues providing perfect syntax highlighting.
 </p>
 </div>
 </div>
@@ -255,7 +255,7 @@ As mentioned, the bulk of my config complexity was coming from completion and LS
 </ol>
 
 <p>
-Since completion is now built-in I can able with the following global settings, and a special function required to enable it for each lsp server, if it supports it.
+Since completion is now built-in I can turn it on with the following global settings and an LspAttach autocmd to enable it for each lsp server after checking if it is supported.
 </p>
 
 <div class="org-src-container">
@@ -302,8 +302,8 @@ LSP configuration can now be done using an lsp folder in your config. Each confi
   filetypes = { <span style="color: #79a8ff;">'python'</span> },
   settings = {
     pylsp = {
-          plugins = {
-            mccabe = { enabled = <span style="color: #00bcff;">false</span> },
+      plugins = {
+        mccabe = { enabled = <span style="color: #00bcff;">false</span> },
         pycodestyle = { enabled = <span style="color: #00bcff;">false</span> },
         flake8 = {
           enabled = <span style="color: #00bcff;">true</span>,
