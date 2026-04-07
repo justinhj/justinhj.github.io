@@ -286,4 +286,8 @@ For science, on my Windows machine which I mostly use for Gaming and a bit of ML
 
 0.12.x is one of the biggest updates for a while in Neovim and it's great to see the out-of-the-box experience expanding. I found clearing out my configuration and refreshing it for 2026 was a good excuse to explore these new features.
 
+* Thanks
+
+Thank you to ~GrandLate7367~, ~TheLeoP_~ and  ~mushfiq_814~ on Reddit's ~r/neovim~ for pointing out some issues with the original post.
+
 \copy2026 Justin Heyes-Jones. All Rights Reserved
