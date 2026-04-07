@@ -170,7 +170,7 @@ Ensure to switch to the main branch of treesitter-nvim (main is more up to date 
 #+BEGIN_SRC lua
 vim.pack.add({
   { src = "https://github.com/nvim-treesitter/nvim-treesitter", 
-    branch = 'main' },
+    version = 'main' },
 })
 #+END_SRC
 
