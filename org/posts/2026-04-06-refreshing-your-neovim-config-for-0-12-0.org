@@ -16,26 +16,96 @@ tags: [neovim, vim, command-line]
 
 * Introduction
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+Neovim version 0.12.1 was just released and you can check the release news here:
 
-* What's new in 0.12.0
+[[https://github.com/neovim/neovim/blob/v0.12.1/runtime/doc/news.txt][Neovim v0.12.1 release news]]
 
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+This is a massive release bringing a number of core capabilities that used to require external plugins to support into the core editor. I took this opportunity to do a full refresh of my config. This was required as over the last few years I have pulled in many plugins only to forget what they are for. My config had too many files, too much surface area when trying to make changes or fix annoyances.
 
-* My configuration structure
+In particular my lsp configurations and key maps were spread all over different places, and there was cruft I wasn't even using such as luasnip (hrsh7th/nvim-cmp won't work without a snippets plugin whether you want one or not).
 
-Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.
+There are a couple of options for getting out of a config hell like this:
 
-#+BEGIN_SRC lua
--- Sample Neovim configuration snippet
-vim.opt.number = true
-vim.opt.relativenumber = true
+1. Gradually fix it a bit at a time.
+2. Kill it with fire and start again.
+
+Given the mess my old config had gotten to I decided the latter would be much more manageable.
+
+* Running two configs on the same machine
+
+It's a lot easier to work on a new config if you still have the old one around for reference, and can easily run the new and the old together. One way to make this work is the NVIM_APPNAME environment variable. Normally Neovim expects the various working folders, including the configuration, to be in the nvim folder.
+
+By using the NVIM_APPNAME environment variable you can set it to something different, I chose nvim-next. This let's you build an entirely new config and leave your old one intact.
+
+I started by manually creating the new folders (MacOS example).
+
+#+BEGIN_SRC bash
+mkdir -p ~/.config/nvim-next
+mkdir -p ~/.local/share/nvim-next
+mkdir -p ~/.local/state/nvim-next
+mkdir -p ~/.cache/nvim-next
 #+END_SRC
 
-* Key changes for this version
+Now it's possible to run with a fresh config without worrying about messing up the old one.
 
-Integer in sapien. Vivamus egestas. Sed sed libero. Mauris consequat, felis vitae semper porta, magna felis tempus mauris, ac porttitor elit nisl sed lorem.
+#+BEGIN_SRC bash
+NVIM_APPNAME=nvim-next nvim
+#+END_SRC
+
+During development of the new config I used this command to open them both up together.
+
+#+BEGIN_SRC bash
+NVIM_APPNAME=nvim-next nvim -O ~/.config/nvim-next/init.lua ~/.config/nvim/init.lua
+#+END_SRC
+
+* Replicating the config
+
+I needed some method to migrate this without missing anything so I went through the init.lua file and copied over anything that was obviously needed and unchanged. In particular the vim options have not changed.
+
+#+BEGIN_SRC lua
+vim.g.mapleader = ","
+-- Prevents showing extra messages when using completion
+vim.opt.shortmess:append("c")
+-- Sets the height of the command line area at the bottom
+vim.opt.cmdheight = 2
+-- Displays the line number for the current line
+vim.opt.number = true
+-- Displays line numbers relative to the current cursor position
+vim.opt.relativenumber = true
+-- Time in milliseconds to wait for a mapped sequence to complete
+vim.opt.timeoutlen = 500
+-- Time in milliseconds of inactivity before calling CursorHold or writing to swap
+vim.opt.updatetime = 4000
+-- Ignores case when searching patterns
+vim.opt.ignorecase = true
+-- Automatically switches to case-sensitive search if a capital letter is used
+vim.opt.smartcase = true
+-- Enables 24-bit RGB colors in the terminal
+vim.opt.termguicolors = true
+-- Configures the behavior of the insert mode completion menu
+vim.opt.completeopt = "menu,menuone,noselect,popup"
+-- Number of spaces that a <Tab> character represents
+vim.opt.tabstop = 2
+-- Number of spaces to use for each step of automatic indentation
+vim.opt.shiftwidth = 2
+-- Number of spaces that a <Tab> counts for during editing operations
+vim.opt.softtabstop = 2
+-- Converts tabs into spaces when typing
+vim.opt.expandtab = true
+-- Automatically inserts an extra level of indentation in some cases
+vim.opt.smartindent = true
+-- Makes <Tab> insert 'shiftwidth' number of spaces at the start of a line
+vim.opt.smarttab = true
+#+END_SRC
+
+After that I stepped through the init.lua entirely and made a list of things to keep and things to lose. Let's cover them by category.
+
+* vim.pack, Neovim's new built-in plugin manager
+
 
 * Conclusion
 
+# Updated via publishing loop check.
 Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris ut leo. Ut tellus.
+
+\copy2026 Justin Heyes-Jones. All Rights Reserved

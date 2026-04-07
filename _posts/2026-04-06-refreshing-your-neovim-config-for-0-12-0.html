@@ -10,35 +10,121 @@ tags: [neovim, vim, command-line]
 <h2 id="org12a1d94">Introduction</h2>
 <div class="outline-text-2" id="text-org12a1d94">
 <p>
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+Neovim version 0.12.1 was just released and you can check the release news here:
+</p>
+
+<p>
+<a href="https://github.com/neovim/neovim/blob/v0.12.1/runtime/doc/news.txt">Neovim v0.12.1 release news</a>
+</p>
+
+<p>
+This is a massive release bringing a number of core capabilities that used to require external plugins to support into the core editor. I took this opportunity to do a full refresh of my config. This was required as over the last few years I have pulled in many plugins only to forget what they are for. My config had too many files, too much surface area when trying to make changes or fix annoyances.
+</p>
+
+<p>
+There are a couple of options for getting out of a config hell like this:
+</p>
+
+<ol class="org-ol">
+<li>Gradually fix it a bit at a time.</li>
+<li>Kill it with fire and start again.</li>
+</ol>
+
+<p>
+I decided on the latter option.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org95cba6a" class="outline-2">
-<h2 id="org95cba6a">What's new in 0.12.0</h2>
-<div class="outline-text-2" id="text-org95cba6a">
+<div id="outline-container-orge55627f" class="outline-2">
+<h2 id="orge55627f">Running two configs on the same machine</h2>
+<div class="outline-text-2" id="text-orge55627f">
 <p>
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+It's a lot easier to work on a new config if you still have the old one around for reference, and can easily run the new and the old together. One way to make this work is the NVIM<sub>APPNAME</sub> environment variable. Normally Neovim expects the various working folders, including the configuration, to be in the nvim folder.
 </p>
-</div>
-</div>
 
-<div id="outline-container-orgbdfe4f9" class="outline-2">
-<h2 id="orgbdfe4f9">My configuration structure</h2>
-<div class="outline-text-2" id="text-orgbdfe4f9">
 <p>
-Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.
+By using the NVIM<sub>APPNAME</sub> environment variable you can set it to something different, I chose nvim-next. This let's you build an entirely new config and leave your old one intact.
+</p>
+
+<p>
+I started by manually creating the new folders (MacOS example).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-lua">-- Sample Neovim configuration snippet
-vim.opt.number = true
-vim.opt.relativenumber = true
+<pre class="src src-bash">mkdir -p ~/.config/nvim-next
+mkdir -p ~/.local/share/nvim-next
+mkdir -p ~/.local/state/nvim-next
+mkdir -p ~/.cache/nvim-next
+</pre>
+</div>
+
+<p>
+Now it's possible to run with a fresh config without worrying about messing up the old one.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #00d3d0;">NVIM_APPNAME</span>=nvim-next nvim
+</pre>
+</div>
+
+<p>
+During development of the new config I used this command to open them both up together.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #00d3d0;">NVIM_APPNAME</span>=nvim-next nvim -O ~/.config/nvim-next/init.lua ~/.config/nvim/init.lua
 </pre>
 </div>
 </div>
 </div>
+
+<div id="outline-container-org0367c42" class="outline-2">
+<h2 id="org0367c42">Replicating the config</h2>
+<div class="outline-text-2" id="text-org0367c42">
+<p>
+I needed some method to migrate this without missing anything so I went through the init.lua file and copied over anything that was obviously needed and unchanged. In particular 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lua">vim.g.mapleader = <span style="color: #79a8ff;">","</span>
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Prevents showing extra messages when using completion</span>
+vim.opt.shortmess:append(<span style="color: #79a8ff;">"c"</span>)
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Sets the height of the command line area at the bottom</span>
+vim.opt.cmdheight = 2
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Displays the line number for the current line</span>
+vim.opt.number = <span style="color: #00bcff;">true</span>
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Displays line numbers relative to the current cursor position</span>
+vim.opt.relativenumber = <span style="color: #00bcff;">true</span>
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Time in milliseconds to wait for a mapped sequence to complete</span>
+vim.opt.timeoutlen = 500
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Time in milliseconds of inactivity before calling CursorHold or writing to swap</span>
+vim.opt.updatetime = 4000
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Ignores case when searching patterns</span>
+vim.opt.ignorecase = <span style="color: #00bcff;">true</span>
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Automatically switches to case-sensitive search if a capital letter is used</span>
+vim.opt.smartcase = <span style="color: #00bcff;">true</span>
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Enables 24-bit RGB colors in the terminal</span>
+vim.opt.termguicolors = <span style="color: #00bcff;">true</span>
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Configures the behavior of the insert mode completion menu</span>
+vim.opt.completeopt = <span style="color: #79a8ff;">"menu,menuone,noselect,popup"</span>
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Number of spaces that a &lt;Tab&gt; character represents</span>
+vim.opt.tabstop = 2
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Number of spaces to use for each step of automatic indentation</span>
+vim.opt.shiftwidth = 2
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Number of spaces that a &lt;Tab&gt; counts for during editing operations</span>
+vim.opt.softtabstop = 2
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Converts tabs into spaces when typing</span>
+vim.opt.expandtab = <span style="color: #00bcff;">true</span>
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Automatically inserts an extra level of indentation in some cases</span>
+vim.opt.smartindent = <span style="color: #00bcff;">true</span>
+<span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Makes &lt;Tab&gt; insert 'shiftwidth' number of spaces at the start of a line</span>
+vim.opt.smarttab = <span style="color: #00bcff;">true</span>
+</pre>
+</div>
+</div>
+</div>
+
 
 <div id="outline-container-org09a98aa" class="outline-2">
 <h2 id="org09a98aa">Key changes for this version</h2>
@@ -54,6 +140,10 @@ Integer in sapien. Vivamus egestas. Sed sed libero. Mauris consequat, felis vita
 <div class="outline-text-2" id="text-org6a4f83d">
 <p>
 Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris ut leo. Ut tellus.
+</p>
+
+<p>
+&copy;2026 Justin Heyes-Jones. All Rights Reserved
 </p>
 </div>
 </div>
