@@ -20,11 +20,11 @@ Neovim version 0.12.1 was just released and you can check the release news here:
 
 [[https://github.com/neovim/neovim/blob/v0.12.1/runtime/doc/news.txt][Neovim v0.12.1 release news]]
 
-This is a massive release bringing a number of core capabilities that used to require external plugins to support into the core editor. I took this opportunity to do a full refresh of my config. This was required as over the last few years I have pulled in many plugins only to forget what they are for. My config had too many files, too much surface area when trying to make changes or fix annoyances.
+This is a massive release bringing a number of core capabilities that used to require external plugins into Neovim as built-in features. I took this opportunity to do a full refresh of my config. This was required as over the last few years I have pulled in many plugins only to forget what they are for. My config had too many files, too much surface area when trying to make changes or fix annoyances.
 
-In particular my lsp configurations and key maps were spread all over different places, and there was cruft I wasn't even using such as luasnip (hrsh7th/nvim-cmp won't work without a snippets plugin whether you want one or not).
+Rather than use an off the shelf config I had built it all by hand to meet my needs perfectly, but without careful maintenance it becomes an overgrown mess. In particular my lsp configurations and key maps were spread all over different places, and there was cruft I wasn't even using such as luasnip (hrsh7th/nvim-cmp won't work without a snippets plugin whether you want one or not).
 
-There are a couple of options for getting out of a config hell like this:
+I considered two options for the refresh:
 
 1. Gradually fix it a bit at a time.
 2. Kill it with fire and start again.
@@ -102,10 +102,175 @@ After that I stepped through the init.lua entirely and made a list of things to 
 
 * vim.pack, Neovim's new built-in plugin manager
 
+Previously I used [[https://github.com/folke/lazy.nvim][folke/lazy.nvim]] for plugin management. This worked well and was fairly easy to configure, however there was complexity in the form of having to think about and configure lazy loading. For example, in loading this colour theme I need to think about whether to load it lazy or not, the priority with respect to other plugins and what to do to configure it.
+
+#+BEGIN_SRC lua
+{
+  'shaunsingh/nord.nvim',
+  lazy = false,
+  priority = 1000,
+  config = function()
+    vim.cmd "colorscheme nord"
+  end
+},
+#+END_SRC
+
+vim.pack's approach is a lot more vanilla. It has no lazy loading, no priority system and all plugins have to be on a remote git repo. I think you cannot use local folders or local git repos. This may make plugin development a bit tricky.
+
+If you load a lot of plugins and some of them are slow, the optimization of lazy loading is probably worth it. With vim.pack you can still do the setup functions conditionally based on autocommands if you need to. 
+
+In my use case I found the start up time is 80ms and plenty fast enough for me, so I don't miss the lazy loading.
+
+To actually do the conversion you simply call vim.pack.add when you want to add a plugin, and once it is installed every command after that can use it.
+
+For example the configuration above becomes:
+
+#+BEGIN_SRC lua
+vim.pack.add({
+  { src = "https://github.com/shaunsingh/nord.nvim" },
+})
+
+vim.cmd('colorscheme nord')
+#+END_SRC
+
+Note that assumed Github paths are not filled out like in Lazy.nvim, you must fill them yourself, or as the documentation suggests use a helper function to generate the names.
+
+#+BEGIN_SRC lua
+local gh = function(x) return 'https://github.com/' .. x end
+local cb = function(x) return 'https://codeberg.org/' .. x end
+
+vim.pack.add({ gh('user/plugin1'), cb('user/plugin2') })
+#+END_SRC
+
+vim.pack keeps track of the versions you are using and saves to a lock file. This is supposed to be committed to source control and it means you can move to another machine and get the exact same plugin versions. It also means you may have merge issues if you edit the configs on different machines.
+
+Also of note is the new :restart command, which lets you iterate on changes to plugins and configuration more easily. The Neovim core restarts. With mksession you can save the current session then resume it after a restart. 
+
+One more thing I like about vim.pack is it uses simple buffers as its user interface. vim.pack.update({}) shows a buffer with the packages and any updates that need doing. Simply writing the file acts as confirmation you want to go ahead. Nice.
+
+* Treesitter
+
+I ran into some issues with Treesitter as I ended up with a mix of different tree-sitter compiled grammars and different versions of Treesitter. It all worked after doing the following:
+
+Install the tree-sitter-cli
+
+#+BEGIN_SRC bash
+brew install tree-sitter-cli
+#+END_SRC
+
+Ensure to switch to the main branch of treesitter-nvim (main is more up to date than master).
+
+#+BEGIN_SRC lua
+vim.pack.add({
+  { src = "https://github.com/nvim-treesitter/nvim-treesitter", 
+    branch = 'main' },
+})
+#+END_SRC
+
+After that I was able to TSUpdate and TSInstall whatever I needed without any issues and syntax highlighting worked along with it.
+
+* LSP and completion
+
+As mentioned, the bulk of my config complexity was coming from completion and LSP configuration. This complexity is greatly reduced by the following changes:
+
+1. Remove nvim-cmp and LuaSnip
+2. Use native completion
+3. Modular lsp configuration
+
+Since completion is now built-in I can able with the following global settings, and a special function required to enable it for each lsp server, if it supports it.
+
+#+BEGIN_SRC lua
+vim.opt.completeopt = "menu,menuone,noselect,popup" -- Ensures the menu appears even for a single match and uses the native popup window.
+vim.o.autocomplete = true -- Enables the overall completion feature.
+
+vim.api.nvim_create_autocmd("LspAttach", {
+  group = vim.api.nvim_create_augroup("lsp_completion", { clear = true }),
+  callback = function(args)
+    local client_id = args.data.client_id
+    if not client_id then
+      return
+    end
+
+    local client = vim.lsp.get_client_by_id(client_id)
+    if client and client:supports_method("textDocument/completion") then
+      -- Enable native LSP completion for this client + buffer
+      vim.lsp.completion.enable(true, client_id, args.buf, {
+        autotrigger = true,   -- auto-show menu as you type (recommended)
+        -- You can also set { autotrigger = false } and trigger manually with <C-x><C-o>
+      })
+    end
+  end,
+})
+#+END_SRC
+
+Finally, I still use Mason for easy management of LSP servers. What remains is to enable the servers which must be done by calling the enable method, and to configure it. For example for Python I added the following in my init.lua to enable the server.
+
+#+BEGIN_SRC lua
+vim.lsp.enable('pylsp') -- Python
+#+END_SRC
+
+LSP configuration can now be done using an lsp folder in your config. Each config file should be named after the LSP server. In this case I made lsp/pylsp.lua. It should simply return the configuration structure.
+
+#+BEGIN_SRC lua
+return {
+  cmd = { 'pylsp' },
+  filetypes = { 'python' },
+  settings = {
+    pylsp = {
+          plugins = {
+            mccabe = { enabled = false },
+        pycodestyle = { enabled = false },
+        flake8 = {
+          enabled = true,
+          ignore = { "E501", "E302", "W" },
+          maxLineLength = 120,
+        },
+      },
+    },
+  },
+}
+#+END_SRC
+
+This kind of convention over configuration appeals to me and helps keeps things organized.
+
+* New User interface (ui2) and the status line
+
+ui2 is a "is a redesign of the core messages and commandline UI, which will replace the legacy message grid in the TUI.". In particular it removes "Press Enter" interruptions, and it highlights the command line as you type. Nice.
+
+As a maintainer of a status line plugin, [[https://github.com/justinhj/battery.nvim][battery.nvim]] I was curious if anything had broken the statusline. Everything seemed to work without any changes. 
+
+ui2 is opt-in and you can do so as follows:
+
+#+BEGIN_SRC lua
+-- New UI opt-in
+require('vim._core.ui2').enable({})
+#+END_SRC
+
+* The best of the rest
+
+I've kept the most minimal set of plugins for my config. In particular I still have:
+
+1. mason, mason-lspconfig -- lsp server managment
+2. nvim-treesitter -- tools for treesitter
+3. shaunsingh/nord.nvim -- my favourite colourscheme
+4. mrjones2014/legendary.nvim -- archived but still great key map manager
+5. ibhagwan/fzf-lua -- fast finder for files and text within files
+6. nvim-lualine/lualine.nvim -- best statusline
+7. justinhj/battery.nvim -- Let me plug my own plugin
+8. nvim-lua/plenary.nvim -- Useful libraries
+9. folke/which-key.nvim -- Keymap display
+
+Some I may miss
+
+1. tpope/vim-fugitive -- Nice Git commands, but I mostly use Git at the command line
+2. karb94/neoscroll.nvim -- smooth scrolling
+
+* vim.net.request
+
+I have done some http programming in lua, mostly with the help of plenary and libuv. Adding GET requests to the built-in lua is a nice step. I would hope it gets POST and other methods to expand its utility over time.
 
 * Conclusion
 
-# Updated via publishing loop check.
-Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris ut leo. Ut tellus.
+0.12.x is one of the biggest updates for a while in Neovim and it's great to see the out-of-the-box experience expanding. I found clearing out my configuration and refreshing it for 2026 was a good excuse to explore these new features.
 
 \copy2026 Justin Heyes-Jones. All Rights Reserved

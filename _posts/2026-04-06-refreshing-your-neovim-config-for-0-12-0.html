@@ -18,11 +18,15 @@ Neovim version 0.12.1 was just released and you can check the release news here:
 </p>
 
 <p>
-This is a massive release bringing a number of core capabilities that used to require external plugins to support into the core editor. I took this opportunity to do a full refresh of my config. This was required as over the last few years I have pulled in many plugins only to forget what they are for. My config had too many files, too much surface area when trying to make changes or fix annoyances.
+This is a massive release bringing a number of core capabilities that used to require external plugins into Neovim as built-in features. I took this opportunity to do a full refresh of my config. This was required as over the last few years I have pulled in many plugins only to forget what they are for. My config had too many files, too much surface area when trying to make changes or fix annoyances.
 </p>
 
 <p>
-There are a couple of options for getting out of a config hell like this:
+Rather than use an off the shelf config I had built it all by hand to meet my needs perfectly, but without careful maintenance it becomes an overgrown mess. In particular my lsp configurations and key maps were spread all over different places, and there was cruft I wasn't even using such as luasnip (hrsh7th/nvim-cmp won't work without a snippets plugin whether you want one or not).
+</p>
+
+<p>
+I considered two options for the refresh:
 </p>
 
 <ol class="org-ol">
@@ -31,7 +35,7 @@ There are a couple of options for getting out of a config hell like this:
 </ol>
 
 <p>
-I decided on the latter option.
+Given the mess my old config had gotten to I decided the latter would be much more manageable.
 </p>
 </div>
 </div>
@@ -83,7 +87,7 @@ During development of the new config I used this command to open them both up to
 <h2 id="org0367c42">Replicating the config</h2>
 <div class="outline-text-2" id="text-org0367c42">
 <p>
-I needed some method to migrate this without missing anything so I went through the init.lua file and copied over anything that was obviously needed and unchanged. In particular 
+I needed some method to migrate this without missing anything so I went through the init.lua file and copied over anything that was obviously needed and unchanged. In particular the vim options have not changed.
 </p>
 
 <div class="org-src-container">
@@ -122,15 +126,261 @@ vim.opt.smartindent = <span style="color: #00bcff;">true</span>
 vim.opt.smarttab = <span style="color: #00bcff;">true</span>
 </pre>
 </div>
-</div>
-</div>
 
-
-<div id="outline-container-org09a98aa" class="outline-2">
-<h2 id="org09a98aa">Key changes for this version</h2>
-<div class="outline-text-2" id="text-org09a98aa">
 <p>
-Integer in sapien. Vivamus egestas. Sed sed libero. Mauris consequat, felis vitae semper porta, magna felis tempus mauris, ac porttitor elit nisl sed lorem.
+After that I stepped through the init.lua entirely and made a list of things to keep and things to lose. Let's cover them by category.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd0cd587" class="outline-2">
+<h2 id="orgd0cd587">vim.pack, Neovim's new built-in plugin manager</h2>
+<div class="outline-text-2" id="text-orgd0cd587">
+<p>
+Previously I used <a href="https://github.com/folke/lazy.nvim">folke/lazy.nvim</a> for plugin management. This worked well and was fairly easy to configure, however there was complexity in the form of having to think about and configure lazy loading. For example, in loading this colour theme I need to think about whether to load it lazy or not, the priority with respect to other plugins and what to do to configure it.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lua">{
+  <span style="color: #79a8ff;">'shaunsingh/nord.nvim'</span>,
+  lazy = <span style="color: #00bcff;">false</span>,
+  priority = 1000,
+  <span style="color: #feacd0;">config</span> = <span style="color: #b6a0ff;">function</span>()
+    vim.cmd <span style="color: #79a8ff;">"colorscheme nord"</span>
+  <span style="color: #b6a0ff;">end</span>
+},
+</pre>
+</div>
+
+<p>
+vim.pack's approach is a lot more vanilla. It has no lazy loading, no priority system and all plugins have to be on a remote git repo. I think you cannot use local folders or local git repos. This may make plugin development a bit tricky.
+</p>
+
+<p>
+If you load a lot of plugins and some of them are slow, the optimization of lazy loading is probably worth it. With vim.pack you can still do the setup functions conditionally based on autocommands if you need to. 
+</p>
+
+<p>
+In my use case I found the start up time is 80ms and plenty fast enough for me, so I don't miss the lazy loading.
+</p>
+
+<p>
+To actually do the conversion you simply call vim.pack.add when you want to add a plugin, and once it is installed every command after that can use it.
+</p>
+
+<p>
+For example the configuration above becomes:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lua">vim.pack.add({
+  { src = <span style="color: #79a8ff;">"https://github.com/shaunsingh/nord.nvim"</span> },
+})
+
+vim.cmd(<span style="color: #79a8ff;">'colorscheme nord'</span>)
+</pre>
+</div>
+
+<p>
+Note that assumed Github paths are not filled out like in Lazy.nvim, you must fill them yourself, or as the documentation suggests use a helper function to generate the names.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lua"><span style="color: #b6a0ff;">local</span> <span style="color: #feacd0;">gh</span> = <span style="color: #b6a0ff;">function</span>(<span style="color: #00d3d0;">x</span>) <span style="color: #b6a0ff;">return</span> <span style="color: #79a8ff;">'https://github.com/'</span> .. x <span style="color: #b6a0ff;">end</span>
+<span style="color: #b6a0ff;">local</span> <span style="color: #feacd0;">cb</span> = <span style="color: #b6a0ff;">function</span>(<span style="color: #00d3d0;">x</span>) <span style="color: #b6a0ff;">return</span> <span style="color: #79a8ff;">'https://codeberg.org/'</span> .. x <span style="color: #b6a0ff;">end</span>
+
+vim.pack.add({ gh(<span style="color: #79a8ff;">'user/plugin1'</span>), cb(<span style="color: #79a8ff;">'user/plugin2'</span>) })
+</pre>
+</div>
+
+<p>
+vim.pack keeps track of the versions you are using and saves to a lock file. This is supposed to be committed to source control and it means you can move to another machine and get the exact same plugin versions. It also means you may have merge issues if you edit the configs on different machines.
+</p>
+
+<p>
+Also of note is the new :restart command, which lets you iterate on changes to plugins and configuration more easily. The Neovim core restarts. With mksession you can save the current session then resume it after a restart. 
+</p>
+
+<p>
+One more thing I like about vim.pack is it uses simple buffers as its user interface. vim.pack.update({}) shows a buffer with the packages and any updates that need doing. Simply writing the file acts as confirmation you want to go ahead. Nice.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4665a53" class="outline-2">
+<h2 id="org4665a53">Treesitter</h2>
+<div class="outline-text-2" id="text-org4665a53">
+<p>
+I ran into some issues with Treesitter as I ended up with a mix of different tree-sitter compiled grammars and different versions of Treesitter. It all worked after doing the following:
+</p>
+
+<p>
+Install the tree-sitter-cli
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">brew install tree-sitter-cli
+</pre>
+</div>
+
+<p>
+Ensure to switch to the main branch of treesitter-nvim (main is more up to date than master).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lua">vim.pack.add({
+  { src = <span style="color: #79a8ff;">"https://github.com/nvim-treesitter/nvim-treesitter"</span>, 
+    branch = <span style="color: #79a8ff;">'main'</span> },
+})
+</pre>
+</div>
+
+<p>
+After that I was able to TSUpdate and TSInstall whatever I needed without any issues and syntax highlighting worked along with it.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb35f839" class="outline-2">
+<h2 id="orgb35f839">LSP and completion</h2>
+<div class="outline-text-2" id="text-orgb35f839">
+<p>
+As mentioned, the bulk of my config complexity was coming from completion and LSP configuration. This complexity is greatly reduced by the following changes:
+</p>
+
+<ol class="org-ol">
+<li>Remove nvim-cmp and LuaSnip</li>
+<li>Use native completion</li>
+<li>Modular lsp configuration</li>
+</ol>
+
+<p>
+Since completion is now built-in I can able with the following global settings, and a special function required to enable it for each lsp server, if it supports it.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lua">vim.opt.completeopt = <span style="color: #79a8ff;">"menu,menuone,noselect,popup"</span> <span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Ensures the menu appears even for a single match and uses the native popup window.</span>
+vim.o.autocomplete = <span style="color: #00bcff;">true</span> <span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Enables the overall completion feature.</span>
+
+vim.api.nvim_create_autocmd(<span style="color: #79a8ff;">"LspAttach"</span>, {
+  group = vim.api.nvim_create_augroup(<span style="color: #79a8ff;">"lsp_completion"</span>, { clear = <span style="color: #00bcff;">true</span> }),
+  <span style="color: #feacd0;">callback</span> = <span style="color: #b6a0ff;">function</span>(<span style="color: #00d3d0;">args</span>)
+    <span style="color: #b6a0ff;">local</span> <span style="color: #00d3d0;">client_id</span> = args.data.client_id
+    <span style="color: #b6a0ff;">if</span> <span style="color: #b6a0ff;">not</span> client_id <span style="color: #b6a0ff;">then</span>
+      <span style="color: #b6a0ff;">return</span>
+    <span style="color: #b6a0ff;">end</span>
+
+    <span style="color: #b6a0ff;">local</span> <span style="color: #00d3d0;">client</span> = vim.lsp.get_client_by_id(client_id)
+    <span style="color: #b6a0ff;">if</span> client <span style="color: #b6a0ff;">and</span> client:supports_method(<span style="color: #79a8ff;">"textDocument/completion"</span>) <span style="color: #b6a0ff;">then</span>
+      <span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Enable native LSP completion for this client + buffer</span>
+      vim.lsp.completion.enable(<span style="color: #00bcff;">true</span>, client_id, args.buf, {
+        autotrigger = <span style="color: #00bcff;">true</span>,   <span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">auto-show menu as you type (recommended)</span>
+        <span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">You can also set { autotrigger = false } and trigger manually with &lt;C-x&gt;&lt;C-o&gt;</span>
+      })
+    <span style="color: #b6a0ff;">end</span>
+  <span style="color: #b6a0ff;">end</span>,
+})
+</pre>
+</div>
+
+<p>
+Finally, I still use Mason for easy management of LSP servers. What remains is to enable the servers which must be done by calling the enable method, and to configure it. For example for Python I added the following in my init.lua to enable the server.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lua">vim.lsp.enable(<span style="color: #79a8ff;">'pylsp'</span>) <span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">Python</span>
+</pre>
+</div>
+
+<p>
+LSP configuration can now be done using an lsp folder in your config. Each config file should be named after the LSP server. In this case I made lsp/pylsp.lua. It should simply return the configuration structure.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lua"><span style="color: #b6a0ff;">return</span> {
+  cmd = { <span style="color: #79a8ff;">'pylsp'</span> },
+  filetypes = { <span style="color: #79a8ff;">'python'</span> },
+  settings = {
+    pylsp = {
+          plugins = {
+            mccabe = { enabled = <span style="color: #00bcff;">false</span> },
+        pycodestyle = { enabled = <span style="color: #00bcff;">false</span> },
+        flake8 = {
+          enabled = <span style="color: #00bcff;">true</span>,
+          ignore = { <span style="color: #79a8ff;">"E501"</span>, <span style="color: #79a8ff;">"E302"</span>, <span style="color: #79a8ff;">"W"</span> },
+          maxLineLength = 120,
+        },
+      },
+    },
+  },
+}
+</pre>
+</div>
+
+<p>
+This kind of convention over configuration appeals to me and helps keeps things organized.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga3c3afd" class="outline-2">
+<h2 id="orga3c3afd">New User interface (ui2) and the status line</h2>
+<div class="outline-text-2" id="text-orga3c3afd">
+<p>
+ui2 is a "is a redesign of the core messages and commandline UI, which will replace the legacy message grid in the TUI.". In particular it removes "Press Enter" interruptions, and it highlights the command line as you type. Nice.
+</p>
+
+<p>
+As a maintainer of a status line plugin, <a href="https://github.com/justinhj/battery.nvim">battery.nvim</a> I was curious if anything had broken the statusline. Everything seemed to work without any changes. 
+</p>
+
+<p>
+ui2 is opt-in and you can do so as follows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lua"><span style="color: #a8a8a8;">-- </span><span style="color: #a8a8a8;">New UI opt-in</span>
+<span style="color: #f78fe7;">require</span>(<span style="color: #79a8ff;">'vim._core.ui2'</span>).enable({})
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org28e3aee" class="outline-2">
+<h2 id="org28e3aee">The best of the rest</h2>
+<div class="outline-text-2" id="text-org28e3aee">
+<p>
+I've kept the most minimal set of plugins for my config. In particular I still have:
+</p>
+
+<ol class="org-ol">
+<li>mason, mason-lspconfig &#x2013; lsp server managment</li>
+<li>nvim-treesitter &#x2013; tools for treesitter</li>
+<li>shaunsingh/nord.nvim &#x2013; my favourite colourscheme</li>
+<li>mrjones2014/legendary.nvim &#x2013; archived but still great key map manager</li>
+<li>ibhagwan/fzf-lua &#x2013; fast finder for files and text within files</li>
+<li>nvim-lualine/lualine.nvim &#x2013; best statusline</li>
+<li>justinhj/battery.nvim &#x2013; Let me plug my own plugin</li>
+<li>nvim-lua/plenary.nvim &#x2013; Useful libraries</li>
+<li>folke/which-key.nvim &#x2013; Keymap display</li>
+</ol>
+
+<p>
+Some I may miss
+</p>
+
+<ol class="org-ol">
+<li>tpope/vim-fugitive &#x2013; Nice Git commands, but I mostly use Git at the command line</li>
+<li>karb94/neoscroll.nvim &#x2013; smooth scrolling</li>
+</ol>
+</div>
+</div>
+
+<div id="outline-container-org23ff122" class="outline-2">
+<h2 id="org23ff122">vim.net.request</h2>
+<div class="outline-text-2" id="text-org23ff122">
+<p>
+I have done some http programming in lua, mostly with the help of plenary and libuv. Adding GET requests to the built-in lua is a nice step. I would hope it gets POST and other methods to expand its utility over time.
 </p>
 </div>
 </div>
@@ -139,7 +389,7 @@ Integer in sapien. Vivamus egestas. Sed sed libero. Mauris consequat, felis vita
 <h2 id="org6a4f83d">Conclusion</h2>
 <div class="outline-text-2" id="text-org6a4f83d">
 <p>
-Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Mauris ut leo. Ut tellus.
+0.12.x is one of the biggest updates for a while in Neovim and it's great to see the out-of-the-box experience expanding. I found clearing out my configuration and refreshing it for 2026 was a good excuse to explore these new features.
 </p>
 
 <p>
