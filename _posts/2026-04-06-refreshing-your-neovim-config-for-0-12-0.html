@@ -44,11 +44,11 @@ Given the mess my old config had gotten to I decided the latter would be much mo
 <h2 id="orge55627f">Running two configs on the same machine</h2>
 <div class="outline-text-2" id="text-orge55627f">
 <p>
-It's a lot easier to work on a new config if you still have the old one around for reference, and can easily run the new and the old together. One way to make this work is the NVIM<sub>APPNAME</sub> environment variable. Normally Neovim expects the various working folders, including the configuration, to be in the nvim folder.
+It's a lot easier to work on a new config if you still have the old one around for reference, and can easily run the new and the old together. One way to make this work is the <code>NVIM_APPNAME</code> environment variable. Normally Neovim expects the various working folders, including the configuration, to be in the nvim folder.
 </p>
 
 <p>
-By using the NVIM<sub>APPNAME</sub> environment variable you can set it to something different, I chose nvim-next. This let's you build an entirely new config and leave your old one intact.
+By using the <code>NVIM_APPNAME</code> environment variable you can set it to something different, I chose nvim-next. This let's you build an entirely new config and leave your old one intact.
 </p>
 
 <p>
@@ -80,8 +80,18 @@ During development of the new config I used this command to open them both up to
 <pre class="src src-bash"><span style="color: #00d3d0;">NVIM_APPNAME</span>=nvim-next nvim -O ~/.config/nvim-next/init.lua ~/.config/nvim/init.lua
 </pre>
 </div>
+
+<p>
+Finally, you may want to include the environment variable in your shell config to use it as your "real" config more easily.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #f78fe7;">export</span> <span style="color: #00d3d0;">NVIM_APPNAME</span>=nvim-next
+</pre>
 </div>
 </div>
+</div>
+
 
 <div id="outline-container-org0367c42" class="outline-2">
 <h2 id="org0367c42">Replicating the config</h2>
@@ -381,6 +391,19 @@ Some I may miss
 <div class="outline-text-2" id="text-org23ff122">
 <p>
 I have done some http programming in lua, mostly with the help of plenary and libuv. Adding GET requests to the built-in lua is a nice step. I would hope it gets POST and other methods to expand its utility over time.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4f02f78" class="outline-2">
+<h2 id="org4f02f78">Wrapping up</h2>
+<div class="outline-text-2" id="text-org4f02f78">
+<p>
+There are a couple of options once you're happy with the new config. One option is to keep the old config around forever. Another would be to delete it completely.
+</p>
+
+<p>
+For science, on my Windows machine which I mostly use for Gaming and a bit of ML and AI, I completely deleted the old config and replaced it. On my Macbook I keep both for now. 
 </p>
 </div>
 </div>

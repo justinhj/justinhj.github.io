@@ -33,9 +33,9 @@ Given the mess my old config had gotten to I decided the latter would be much mo
 
 * Running two configs on the same machine
 
-It's a lot easier to work on a new config if you still have the old one around for reference, and can easily run the new and the old together. One way to make this work is the NVIM_APPNAME environment variable. Normally Neovim expects the various working folders, including the configuration, to be in the nvim folder.
+It's a lot easier to work on a new config if you still have the old one around for reference, and can easily run the new and the old together. One way to make this work is the ~NVIM_APPNAME~ environment variable. Normally Neovim expects the various working folders, including the configuration, to be in the nvim folder.
 
-By using the NVIM_APPNAME environment variable you can set it to something different, I chose nvim-next. This let's you build an entirely new config and leave your old one intact.
+By using the ~NVIM_APPNAME~ environment variable you can set it to something different, I chose nvim-next. This let's you build an entirely new config and leave your old one intact.
 
 I started by manually creating the new folders (MacOS example).
 
@@ -57,6 +57,13 @@ During development of the new config I used this command to open them both up to
 #+BEGIN_SRC bash
 NVIM_APPNAME=nvim-next nvim -O ~/.config/nvim-next/init.lua ~/.config/nvim/init.lua
 #+END_SRC
+
+Finally, you may want to include the environment variable in your shell config to use it as your "real" config more easily.
+
+#+BEGIN_SRC bash
+export NVIM_APPNAME=nvim-next
+#+END_SRC
+
 
 * Replicating the config
 
@@ -268,6 +275,12 @@ Some I may miss
 * vim.net.request
 
 I have done some http programming in lua, mostly with the help of plenary and libuv. Adding GET requests to the built-in lua is a nice step. I would hope it gets POST and other methods to expand its utility over time.
+
+* Wrapping up
+
+There are a couple of options once you're happy with the new config. One option is to keep the old config around forever. Another would be to delete it completely.
+
+For science, on my Windows machine which I mostly use for Gaming and a bit of ML and AI, I completely deleted the old config and replaced it. On my Macbook I keep both for now. 
 
 * Conclusion
 
