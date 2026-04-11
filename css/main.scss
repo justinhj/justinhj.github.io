@@ -3,7 +3,41 @@
 ---
 @charset "utf-8";
 
+/* jetbrains-mono-regular - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/jetbrains-mono-v24-latin-regular.woff2') format('woff2');
+}
 
+/* jetbrains-mono-500 - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  src: url('../fonts/jetbrains-mono-v24-latin-500.woff2') format('woff2');
+}
+
+/* sora-regular - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/sora-v17-latin-regular.woff2') format('woff2');
+}
+
+/* sora-700 - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../fonts/sora-v17-latin-700.woff2') format('woff2');
+}
 
 // Our variables
 $base-font-family: 'Sora', sans-serif;
@@ -68,3 +102,5 @@ $on-laptop:        800px;
         "layout",
         "syntax-highlighting"
 ;
+
+
