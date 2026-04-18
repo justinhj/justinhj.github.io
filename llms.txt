@@ -1,0 +1,19 @@
+---
+layout: null
+---
+# {{ site.title }} - Blog
+
+> {{ site.description }}
+
+Welcome to the machine-readable version of my blog. I write about Functional Programming, Scala, Emacs, and Generative AI.
+
+## About the Author
+I am {{ site.title }}. You can find my code on GitHub (@{{ site.github_username }}) and on Twitter (@{{ site.twitter_username }}).
+
+## Recent Content
+{% for post in site.posts limit:10 %}
+- [{{ post.title }}]({{ site.url }}{{ post.url }}): {{ post.excerpt | strip_html | strip_newlines | truncate: 120 }}
+{% endfor %}
+
+## Complete Blog Archive
+To see all posts, please refer to the sitemap at `{{ site.url }}/sitemap.xml`.

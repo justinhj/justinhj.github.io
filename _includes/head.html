@@ -4,7 +4,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}</title>
-  <meta name="description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | strip_newlines | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
+{% if page.layout == 'post' %}
+  {% assign post_description = page.excerpt | strip_html | strip_newlines | escape %}
+  {% if post_description == "" %}
+    {% assign post_description = site.description | escape %}
+  {% endif %}
+{% else %}
+  {% assign post_description = site.description | escape %}
+{% endif %}
+  <meta name="description" content="{{ post_description | truncate: 160 }}">
 
   <link href="{{ '/css/style.css' | relative_url }}" rel="stylesheet">
   <link rel="stylesheet" href="{{ "/css/main.css" | prepend: site.baseurl }}">
@@ -29,6 +37,40 @@
   </script>
     
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "2e274800bbdb41cfbfda04a3ea01bd0a"}'></script><!-- End Cloudflare Web Analytics -->
+
+{% if page.layout == 'post' %}
+{% assign post_description = page.excerpt | strip_html | strip_newlines | escape %}
+{% if post_description == "" %}
+  {% assign post_description = site.description | escape %}
+{% endif %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ page.url | absolute_url }}"
+  },
+  "headline": "{{ page.title | escape }}",
+  "description": "{{ post_description }}",
+  "author": {
+    "@type": "Person",
+    "name": "{{ page.author | default: site.title | escape }}"
+  },
+  "datePublished": "{{ page.date | date_to_xmlschema }}"
+}
+</script>
+{% else %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "url": "{{ site.url }}",
+  "name": "{{ site.title | escape }}",
+  "description": "{{ site.description | escape }}"
+}
+</script>
+{% endif %}
 
 </head>
   
