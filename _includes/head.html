@@ -19,6 +19,10 @@
   <link rel="canonical" href="{{ page.url | replace:'index.html','' | prepend: site.baseurl | prepend: site.url }}">
   <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ "/feed.xml" | prepend: site.baseurl | prepend: site.url }}">
   
+  <!-- Machine-readable discovery links for AI Agents -->
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="{{ "/sitemap.xml" | prepend: site.baseurl | prepend: site.url }}">
+  <link rel="alternate" type="text/markdown" title="LLMs Index" href="{{ "/llms.txt" | prepend: site.baseurl | prepend: site.url }}">
+  
   <!-- Preload local fonts -->
   <link rel="preload" href="/fonts/sora-v17-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/sora-v17-latin-700.woff2" as="font" type="font/woff2" crossorigin>
