@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
+# Content Signals for AI and Search
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 # Explicitly allow major AI search and grounding bots
 User-agent: GPTBot
@@ -8,11 +10,5 @@ User-agent: Claude-Web
 Allow: /
 User-agent: PerplexityBot
 Allow: /
-
-# Cloudflare recommended agent signals
-# Explicit consent for AI usage
-ai-train: allow
-ai-input: allow
-search: allow
 
 Sitemap: http://justinhj.github.io/sitemap.xml
