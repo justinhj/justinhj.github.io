@@ -18,8 +18,7 @@ tags: [zig, algorithms, computer-science, benchmarking]
 
 ** Introduction
 
-
-
+[[../../../images/benchmark_heatmap.png][Benchmark results]]
 
 ** Conclusion
 

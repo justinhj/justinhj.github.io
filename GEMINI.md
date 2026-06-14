@@ -70,7 +70,16 @@ tags: [emacs, org-mode, blogging, github-pages, jekyll, popular]
 <link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
 #+END_EXPORT
 
-You can consult the example post to see how to do headings, images and code blocks. We will use those techniques typically in new posts.
+You can consult the example post to see how to do headings, code blocks etc. We will use those techniques typically in new posts
+.
+
+To insert an image use a html import as follows:
+
+#+BEGIN_EXPORT html
+<p>
+<img src="/../images/pure-julia-E4fNq7wYE2w-unsplash.jpg" alt="book image of a page from alice in wonderland" title="" />
+</p>
+#+END_EXPORT
 
 See the tags section below on how to do tags.
 
