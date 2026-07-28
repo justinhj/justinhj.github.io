@@ -18,9 +18,14 @@ tags: [zig, algorithms, computer-science, benchmarking]
 
 ** Introduction
 
-[[../../../images/benchmark_heatmap.png][Benchmark results]]
+** Results
+
+#+BEGIN_EXPORT html
+<p>
+<img src="/../images/benchmark_heatmap.png" alt="Benchmark Heatmap" title="" />
+</p>
+#+END_EXPORT
 
 ** Conclusion
-
 
 ©2026 Justin Heyes-Jones. All Rights Reserved
