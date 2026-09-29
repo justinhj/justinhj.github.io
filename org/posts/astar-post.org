@@ -239,7 +239,43 @@ Building bench target...
 -> Mean: 13.474351 s | Std Dev: 0.474918 s
 #+END_SRC
 
-*** Conclusion and thoughts
+** The Real-World Reality Check: Bounded Tactical Searches
+A 1,000 x 1,000 open-grid search is a brutal stress test that intentionally blows up the frontier to expose asymptotic bottlenecks. But in real-world applications (like video games or robotics), pathfinding is rarely done across 1,000,000 raw grid cells in a single frame. Usually, games use hierarchical pathfinding for long distances, and local A* searches are restricted to tactical ranges (e.g. 64x64 tiles across a room or screen).
+
+Do these algorithmic optimizations still make sense when the frontier is small?
+
+To test this, I modified the benchmark with ~MAX_SEARCH_DISTANCE = 64~, constraining the random start and goal pairs to be within 64 grid squares horizontally and vertically of each other on the 1000x1000 map.
+
+Here are the results for 1,000 searches across 5 runs:
+
+| Commit  | Description                            | Mean Runtime | Throughput vs Baseline | Speedup Factor |
+|---------+----------------------------------------+--------------+------------------------+----------------|
+| 64bdb20 | Baseline (Pre-optimization)            | 45.3353 s    | —                      |          1.00x |
+| 7424a4c | Step 1: Open set lookup O(1)           | 48.3634 s    | -6.3% (Slower!)        |          0.94x |
+| 3ee685b | Step 2: Intrusive min-heap             | 44.4163 s    | +2.1%                  |          1.02x |
+| a37013f | Step 3: Unified map & deferred alloc   | 23.7850 s    | +90.6% faster          |          1.91x |
+
+*** The Crossover Point: When O(N) Beats O(1)
+Notice what happened in Step 1: introducing ~m_OpenSet~ actually made short searches *6% slower*!
+
+When a search is bounded to 64 tiles, the open list is small (often just a few dozen nodes). Scanning a contiguous array of pointers in ~std::vector~ that sits cleanly in the CPU's L1 cache is remarkably fast. By contrast, computing a hash, traversing bucket chains, and dealing with cache misses in ~std::unordered_set~ introduces a fixed overhead that isn't worth paying when N is small. 
+
+Similarly, in Step 2, ~std::make_heap~ was operating on such tiny vectors that replacing it with an intrusive heap barely moved the needle (1.02x vs baseline).
+
+*** Why Step 3 Still Dominates
+However, Step 3 (~a37013f~) still cut the runtime almost in half (**1.91x speedup**, down to 23.78 s).
+
+Why? Because avoiding redundant memory allocations is a universal win. On a 4-connected grid, roughly 3 out of 4 evaluated neighbors are duplicates. Probing on the stack and only calling ~AllocateNode()~ when a node is genuinely new eliminates thousands of pool/heap allocations regardless of how long the path is.
+
+*** Unbounded vs. Bounded Summary
+
+| Optimization Stage              | Unbounded (1,000 x 1,000 Full Map) | Bounded (64 x 64 Window) |
+|---------------------------------+------------------------------------+--------------------------|
+| Step 1: Open set lookup O(1)    | 3.49x speedup                      | 0.94x (slight regression)|
+| Step 2: Intrusive min-heap      | 14.75x speedup                     | 1.02x (break-even)       |
+| Step 3: Unified map & deferred  | 22.44x speedup                     | 1.91x speedup            |
+
+** Conclusion and thoughts
 These optimizations are nice, high level changes that rely on more efficient data structures. I expect that I can get more performance by continuing to iterate over the bottle necks, however I am done for the time being. This repository has tried to meet two goals: 1) an easy to understand implementation that maps to the pseudocode of the algorithm and 2) a fast and memory efficient implementation suitable for real time systems like robotics and video games. Once you head down the path of optimization the code will become more difficult to follow and more detached from the textbook implementation. See this [[https://x.com/ChShersh/status/1887151595042800068][X Post by Dmitrii Kovanikov]] for a similar sentiment.
 
 Therefore for now I have not committed the third step of optimizations and I am likely to split this project into two, with the newer project likely a target for non-stop optimization experiments which will take us further into the frontier of complexity.
