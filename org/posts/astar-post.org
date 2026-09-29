@@ -1,0 +1,257 @@
+* a-star-algorithm-2x-optimizations 
+** Background
+Almost 30 years ago I wrote an [[https://heyes-jones.com/astar.php][A* algorithm tutorial]] and published it (on Geocities I think), and it got a decent amount of traffic. Although the focus was on pseudocode and how the algorithm worked, I received a lot of requests for source code, and so I shared an implementation in C++ that was designed to walk that line between clarity and efficiency. You can find it here: [[https://github.com/justinhj/astar-algorithm-cpp][justinhj/astar-algorithm-cpp]] 
+Although there are better tutorials around these days the code has endured quite well; it has been used by robotics researchers and video game developers, as well as being used by University and Colleges as a clear but efficient implementation. Thanks to C++'s backwards compatibility that code mostly works unchanged from the early 2000's version, although there have been some minor bug fixes over the years from helpful contributors. The first breaking change came with version 1.2 where we changed the closed list to an unordered_set (now it requires the user to provide a hash function for their data type).
+At the end of 2025 I updated the code to require C++11 as the minimum version so I could make some changes in the name of modernization, and I added unit tests with doctest.
+** Muse on A-Star
+Last week I was checking out Muse, Meta's new personal AI Agent, and decided to point it to one of my oldest Github repos [[https://github.com/justinhj/astar-algorithm-cpp][justinhj/astar-algorithm-cpp]] and asked what it thought. The analysis was surprisingly good; whilst the agent politely acknowledged some strengths of the repo it also noticed some low hanging fruit regarding optimization, which sent me down a rabbit hole to "implement" the suggestions and see what performance gains we can squeeze out of this nearly 30 year old codebase. 
+
+What was good (in the agents opinion): 
+
+1. I wrap the users ~UserNode~ type in a template, the main interface to the API, and the user implements the required functionality for their problem. This means no vtable, no virtual dispatch in the successor-expansion hot loop, and no pointer chasing.
+2. Efficient and fast memory use with the provided "fixed size allocator", a fixed size pool of nodes Very fast but single threaded and requires you to have a bound on your maximum number of search nodes. In modern C++ you could replace this with ~std::pmr::unsynchronized_pool_resource~, which has a little extra overhead but is growable. It would also require C++ 17.
+3. Incremental state machine style API is easy to understand and use. For game developers in the 90s it wasn't always possible to do a search in a frame. You may want to spread it across multiple frames, and for that you need to be able to control the search step by step. This is also handy for people learning the algorithm and building visualizations around its progress.
+
+What could be improved:
+
+1. Open-list membership is still a linear scan. The agent identified the biggest open performance bottleneck, and recommended using an unordered_set like we use for the closed list, but in conjunction with the existing heap so we still have fast best node popping.
+2. Issues around double free and management of the fsa.h between runs that were worth fixing.
+3. Lots of minor nits.
+
+Fixing the nits and memory issues seemed like a no brainer so I did those, but the optimization step required some thought so I copied Muse's feedback into Antigravity and worked with Gemini Pro and Flash models to make a series of optimizations which added up to a 2x in speed. 
+** Open list and Closed list access patterns
+In A* the open list tracks nodes that have been discovered and evaluated but not yet expanded. We have estimated how they close to the goal they are with the user supplied heuristic, plus the lowest cost of getting to this node so far. It is the boundary between the known territory and the undiscovered graph.
+The closed list tracks nodes that have been fully explored.
+
+Each list has its own access patterns, and so the choice of data structure should reflect that. 
+
+*** Open list access patterns
+Pop the best node - based on cost and estimated distance to goal we need to get the next best candidate.
+Insert new node - we add the start node or each new candidate to the open list.
+Membership check - is a node in the open list?
+Decrease cost - update an existing node when a cheaper way there is found.
+*** Closed list access patterns
+Insert a node - adding an expanded Node to the closed list.
+Membership check - is this node already expanded?
+Reopen - we move a node from Closed to Open. (This happens only when the heuristic is not consistent, see below).
+** Baseline architecture
+As pointed out by Muse the existing architecture has a couple of bottlenecks we can work on. 
+
+#+BEGIN_SRC C++
+std::vector<Node*> m_OpenList;
+std::unordered_set<Node*, NodeHash, NodeEqual> m_ClosedList;
+#+END_SRC
+
+Note that "Pop the best node" from Open is O(log n) and "Membership check" on Closed is O(1) average... great! But the open list has the two O(n) bottlenecks.
+1. Membership check. (Linear scan).
+2. Decrease cost. (Rebuild the heap).
+
+That aligns with what Muse suggested and so I began the task of optimizing these Open list bottlenecks.
+** Benchmarking
+Obviously it makes no sense to implement optimizations based on a hunch if they are not going to pay for the additional complexity and memory with significantly better runtime performance. So first I needed to add a benchmark to the project that we can use as an indicator that we're going in the right direction. 
+
+The benchmark has some parameters you can tune with a recompile, and you can pass the number of iteractions as a command line argument. The basic idea is to do a large number of iterations of a fixed set of searches on a 1000x1000. Using a fixed random seed we can ensure the benchmark is fair across different versions of the code. We will ignore doing a warm up cycle because we're mostly interested in comparitive performance.
+
+Here's a sample of the test output:
+
+#+BEGIN_SRC bash
+> ./ninjabuildrelease/bench 20000
+========================================
+A* Search Benchmark
+Grid size:          1000 x 1000
+Random seed:        12345
+Obstacle ratio:     20%
+Number of searches: 20000
+========================================
+Grid generated successfully.
+Running benchmark...
+  Progress: 2000 / 20000 (10%)...
+  Progress: 4000 / 20000 (20%)...
+  Progress: 6000 / 20000 (30%)...
+  Progress: 8000 / 20000 (40%)...
+  Progress: 10000 / 20000 (50%)...
+  Progress: 12000 / 20000 (60%)...
+  Progress: 14000 / 20000 (70%)...
+  Progress: 16000 / 20000 (80%)...
+  Progress: 18000 / 20000 (90%)...
+  Progress: 20000 / 20000 (100%)...
+
+----------------------------------------
+Benchmark Results:
+Total searches: 20000
+  Succeeded:    391
+  Failed:       19609
+Total time:     4.788752 seconds (4788.751542 ms)
+Average time:   239.438 us (239437.577 ns, 0.00023944 s) per search
+#+END_SRC
+
+Note that we're doing a combination of succeeding and failing searches (no possible route).
+
+Now before we make any optimizations I will measure repeated sets of 5 runs of each of the stages and report the mean and standard deviation to check we are getting consistent results. Here is the output of the first run:
+
+#+BEGIN_SRC bash
+============================================================
+Testing commit: 64bdb20 - Baseline (Pre-optimization)
+============================================================
+Building bench target...
+  Run 1/5: 5.607741 s
+  Run 2/5: 5.611098 s
+  Run 3/5: 5.717152 s
+  Run 4/5: 5.649564 s
+  Run 5/5: 5.624636 s
+-> Mean: 5.642038 s | Std Dev: 0.045098 s
+#+END_SRC
+
+To run this yourself check the run_benchmarks.py script in the repo.
+** Optimization step 1 - Introduce an auxiliary lookup set alongside the heap
+It's quite common that when a single data structure does not meet the runtime characteristics we want for its access patterns then we simply use two data structures. We see this with database tables and indexes (every write has to go to the rows in the table and the index), the LRU cache (a hashmap for lookup and a double linked list for recency). The [[https://www.boost.org/doc/libs/latest/libs/multi_index/doc/index.html][Boost Multi-Index Containers Library]] provides a performant general way to combine multiple indices with different sorting and access semantics. Rather than introduce a dependency on Boost we will simply implement what we need by hand.
+
+In this case the suggestion was to add an unordered_set to live alongside the heap. The code changes are minimal, wherever a node is added or removed from the OpenList (actually a heap), it is also added to the new OpenSet. The linear search is removed and replaced with a set lookup.
+
+#+BEGIN_SRC c++
+std::vector<Node*> m_OpenList; // Kept as the priority queue
+std::unordered_set<Node*, NodeHash, NodeEqual> m_OpenSet; // New auxiliary set
+std::unordered_set<Node*, NodeHash, NodeEqual> m_ClosedList; // Same
+#+END_SRC
+
+The benchmark result is solid +17.8% faster. 
+
+#+BEGIN_SRC bash
+============================================================
+Testing commit: 7424a4c - Step 1: Open set lookup O(1)
+============================================================
+Building bench target...
+  Run 1/5: 4.915076 s
+  Run 2/5: 4.926566 s
+  Run 3/5: 4.705170 s
+  Run 4/5: 4.706216 s
+  Run 5/5: 4.689770 s
+-> Mean: 4.788560 s | Std Dev: 0.120981 s
+#+END_SRC
+** Optimization step 2 - Intrusive min-heap
+Once the first optimization was tested and benched I resumed working with the agent on helping with the next bottleneck; decreasing key scores when better nodes are found on the open list. In the current implementation when a node is improved and we need to update it. This should be an O(log n) complexity operation, but unfortunately C++ heaps do not have a way to adjust the location of an item in the heap when its sort key changes. This is why in the original code you see the call to ~make_heap~ which is O(n). 
+
+#+BEGIN_SRC c++
+// ...
+else if (openlist_result != m_OpenSet.end()) {
+    // Update open node with successor node AStar data
+    //*(*openlist_result) = *(*successor);
+    (*openlist_result)->parent = (*successor)->parent;
+    (*openlist_result)->g = (*successor)->g;
+    (*openlist_result)->h = (*successor)->h;
+    (*openlist_result)->f = (*successor)->f;
+
+    // Free successor node
+    FreeNode((*successor));
+
+    // re-make the heap O(n)
+    make_heap(m_OpenList.begin(), m_OpenList.end(), HeapCompare_f());
+}
+#+END_SRC
+
+Our open list is just a vector of elements, implicitly laid out like a tree. In order to satisfy the heap property, every element must be smaller than both its children. The make_heap function uses [[https://cgm.cs.mcgill.ca/~breed/2016COMP610/BUILDINGHEAPSFAST.pdf][Floyd's Heap Construction Algorithm]] which is a very clever piece of work but even so, is O(n) when we can do better. 
+
+The code adds some utility functions; swap_nodes so we can manipulate the tree, and siftUp/siftDown, that take care of moving items up or down through the heap until the heap property is satisfied. To ensure there are no mistakes the agent also wrote a function to run when asserts are on ~AssertHeapInvariants~.
+
+Now when we decrease the cost of a key, we know where it is in the heap from its heap index, then we siftUp (it goes higher up the tree because it's a min heap and its value has decreased). The number of levels to siftUp is constrained by the tree depth which is what gives us the O(log n) runtime.
+
+When popping the minimum we can also cheaply replace it by taking the tail, the last element in the vector, putting it at the root of the tree (index 0) and calling siftDown to move it if needed to the right place.
+
+Benching this new method reveals the algorithm is now +29.1% faster than our original code.
+
+#+BEGIN_SRC bash
+======================================================================
+Testing commit: 3ee685b - Step 2: Intrusive min-heap (siftUp/siftDown)
+======================================================================
+Building bench target...
+  Run 1/5: 4.371779 s
+  Run 2/5: 4.383647 s
+  Run 3/5: 4.367737 s
+  Run 4/5: 4.354680 s
+  Run 5/5: 4.374178 s
+-> Mean: 4.370404 s | Std Dev: 0.010558 s
+#+END_SRC
+** Optimization step 3 - Unified node map & deferred allocations
+In this third and final (for now) pass, we will get even more substantial speed up by continuing to optimize the open and closed list, primarily, but also by some adjustments to how new nodes are allocated.
+
+1. Avoiding the New Node tax.
+2. Unifying the Open Set and Closed List into a single m_NodeMap.
+3. Repurposing heap_index as an implicit state discriminator (Open vs. Closed).
+*** Avoiding the New Node tax 
+For each new successor in the search we do the following:
+
+1. Allocate a node.
+2. Look for the node on the open list.
+3. If not there look for the node on the closed list.
+4. If the node was already explored or had a worse cost, it is deallocated immediately.
+
+On the sample problem of finding a path in a grid we will waste a lot of time looking at nodes that have been already explored, so this allocation and de-allocation is overhead it would be nice to remove.
+
+The user code would handle adding a successor and my code would put them in a vector ~m_Successors~ which can be iterated over and processed as above. We can process a node fully at the time it is added with some rearrangement of my code. After that no allocation is done until we know the node is needed.
+
+Instead of buffering successors in m_Successors, SearchStep() exposes the current node being expanded (m_CurrentExpandingNode). When the user calls AddSuccessor(state), we construct a temporary probe node directly on the stack (Node dummy; dummy.m_UserState = state;) and query m_NodeMap. Only if the state is genuinely unvisited do we call AllocateNode().
+*** Unifying the Open Set and Closed List into a single m_NodeMap
+Let's recap the three containers in use after the last two steps and review the work needed to generate each successor:
+#+BEGIN_SRC c++
+m_OpenList (std::vector<Node*>); //  Min-heap priority queue.
+m_OpenSet (std::unordered_set<Node*>); //  Fast membership test for Open.
+m_ClosedList (std::unordered_set<Node*>); //  Fast membership test for Closed.
+#+END_SRC
+
+Instead of having a set for open and a set for closed, the insight is that we can combine the two sets together since a node can only be open or closed. That way we can do a single lookup instead of two.
+
+#+BEGIN_SRC c++
+// Stores every node currently discovered (whether Open or Closed)
+std::unordered_set<Node*, NodeHash, NodeEqual> m_NodeMap;
+#+END_SRC
+*** Repurposing heap_index as an implicit state discriminator (Open vs. Closed).
+We already added heap_index to the open list that identifies its position in the priority queue. We can set the heap_index to some constant (SIZE_MAX) to indicate that the node is closed, and that saves us from having to use up more memory to add a flag indicating the node's status.
+
+These two data structure changes make operations simpler and more efficient. For example: 
+
+#+BEGIN_SRC c++
+Node* n = m_OpenList.front();
+swapNodes(0, m_OpenList.size() - 1); // Now the tail of the open list is the at the front
+m_OpenList.pop_back(); 
+n->heap_index = SIZE_MAX; // Conceptually, removes from open and adds to closed
+
+if (!m_OpenList.empty()) {
+  siftDown(0); // We need to fix the heap by moving the new front node
+#+END_SRC
+
+Furthermore, because our grid heuristic is consistent (monotonic) [fn:heuristics], closed nodes are guaranteed optimal; if a probe reveals ~heap_index == SIZE_MAX~, we can skip it immediately.
+
+Here are the benchmark results for this final step, which put the speed up at +113.2% faster!
+
+#+BEGIN_SRC bash
+===================================================================
+Testing commit: a37013f - Step 3: Unified node map & deferred alloc
+===================================================================
+Building bench target...
+  Run 1/5: 2.649180 s
+  Run 2/5: 2.639505 s
+  Run 3/5: 2.649023 s
+  Run 4/5: 2.643634 s
+  Run 5/5: 2.647499 s
+-> Mean: 2.645768 s | Std Dev: 0.004154 s
+#+END_SRC
+
+*** Conclusion and thoughts
+These optimizations are nice, high level changes that rely on more efficient data structures. I expect that I can get more performance by continuing to iterate over the bottle necks, however I am done for the time being. This repository has tried to meet two goals: 1) an easy to understand implementation that maps to the pseudocode of the algorithm and 2) a fast and memory efficient implementation suitable for real time systems like robotics and video games. Once you head down the path of optimization the code will become more difficult to follow and more detached from the textbook implementation. See this [[https://x.com/ChShersh/status/1887151595042800068][X Post by Dmitrii Kovanikov]] for a similar sentiment.
+
+Therefore for now I have not committed the third step of optimizations and I am likely to split this project into two, with the newer project likely a target for non-stop optimization experiments which will take us further into the frontier of complexity.
+
+| Commit  | Description                          | Mean Runtime | Cumulative Speed Increase | Cumulative Runtime Reduction | Speedup Factor |
+|---------+--------------------------------------+--------------+---------------------------+------------------------------+----------------|
+| 7424a4c | Step 1: Open set lookup O(1)         | 4.7886 s     | +17.8% faster             | 15.1% less time              |          1.18x |
+| 3ee685b | Step 2: Intrusive min-heap           | 4.3704 s     | +29.1% faster             | 22.5% less time              |          1.29x |
+| a37013f | Step 3: Unified map & deferred alloc | 2.6458 s     | +113.2% faster            | 53.1% less time              |          2.13x |
+
+[fn:heuristics] An *admissible* heuristic never overestimates the actual cost to the goal (h(n) <= h*(n)), which
+guarantees A* finds the optimal shortest path. A *monotonic* (or *consistent*) heuristic adds the triangle inequality
+condition: for any node A and successor B, h(A) <= cost(A, B) + h(B). Monotonicity ensures that f-scores are non-
+decreasing along any path, guaranteeing that the first time a node is expanded into the Closed list, its optimal
+distance from the start is already finalized. Consequently, under a monotonic heuristic (which includes standard grid
+metrics like Manhattan and Euclidean distance), nodes on the Closed list never need to be reopened.
+
+(C)2026 Justin Heyes-Jones. All Rights Reserved.
