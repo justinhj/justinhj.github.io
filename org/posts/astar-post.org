@@ -1,16 +1,16 @@
-* a-star-algorithm-2x-optimizations 
+* a-star-algorithm-19x-optimizations 
 ** Background
 Almost 30 years ago I wrote an [[https://heyes-jones.com/astar.php][A* algorithm tutorial]] and published it (on Geocities I think), and it got a decent amount of traffic. Although the focus was on pseudocode and how the algorithm worked, I received a lot of requests for source code, and so I shared an implementation in C++ that was designed to walk that line between clarity and efficiency. You can find it here: [[https://github.com/justinhj/astar-algorithm-cpp][justinhj/astar-algorithm-cpp]] 
 Although there are better tutorials around these days the code has endured quite well; it has been used by robotics researchers and video game developers, as well as being used by University and Colleges as a clear but efficient implementation. Thanks to C++'s backwards compatibility that code mostly works unchanged from the early 2000's version, although there have been some minor bug fixes over the years from helpful contributors. The first breaking change came with version 1.2 where we changed the closed list to an unordered_set (now it requires the user to provide a hash function for their data type).
 At the end of 2025 I updated the code to require C++11 as the minimum version so I could make some changes in the name of modernization, and I added unit tests with doctest.
-** Muse on A-Star
-Last week I was checking out Muse, Meta's new personal AI Agent, and decided to point it to one of my oldest Github repos [[https://github.com/justinhj/astar-algorithm-cpp][justinhj/astar-algorithm-cpp]] and asked what it thought. The analysis was surprisingly good; whilst the agent politely acknowledged some strengths of the repo it also noticed some low hanging fruit regarding optimization, which sent me down a rabbit hole to "implement" the suggestions and see what performance gains we can squeeze out of this nearly 30 year old codebase. 
+** Musing on A-Star
+Last week I was randomly checking out Muse, Meta's new personal AI Agent, and decided to point it to one of my oldest Github repos [[https://github.com/justinhj/astar-algorithm-cpp][justinhj/astar-algorithm-cpp]] and asked what it thought. The analysis was surprisingly good; whilst the agent politely acknowledged some strengths of the repo it also noticed some simple data structure changes to improve performance.
 
-What was good (in the agents opinion): 
+What was good already (in Muse's review): 
 
-1. I wrap the users ~UserNode~ type in a template, the main interface to the API, and the user implements the required functionality for their problem. This means no vtable, no virtual dispatch in the successor-expansion hot loop, and no pointer chasing.
+1. I wrap the users ~UserNode~ type in a template, the main interface to the API, and the user implements the required functionality for their problem. This means no vtable, no virtual dispatch in the successor-expansion hot loop, and no pointer chasing. It means for multiple node types you pay in executable size and instruction cache for the extra code, but in most applications the number of node types is small.
 2. Efficient and fast memory use with the provided "fixed size allocator", a fixed size pool of nodes Very fast but single threaded and requires you to have a bound on your maximum number of search nodes. In modern C++ you could replace this with ~std::pmr::unsynchronized_pool_resource~, which has a little extra overhead but is growable. It would also require C++ 17.
-3. Incremental state machine style API is easy to understand and use. For game developers in the 90s it wasn't always possible to do a search in a frame. You may want to spread it across multiple frames, and for that you need to be able to control the search step by step. This is also handy for people learning the algorithm and building visualizations around its progress.
+3. Incremental state machine style API is easy to understand and use. For game developers in the 90s it was rarely possible to do a search in a frame. You may want to spread it across multiple frames, and for that you need to be able to control the search step by step. This is also handy for people learning the algorithm and building visualizations around its progress.
 
 What could be improved:
 
@@ -18,7 +18,7 @@ What could be improved:
 2. Issues around double free and management of the fsa.h between runs that were worth fixing.
 3. Lots of minor nits.
 
-Fixing the nits and memory issues seemed like a no brainer so I did those, but the optimization step required some thought so I copied Muse's feedback into Antigravity and worked with Gemini Pro and Flash models to make a series of optimizations which added up to an over 22x increase in speed. 
+Fixing the nits and memory issues seemed like a no brainer so I did those, but the optimization step required some thought so I copied Muse's feedback into the Antigravity and worked with Gemini Flash (3.8) to make a series of optimizations which added up to an over 22x increase in speed. 
 ** Open list and Closed list access patterns
 In A* the open list tracks nodes that have been discovered and evaluated but not yet expanded. We have estimated how they close to the goal they are with the user supplied heuristic, plus the lowest cost of getting to this node so far. It is the boundary between the known territory and the undiscovered graph.
 The closed list tracks nodes that have been fully explored.
@@ -278,7 +278,9 @@ Why? Because avoiding redundant memory allocations is a universal win. On a 4-co
 ** Conclusion and thoughts
 These optimizations are nice, high level changes that rely on more efficient data structures. I expect that I can get more performance by continuing to iterate over the bottle necks, however I am done for the time being. This repository has tried to meet two goals: 1) an easy to understand implementation that maps to the pseudocode of the algorithm and 2) a fast and memory efficient implementation suitable for real time systems like robotics and video games. Once you head down the path of optimization the code will become more difficult to follow and more detached from the textbook implementation. See this [[https://x.com/ChShersh/status/1887151595042800068][X Post by Dmitrii Kovanikov]] for a similar sentiment.
 
-Therefore for now I have not committed the third step of optimizations and I am likely to split this project into two, with the newer project likely a target for non-stop optimization experiments which will take us further into the frontier of complexity.
+Although these steps are currently the master branch of the project I expect that as I continue to make more optimizations I will likely make multiple branches available such that the user can match the version to their goal, whether it be learning or path finding with different expectations around performance and memory use.
+
+Here are the final benchmark results for the unbounded case.
 
 | Commit  | Description                          | Mean Runtime | Cumulative Speed Increase | Cumulative Runtime Reduction | Speedup Factor |
 |---------+--------------------------------------+--------------+---------------------------+------------------------------+----------------|
@@ -286,6 +288,7 @@ Therefore for now I have not committed the third step of optimizations and I am 
 | 7424a4c | Step 1: Open set lookup O(1)         | 86.6529 s    | +249.0% faster            | 71.3% less time              |          3.49x |
 | 3ee685b | Step 2: Intrusive min-heap           | 20.5033 s    | +1375.2% faster           | 93.2% less time              |         14.75x |
 | a37013f | Step 3: Unified map & deferred alloc | 13.4744 s    | +2144.8% faster           | 95.5% less time              |         22.44x |
+
 
 [fn:heuristics] An *admissible* heuristic never overestimates the actual cost to the goal (h(n) <= h*(n)), which
 guarantees A* finds the optimal shortest path. A *monotonic* (or *consistent*) heuristic adds the triangle inequality
