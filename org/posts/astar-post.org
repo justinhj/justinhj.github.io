@@ -18,7 +18,7 @@ What could be improved:
 2. Issues around double free and management of the fsa.h between runs that were worth fixing.
 3. Lots of minor nits.
 
-Fixing the nits and memory issues seemed like a no brainer so I did those, but the optimization step required some thought so I copied Muse's feedback into Antigravity and worked with Gemini Pro and Flash models to make a series of optimizations which added up to a 2x in speed. 
+Fixing the nits and memory issues seemed like a no brainer so I did those, but the optimization step required some thought so I copied Muse's feedback into Antigravity and worked with Gemini Pro and Flash models to make a series of optimizations which added up to an over 22x increase in speed. 
 ** Open list and Closed list access patterns
 In A* the open list tracks nodes that have been discovered and evaluated but not yet expanded. We have estimated how they close to the goal they are with the user supplied heuristic, plus the lowest cost of getting to this node so far. It is the boundary between the known territory and the undiscovered graph.
 The closed list tracks nodes that have been fully explored.
@@ -50,7 +50,7 @@ That aligns with what Muse suggested and so I began the task of optimizing these
 ** Benchmarking
 Obviously it makes no sense to implement optimizations based on a hunch if they are not going to pay for the additional complexity and memory with significantly better runtime performance. So first I needed to add a benchmark to the project that we can use as an indicator that we're going in the right direction. 
 
-The benchmark has some parameters you can tune with a recompile, and you can pass the number of iteractions as a command line argument. The basic idea is to do a large number of iterations of a fixed set of searches on a 1000x1000. Using a fixed random seed we can ensure the benchmark is fair across different versions of the code. We will ignore doing a warm up cycle because we're mostly interested in comparitive performance.
+The benchmark has some parameters you can tune with a recompile, and you can pass the number of iterations as a command line argument. The basic idea is to do a large number of iterations of a fixed set of searches on a 1000x1000. Using a fixed random seed we can ensure the benchmark is fair across different versions of the code. We will ignore doing a warm up cycle because we're mostly interested in comparative performance.
 
 Here's a sample of the test output:
 
@@ -87,6 +87,8 @@ Average time:   239.438 us (239437.577 ns, 0.00023944 s) per search
 
 Note that we're doing a combination of succeeding and failing searches (no possible route).
 
+*(Correction: In our very first naive benchmark runs, we accidentally used the default FixedSizeAllocator limit of 1,000 nodes. On a 1,000x1,000 grid, this meant the searches were running out of memory instantly, artificially making the baseline look like it took 5 seconds instead of 5 minutes! The numbers below reflect the true performance with a properly sized 1,000,001 node capacity).*
+
 Now before we make any optimizations I will measure repeated sets of 5 runs of each of the stages and report the mean and standard deviation to check we are getting consistent results. Here is the output of the first run:
 
 #+BEGIN_SRC bash
@@ -94,12 +96,12 @@ Now before we make any optimizations I will measure repeated sets of 5 runs of e
 Testing commit: 64bdb20 - Baseline (Pre-optimization)
 ============================================================
 Building bench target...
-  Run 1/5: 5.607741 s
-  Run 2/5: 5.611098 s
-  Run 3/5: 5.717152 s
-  Run 4/5: 5.649564 s
-  Run 5/5: 5.624636 s
--> Mean: 5.642038 s | Std Dev: 0.045098 s
+  Run 1/5: 308.499835 s
+  Run 2/5: 303.518754 s
+  Run 3/5: 298.831520 s
+  Run 4/5: 301.132410 s
+  Run 5/5: 300.390161 s
+-> Mean: 302.474536 s | Std Dev: 3.768690 s
 #+END_SRC
 
 To run this yourself check the run_benchmarks.py script in the repo.
@@ -114,19 +116,19 @@ std::unordered_set<Node*, NodeHash, NodeEqual> m_OpenSet; // New auxiliary set
 std::unordered_set<Node*, NodeHash, NodeEqual> m_ClosedList; // Same
 #+END_SRC
 
-The benchmark result is solid +17.8% faster. 
+The benchmark result is an incredible +249.0% faster (from 302s down to 86s). 
 
 #+BEGIN_SRC bash
 ============================================================
 Testing commit: 7424a4c - Step 1: Open set lookup O(1)
 ============================================================
 Building bench target...
-  Run 1/5: 4.915076 s
-  Run 2/5: 4.926566 s
-  Run 3/5: 4.705170 s
-  Run 4/5: 4.706216 s
-  Run 5/5: 4.689770 s
--> Mean: 4.788560 s | Std Dev: 0.120981 s
+  Run 1/5: 86.333824 s
+  Run 2/5: 86.924784 s
+  Run 3/5: 88.352723 s
+  Run 4/5: 85.756693 s
+  Run 5/5: 85.896666 s
+-> Mean: 86.652938 s | Std Dev: 1.053590 s
 #+END_SRC
 ** Optimization step 2 - Intrusive min-heap
 Once the first optimization was tested and benched I resumed working with the agent on helping with the next bottleneck; decreasing key scores when better nodes are found on the open list. In the current implementation when a node is improved and we need to update it. This should be an O(log n) complexity operation, but unfortunately C++ heaps do not have a way to adjust the location of an item in the heap when its sort key changes. This is why in the original code you see the call to ~make_heap~ which is O(n). 
@@ -157,19 +159,19 @@ Now when we decrease the cost of a key, we know where it is in the heap from its
 
 When popping the minimum we can also cheaply replace it by taking the tail, the last element in the vector, putting it at the root of the tree (index 0) and calling siftDown to move it if needed to the right place.
 
-Benching this new method reveals the algorithm is now +29.1% faster than our original code.
+Benching this new method reveals the algorithm is now +1375.2% faster than our original code (from 302s down to 20s).
 
 #+BEGIN_SRC bash
 ======================================================================
 Testing commit: 3ee685b - Step 2: Intrusive min-heap (siftUp/siftDown)
 ======================================================================
 Building bench target...
-  Run 1/5: 4.371779 s
-  Run 2/5: 4.383647 s
-  Run 3/5: 4.367737 s
-  Run 4/5: 4.354680 s
-  Run 5/5: 4.374178 s
--> Mean: 4.370404 s | Std Dev: 0.010558 s
+  Run 1/5: 20.443231 s
+  Run 2/5: 20.340075 s
+  Run 3/5: 20.789314 s
+  Run 4/5: 20.143427 s
+  Run 5/5: 20.800478 s
+-> Mean: 20.503305 s | Std Dev: 0.287175 s
 #+END_SRC
 ** Optimization step 3 - Unified node map & deferred allocations
 In this third and final (for now) pass, we will get even more substantial speed up by continuing to optimize the open and closed list, primarily, but also by some adjustments to how new nodes are allocated.
@@ -217,23 +219,24 @@ n->heap_index = SIZE_MAX; // Conceptually, removes from open and adds to closed
 
 if (!m_OpenList.empty()) {
   siftDown(0); // We need to fix the heap by moving the new front node
+}
 #+END_SRC
 
 Furthermore, because our grid heuristic is consistent (monotonic) [fn:heuristics], closed nodes are guaranteed optimal; if a probe reveals ~heap_index == SIZE_MAX~, we can skip it immediately.
 
-Here are the benchmark results for this final step, which put the speed up at +113.2% faster!
+Here are the benchmark results for this final step, which put the speed up at +2144.8% faster (22.44x)!
 
 #+BEGIN_SRC bash
 ===================================================================
 Testing commit: a37013f - Step 3: Unified node map & deferred alloc
 ===================================================================
 Building bench target...
-  Run 1/5: 2.649180 s
-  Run 2/5: 2.639505 s
-  Run 3/5: 2.649023 s
-  Run 4/5: 2.643634 s
-  Run 5/5: 2.647499 s
--> Mean: 2.645768 s | Std Dev: 0.004154 s
+  Run 1/5: 13.128723 s
+  Run 2/5: 13.315372 s
+  Run 3/5: 13.286547 s
+  Run 4/5: 13.329398 s
+  Run 5/5: 14.311713 s
+-> Mean: 13.474351 s | Std Dev: 0.474918 s
 #+END_SRC
 
 *** Conclusion and thoughts
@@ -243,9 +246,10 @@ Therefore for now I have not committed the third step of optimizations and I am 
 
 | Commit  | Description                          | Mean Runtime | Cumulative Speed Increase | Cumulative Runtime Reduction | Speedup Factor |
 |---------+--------------------------------------+--------------+---------------------------+------------------------------+----------------|
-| 7424a4c | Step 1: Open set lookup O(1)         | 4.7886 s     | +17.8% faster             | 15.1% less time              |          1.18x |
-| 3ee685b | Step 2: Intrusive min-heap           | 4.3704 s     | +29.1% faster             | 22.5% less time              |          1.29x |
-| a37013f | Step 3: Unified map & deferred alloc | 2.6458 s     | +113.2% faster            | 53.1% less time              |          2.13x |
+| 64bdb20 | Baseline (Pre-optimization)          | 302.4745 s   | —                         | —                            |          1.00x |
+| 7424a4c | Step 1: Open set lookup O(1)         | 86.6529 s    | +249.0% faster            | 71.3% less time              |          3.49x |
+| 3ee685b | Step 2: Intrusive min-heap           | 20.5033 s    | +1375.2% faster           | 93.2% less time              |         14.75x |
+| a37013f | Step 3: Unified map & deferred alloc | 13.4744 s    | +2144.8% faster           | 95.5% less time              |         22.44x |
 
 [fn:heuristics] An *admissible* heuristic never overestimates the actual cost to the goal (h(n) <= h*(n)), which
 guarantees A* finds the optimal shortest path. A *monotonic* (or *consistent*) heuristic adds the triangle inequality
