@@ -608,6 +608,9 @@
   .\[fn\:4\] {
     fn: 4;
   }
+  .\[fn\:heuristics\] {
+    fn: heuristics;
+  }
   .group-hover\:text-\[var\(--accent-hover-color\)\] {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {

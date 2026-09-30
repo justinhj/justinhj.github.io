@@ -1,0 +1,665 @@
+---
+layout: post
+title: 'Optimizing a Pathfinder: Wishing on A-Star'
+date: 2026-09-30
+tags: [a-star-algorithm, cpp, c++, optimization, performance, ai]
+---
+<link rel="stylesheet" type="text/css" href="../../../_orgcss/site.css" />
+
+<div id="outline-container-org330cb39" class="outline-2">
+<h2 id="org330cb39">Background</h2>
+<div class="outline-text-2" id="text-org330cb39">
+<p>
+Almost 30 years ago I wrote an <a href="https://heyes-jones.com/astar.php">A* algorithm tutorial</a> and published it (on Geocities I think), and it got a decent amount of traffic. Although the focus was on pseudocode and how the algorithm worked, I received a lot of requests for source code, and so I shared an implementation in C++ that was designed to walk that line between clarity and efficiency. You can find it here: <a href="https://github.com/justinhj/astar-algorithm-cpp">justinhj/astar-algorithm-cpp</a> 
+Although there are better tutorials around these days the code has endured quite well; it has been used by robotics researchers and video game developers, as well as being used by University and Colleges as a clear but efficient implementation. Thanks to C++'s backwards compatibility that code mostly works unchanged from the early 2000's version, although there have been some minor bug fixes over the years from helpful contributors. The first breaking change came with version 1.2 where we changed the closed list to an unordered<sub>set</sub> (now it requires the user to provide a hash function for their data type).
+At the end of 2025 I updated the code to require C++11 as the minimum version so I could make some changes in the name of modernization, and I added unit tests with doctest.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org887412c" class="outline-2">
+<h2 id="org887412c">Musing on A-Star</h2>
+<div class="outline-text-2" id="text-org887412c">
+<p>
+Last week I was randomly checking out Muse, Meta's new personal AI Agent, and decided to point it to one of my oldest Github repos <a href="https://github.com/justinhj/astar-algorithm-cpp">justinhj/astar-algorithm-cpp</a> and asked what it thought. The analysis was surprisingly good; whilst the agent politely acknowledged some strengths of the repo it also noticed some simple data structure changes to improve performance.
+</p>
+
+<p>
+What was good already (in Muse's review): 
+</p>
+
+<ol class="org-ol">
+<li>I wrap the users <code>UserNode</code> type in a template, the main interface to the API, and the user implements the required functionality for their problem. This means no vtable, no virtual dispatch in the successor-expansion hot loop, and no pointer chasing. It means for multiple node types you pay in executable size and instruction cache for the extra code, but in most applications the number of node types is small.</li>
+<li>Efficient and fast memory use with the provided "fixed size allocator", a fixed size pool of nodes Very fast but single threaded and requires you to have a bound on your maximum number of search nodes. In modern C++ you could replace this with <code>std::pmr::unsynchronized_pool_resource</code>, which has a little extra overhead but is growable. It would also require C++ 17.</li>
+<li>Incremental state machine style API is easy to understand and use. For game developers in the 90s it was rarely possible to do a search in a frame. You may want to spread it across multiple frames, and for that you need to be able to control the search step by step. This is also handy for people learning the algorithm and building visualizations around its progress.</li>
+</ol>
+
+<p>
+What could be improved:
+</p>
+
+<ol class="org-ol">
+<li>Open-list membership is still a linear scan. The agent identified the biggest open performance bottleneck, and recommended using an unordered<sub>set</sub> like we use for the closed list, but in conjunction with the existing heap so we still have fast best node popping.</li>
+<li>Issues around double free and management of the fsa.h between runs that were worth fixing.</li>
+<li>Lots of minor nits.</li>
+</ol>
+
+<p>
+Fixing the nits and memory issues seemed like a no brainer so I did those, but the optimization step required some thought so I copied Muse's feedback into the Antigravity and worked with Gemini Flash (3.8) to make a series of optimizations which added up to an over 22x increase in speed. 
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf370884" class="outline-2">
+<h2 id="orgf370884">Open list and Closed list access patterns</h2>
+<div class="outline-text-2" id="text-orgf370884">
+<p>
+In A* the open list tracks nodes that have been discovered and evaluated but not yet expanded. We have estimated how they close to the goal they are with the user supplied heuristic, plus the lowest cost of getting to this node so far. It is the boundary between the known territory and the undiscovered graph.
+The closed list tracks nodes that have been fully explored.
+</p>
+
+<p>
+Each list has its own access patterns, and so the choice of data structure should reflect that. 
+</p>
+</div>
+
+<div id="outline-container-org5eeb3ba" class="outline-3">
+<h3 id="org5eeb3ba">Open list access patterns</h3>
+<div class="outline-text-3" id="text-org5eeb3ba">
+<p>
+Pop the best node - based on cost and estimated distance to goal we need to get the next best candidate.
+Insert new node - we add the start node or each new candidate to the open list.
+Membership check - is a node in the open list?
+Decrease cost - update an existing node when a cheaper way there is found.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4d8ee57" class="outline-3">
+<h3 id="org4d8ee57">Closed list access patterns</h3>
+<div class="outline-text-3" id="text-org4d8ee57">
+<p>
+Insert a node - adding an expanded Node to the closed list.
+Membership check - is this node already expanded?
+Reopen - we move a node from Closed to Open. (This happens only when the heuristic is not consistent, see below).
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orged71b3c" class="outline-2">
+<h2 id="orged71b3c">Baseline architecture</h2>
+<div class="outline-text-2" id="text-orged71b3c">
+<p>
+As pointed out by Muse the existing architecture has a couple of bottlenecks we can work on. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++">std::vector&lt;Node*&gt; m_OpenList;
+std::unordered_set&lt;Node*, NodeHash, NodeEqual&gt; m_ClosedList;
+</pre>
+</div>
+
+<p>
+Note that "Pop the best node" from Open is O(log n) and "Membership check" on Closed is O(1) average&#x2026; great! But the open list has the two O(n) bottlenecks.
+</p>
+<ol class="org-ol">
+<li>Membership check. (Linear scan).</li>
+<li>Decrease cost. (Rebuild the heap).</li>
+</ol>
+
+<p>
+That aligns with what Muse suggested and so I began the task of optimizing these Open list bottlenecks.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3b46b8e" class="outline-2">
+<h2 id="org3b46b8e">Benchmarking</h2>
+<div class="outline-text-2" id="text-org3b46b8e">
+<p>
+Obviously it makes no sense to implement optimizations based on a hunch if they are not going to pay for the additional complexity and memory with significantly better runtime performance. So first I needed to add a benchmark to the project that we can use as an indicator that we're going in the right direction. 
+</p>
+
+<p>
+The benchmark has some parameters you can tune with a recompile, and you can pass the number of iterations as a command line argument. The basic idea is to do a large number of iterations of a fixed set of searches on a 1000x1000. Using a fixed random seed we can ensure the benchmark is fair across different versions of the code. We will ignore doing a warm up cycle because we're mostly interested in comparative performance.
+</p>
+
+<p>
+Here's a sample of the test output:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">&gt; ./ninjabuildrelease/bench 20000
+========================================
+A* Search Benchmark
+Grid size:          1000 x 1000
+Random seed:        12345
+Obstacle ratio:     20%
+Number of searches: 20000
+========================================
+Grid generated successfully.
+Running benchmark...
+  Progress: 2000 / 20000 (10%)...
+  Progress: 4000 / 20000 (20%)...
+  Progress: 6000 / 20000 (30%)...
+  Progress: 8000 / 20000 (40%)...
+  Progress: 10000 / 20000 (50%)...
+  Progress: 12000 / 20000 (60%)...
+  Progress: 14000 / 20000 (70%)...
+  Progress: 16000 / 20000 (80%)...
+  Progress: 18000 / 20000 (90%)...
+  Progress: 20000 / 20000 (100%)...
+
+----------------------------------------
+Benchmark Results:
+Total searches: 20000
+  Succeeded:    391
+  Failed:       19609
+Total time:     4.788752 seconds (4788.751542 ms)
+Average time:   239.438 us (239437.577 ns, 0.00023944 s) per search
+</pre>
+</div>
+
+<p>
+Note that we're doing a combination of succeeding and failing searches (no possible route).
+</p>
+
+<p>
+<b>(Correction: In our very first naive benchmark runs, we accidentally used the default FixedSizeAllocator limit of 1,000 nodes. On a 1,000x1,000 grid, this meant the searches were running out of memory instantly, artificially making the baseline look like it took 5 seconds instead of 5 minutes! The numbers below reflect the true performance with a properly sized 1,000,001 node capacity).</b>
+</p>
+
+<p>
+Now before we make any optimizations I will measure repeated sets of 5 runs of each of the stages and report the mean and standard deviation to check we are getting consistent results. Here is the output of the first run:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">============================================================
+Testing commit: 64bdb20 - Baseline (Pre-optimization)
+============================================================
+Building bench target...
+  Run 1/5: 308.499835 s
+  Run 2/5: 303.518754 s
+  Run 3/5: 298.831520 s
+  Run 4/5: 301.132410 s
+  Run 5/5: 300.390161 s
+-&gt; Mean: 302.474536 s | Std Dev: 3.768690 s
+</pre>
+</div>
+
+<p>
+To run this yourself check the run<sub>benchmarks.py</sub> script in the repo.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org6f4128f" class="outline-2">
+<h2 id="org6f4128f">Optimization step 1 - Introduce an auxiliary lookup set alongside the heap</h2>
+<div class="outline-text-2" id="text-org6f4128f">
+<p>
+It's quite common that when a single data structure does not meet the runtime characteristics we want for its access patterns then we simply use two data structures. We see this with database tables and indexes (every write has to go to the rows in the table and the index), the LRU cache (a hashmap for lookup and a double linked list for recency). The <a href="https://www.boost.org/doc/libs/latest/libs/multi_index/doc/index.html">Boost Multi-Index Containers Library</a> provides a performant general way to combine multiple indices with different sorting and access semantics. Rather than introduce a dependency on Boost we will simply implement what we need by hand.
+</p>
+
+<p>
+In this case the suggestion was to add an unordered<sub>set</sub> to live alongside the heap. The code changes are minimal, wherever a node is added or removed from the OpenList (actually a heap), it is also added to the new OpenSet. The linear search is removed and replaced with a set lookup.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++">std::vector&lt;Node*&gt; m_OpenList; // Kept as the priority queue
+std::unordered_set&lt;Node*, NodeHash, NodeEqual&gt; m_OpenSet; // New auxiliary set
+std::unordered_set&lt;Node*, NodeHash, NodeEqual&gt; m_ClosedList; // Same
+</pre>
+</div>
+
+<p>
+The benchmark result is an incredible +249.0% faster (from 302s down to 86s). 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">============================================================
+Testing commit: 7424a4c - Step 1: Open set lookup O(1)
+============================================================
+Building bench target...
+  Run 1/5: 86.333824 s
+  Run 2/5: 86.924784 s
+  Run 3/5: 88.352723 s
+  Run 4/5: 85.756693 s
+  Run 5/5: 85.896666 s
+-&gt; Mean: 86.652938 s | Std Dev: 1.053590 s
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org20c7093" class="outline-2">
+<h2 id="org20c7093">Optimization step 2 - Intrusive min-heap</h2>
+<div class="outline-text-2" id="text-org20c7093">
+<p>
+Once the first optimization was tested and benched I resumed working with the agent on helping with the next bottleneck; decreasing key scores when better nodes are found on the open list. In the current implementation when a node is improved and we need to update it. This should be an O(log n) complexity operation, but unfortunately C++ heaps do not have a way to adjust the location of an item in the heap when its sort key changes. This is why in the original code you see the call to <code>make_heap</code> which is O(n). 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++">// ...
+else if (openlist_result != m_OpenSet.end()) {
+    // Update open node with successor node AStar data
+    //*(*openlist_result) = *(*successor);
+    (*openlist_result)-&gt;parent = (*successor)-&gt;parent;
+    (*openlist_result)-&gt;g = (*successor)-&gt;g;
+    (*openlist_result)-&gt;h = (*successor)-&gt;h;
+    (*openlist_result)-&gt;f = (*successor)-&gt;f;
+
+    // Free successor node
+    FreeNode((*successor));
+
+    // re-make the heap O(n)
+    make_heap(m_OpenList.begin(), m_OpenList.end(), HeapCompare_f());
+}
+</pre>
+</div>
+
+<p>
+Our open list is just a vector of elements, implicitly laid out like a tree. In order to satisfy the heap property, every element must be smaller than both its children. The make<sub>heap</sub> function uses <a href="https://cgm.cs.mcgill.ca/~breed/2016COMP610/BUILDINGHEAPSFAST.pdf">Floyd's Heap Construction Algorithm</a> which is a very clever piece of work but even so, is O(n) when we can do better. 
+</p>
+
+<p>
+The code adds some utility functions; swap<sub>nodes</sub> so we can manipulate the tree, and siftUp/siftDown, that take care of moving items up or down through the heap until the heap property is satisfied. To ensure there are no mistakes the agent also wrote a function to run when asserts are on <code>AssertHeapInvariants</code>.
+</p>
+
+<p>
+Now when we decrease the cost of a key, we know where it is in the heap from its heap index, then we siftUp (it goes higher up the tree because it's a min heap and its value has decreased). The number of levels to siftUp is constrained by the tree depth which is what gives us the O(log n) runtime.
+</p>
+
+<p>
+When popping the minimum we can also cheaply replace it by taking the tail, the last element in the vector, putting it at the root of the tree (index 0) and calling siftDown to move it if needed to the right place.
+</p>
+
+<p>
+Benching this new method reveals the algorithm is now +1375.2% faster than our original code (from 302s down to 20s).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">======================================================================
+Testing commit: 3ee685b - Step 2: Intrusive min-heap (siftUp/siftDown)
+======================================================================
+Building bench target...
+  Run 1/5: 20.443231 s
+  Run 2/5: 20.340075 s
+  Run 3/5: 20.789314 s
+  Run 4/5: 20.143427 s
+  Run 5/5: 20.800478 s
+-&gt; Mean: 20.503305 s | Std Dev: 0.287175 s
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org61186f5" class="outline-2">
+<h2 id="org61186f5">Optimization step 3 - Unified node map &amp; deferred allocations</h2>
+<div class="outline-text-2" id="text-org61186f5">
+<p>
+In this third and final (for now) pass, we will get even more substantial speed up by continuing to optimize the open and closed list, primarily, but also by some adjustments to how new nodes are allocated.
+</p>
+
+<ol class="org-ol">
+<li>Avoiding the New Node tax.</li>
+<li>Unifying the Open Set and Closed List into a single m<sub>NodeMap</sub>.</li>
+<li>Repurposing heap<sub>index</sub> as an implicit state discriminator (Open vs. Closed).</li>
+</ol>
+</div>
+
+<div id="outline-container-orgaa7914a" class="outline-3">
+<h3 id="orgaa7914a">Avoiding the New Node tax</h3>
+<div class="outline-text-3" id="text-orgaa7914a">
+<p>
+For each new successor in the search we do the following:
+</p>
+
+<ol class="org-ol">
+<li>Allocate a node.</li>
+<li>Look for the node on the open list.</li>
+<li>If not there look for the node on the closed list.</li>
+<li>If the node was already explored or had a worse cost, it is deallocated immediately.</li>
+</ol>
+
+<p>
+On the sample problem of finding a path in a grid we will waste a lot of time looking at nodes that have been already explored, so this allocation and de-allocation is overhead it would be nice to remove.
+</p>
+
+<p>
+The user code would handle adding a successor and my code would put them in a vector <code>m_Successors</code> which can be iterated over and processed as above. We can process a node fully at the time it is added with some rearrangement of my code. After that no allocation is done until we know the node is needed.
+</p>
+
+<p>
+Instead of buffering successors in m<sub>Successors</sub>, SearchStep() exposes the current node being expanded (m<sub>CurrentExpandingNode</sub>). When the user calls AddSuccessor(state), we construct a temporary probe node directly on the stack (Node dummy; dummy.m<sub>UserState</sub> = state;) and query m<sub>NodeMap</sub>. Only if the state is genuinely unvisited do we call AllocateNode().
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgacaabe3" class="outline-3">
+<h3 id="orgacaabe3">Unifying the Open Set and Closed List into a single m<sub>NodeMap</sub></h3>
+<div class="outline-text-3" id="text-orgacaabe3">
+<p>
+Let's recap the three containers in use after the last two steps and review the work needed to generate each successor:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++">m_OpenList (std::vector&lt;Node*&gt;); //  Min-heap priority queue.
+m_OpenSet (std::unordered_set&lt;Node*&gt;); //  Fast membership test for Open.
+m_ClosedList (std::unordered_set&lt;Node*&gt;); //  Fast membership test for Closed.
+</pre>
+</div>
+
+<p>
+Instead of having a set for open and a set for closed, the insight is that we can combine the two sets together since a node can only be open or closed. That way we can do a single lookup instead of two.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++">// Stores every node currently discovered (whether Open or Closed)
+std::unordered_set&lt;Node*, NodeHash, NodeEqual&gt; m_NodeMap;
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgd5a6ae3" class="outline-3">
+<h3 id="orgd5a6ae3">Repurposing heap<sub>index</sub> as an implicit state discriminator (Open vs. Closed)</h3>
+<div class="outline-text-3" id="text-orgd5a6ae3">
+<p>
+We already added heap<sub>index</sub> to the open list that identifies its position in the priority queue. We can set the heap<sub>index</sub> to some constant (SIZE<sub>MAX</sub>) to indicate that the node is closed, and that saves us from having to use up more memory to add a flag indicating the node's status.
+</p>
+
+<p>
+These two data structure changes make operations simpler and more efficient. For example: 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++">Node* n = m_OpenList.front();
+swapNodes(0, m_OpenList.size() - 1); // Now the tail of the open list is the at the front
+m_OpenList.pop_back(); 
+n-&gt;heap_index = SIZE_MAX; // Conceptually, removes from open and adds to closed
+
+if (!m_OpenList.empty()) {
+  siftDown(0); // We need to fix the heap by moving the new front node
+}
+</pre>
+</div>
+
+<p>
+Furthermore, because our grid heuristic is consistent (monotonic) <sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, closed nodes are guaranteed optimal; if a probe reveals <code>heap_index == SIZE_MAX</code>, we can skip it immediately.
+</p>
+
+<p>
+Here are the benchmark results for this final step, which put the speed up at +2144.8% faster (22.44x)!
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">===================================================================
+Testing commit: a37013f - Step 3: Unified node map &amp; deferred alloc
+===================================================================
+Building bench target...
+  Run 1/5: 13.128723 s
+  Run 2/5: 13.315372 s
+  Run 3/5: 13.286547 s
+  Run 4/5: 13.329398 s
+  Run 5/5: 14.311713 s
+-&gt; Mean: 13.474351 s | Std Dev: 0.474918 s
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org801c7b4" class="outline-2">
+<h2 id="org801c7b4">Comparing with more realistic search sizes</h2>
+<div class="outline-text-2" id="text-org801c7b4">
+<p>
+A 1,000 x 1,000 open-grid search is a brutal stress test that intentionally blows up the frontier to expose asymptotic bottlenecks. But in real-world applications (like video games or robotics), pathfinding is rarely done across 1,000,000 raw grid cells in a single frame. Usually, games use hierarchical pathfinding for long distances, and local A* searches are restricted to tactical ranges (e.g. 64x64 tiles across a room or screen).
+</p>
+
+<p>
+Do these algorithmic optimizations still make sense when the frontier is small?
+</p>
+
+<p>
+To test this, I modified the benchmark with <code>MAX_SEARCH_DISTANCE = 64</code>, constraining the random start and goal pairs to be within 64 grid squares horizontally and vertically of each other on the 1000x1000 map.
+</p>
+
+<p>
+Here are the results for 1,000 searches across 5 runs:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Commit</th>
+<th scope="col" class="org-left">Description</th>
+<th scope="col" class="org-left">Mean Runtime</th>
+<th scope="col" class="org-left">Throughput vs Baseline</th>
+<th scope="col" class="org-right">Speedup Factor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">64bdb20</td>
+<td class="org-left">Baseline (Pre-optimization)</td>
+<td class="org-left">45.3353 s</td>
+<td class="org-left">—</td>
+<td class="org-right">1.00x</td>
+</tr>
+
+<tr>
+<td class="org-left">7424a4c</td>
+<td class="org-left">Step 1: Open set lookup O(1)</td>
+<td class="org-left">48.3634 s</td>
+<td class="org-left">-6.3% (Slower!)</td>
+<td class="org-right">0.94x</td>
+</tr>
+
+<tr>
+<td class="org-left">3ee685b</td>
+<td class="org-left">Step 2: Intrusive min-heap</td>
+<td class="org-left">44.4163 s</td>
+<td class="org-left">+2.1%</td>
+<td class="org-right">1.02x</td>
+</tr>
+
+<tr>
+<td class="org-left">a37013f</td>
+<td class="org-left">Step 3: Unified map &amp; deferred alloc</td>
+<td class="org-left">23.7850 s</td>
+<td class="org-left">+90.6% faster</td>
+<td class="org-right">1.91x</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div id="outline-container-orgd4796a4" class="outline-3">
+<h3 id="orgd4796a4">When O(N) Beats O(1)</h3>
+<div class="outline-text-3" id="text-orgd4796a4">
+<p>
+You can see in Step 1: introducing <code>m_OpenSet</code> actually made short searches <b>6% slower</b>.
+</p>
+
+<p>
+When a search is bounded to 64 tiles, the open list is small (often just a few dozen nodes) and we are scanning a contiguous array of pointers in a <code>std::vector</code> that is most likely in the cache. By contrast, computing a hash, traversing bucket chains, and dealing with cache misses in <code>std::unordered_set</code> introduces a fixed overhead that isn't worth paying when N is small. 
+</p>
+
+<p>
+Similarly, in Step 2, <code>std::make_heap</code> was operating on such tiny vectors that replacing it with an intrusive heap barely moved the needle (1.02x vs baseline).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org956a82e" class="outline-3">
+<h3 id="org956a82e">Step 3 Still Wins</h3>
+<div class="outline-text-3" id="text-org956a82e">
+<p>
+However, Step 3 (<code>a37013f</code>) still cut the runtime almost in half (<b><b>1.91x speedup</b></b>, down to 23.78 s).
+</p>
+
+<p>
+Why? Because avoiding redundant memory allocations is a universal win. On a 4-connected grid, roughly 3 out of 4 evaluated neighbors are duplicates. Probing on the stack and only calling <code>AllocateNode()</code> when a node is genuinely new eliminates thousands of pool/heap allocations regardless of how long the path is.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc8209be" class="outline-3">
+<h3 id="orgc8209be">Unbounded vs. Bounded Summary</h3>
+<div class="outline-text-3" id="text-orgc8209be">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Optimization Stage</th>
+<th scope="col" class="org-left">Unbounded (1,000 x 1,000 Full Map)</th>
+<th scope="col" class="org-left">Bounded (64 x 64 Window)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Step 1: Open set lookup O(1)</td>
+<td class="org-left">3.49x speedup</td>
+<td class="org-left">0.94x (slight regression)</td>
+</tr>
+
+<tr>
+<td class="org-left">Step 2: Intrusive min-heap</td>
+<td class="org-left">14.75x speedup</td>
+<td class="org-left">1.02x (break-even)</td>
+</tr>
+
+<tr>
+<td class="org-left">Step 3: Unified map &amp; deferred</td>
+<td class="org-left">22.44x speedup</td>
+<td class="org-left">1.91x speedup</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org1eb2443" class="outline-2">
+<h2 id="org1eb2443">Conclusion and thoughts</h2>
+<div class="outline-text-2" id="text-org1eb2443">
+<p>
+These optimizations are nice, high level changes that rely on more efficient data structures. I expect that I can get more performance by continuing to iterate over the bottle necks, however I am done for the time being. This repository has tried to meet two goals: 1) an easy to understand implementation that maps to the pseudocode of the algorithm and 2) a fast and memory efficient implementation suitable for real time systems like robotics and video games. Once you head down the path of optimization the code will become more difficult to follow and more detached from the textbook implementation. See this <a href="https://x.com/ChShersh/status/1887151595042800068">X Post by Dmitrii Kovanikov</a> for a similar sentiment.
+</p>
+
+<p>
+Although these steps are currently the master branch of the project I expect that as I continue to make more optimizations I will likely make multiple branches available such that the user can match the version to their goal, whether it be learning or path finding with different expectations around performance and memory use.
+</p>
+
+<p>
+Here are the final benchmark results for the unbounded case.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Commit</th>
+<th scope="col" class="org-left">Description</th>
+<th scope="col" class="org-left">Mean Runtime</th>
+<th scope="col" class="org-left">Cumulative Speed Increase</th>
+<th scope="col" class="org-left">Cumulative Runtime Reduction</th>
+<th scope="col" class="org-right">Speedup Factor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">64bdb20</td>
+<td class="org-left">Baseline (Pre-optimization)</td>
+<td class="org-left">302.4745 s</td>
+<td class="org-left">—</td>
+<td class="org-left">—</td>
+<td class="org-right">1.00x</td>
+</tr>
+
+<tr>
+<td class="org-left">7424a4c</td>
+<td class="org-left">Step 1: Open set lookup O(1)</td>
+<td class="org-left">86.6529 s</td>
+<td class="org-left">+249.0% faster</td>
+<td class="org-left">71.3% less time</td>
+<td class="org-right">3.49x</td>
+</tr>
+
+<tr>
+<td class="org-left">3ee685b</td>
+<td class="org-left">Step 2: Intrusive min-heap</td>
+<td class="org-left">20.5033 s</td>
+<td class="org-left">+1375.2% faster</td>
+<td class="org-left">93.2% less time</td>
+<td class="org-right">14.75x</td>
+</tr>
+
+<tr>
+<td class="org-left">a37013f</td>
+<td class="org-left">Step 3: Unified map &amp; deferred alloc</td>
+<td class="org-left">13.4744 s</td>
+<td class="org-left">+2144.8% faster</td>
+<td class="org-left">95.5% less time</td>
+<td class="org-right">22.44x</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>
+©2026 Justin Heyes-Jones. All Rights Reserved
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+An <b>admissible</b> heuristic never overestimates the actual cost to the goal (h(n) &lt;= h*(n)), which
+guarantees A* finds the optimal shortest path. A <b>monotonic</b> (or <b>consistent</b>) heuristic adds the triangle inequality
+condition: for any node A and successor B, h(A) &lt;= cost(A, B) + h(B). Monotonicity ensures that f-scores are non-
+decreasing along any path, guaranteeing that the first time a node is expanded into the Closed list, its optimal
+distance from the start is already finalized. Consequently, under a monotonic heuristic (which includes standard grid
+metrics like Manhattan and Euclidean distance), nodes on the Closed list never need to be reopened.
+</p></div></div>
+
+
+</div>
+</div>
