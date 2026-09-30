@@ -8,8 +8,8 @@
     --border-color: #{$border-color-light};
     --card-bg-color: #{$card-bg-color-light};
     --accent-text: #{$accent-text-light};
-    --pre-bg-color: #{$background-color};
-    --pre-text-color: #{$text-color};
+    --pre-bg-color: #{$card-bg-color-light};
+    --pre-text-color: #{$accent-text-light};
 }
 
 @mixin dark-theme-vars {
@@ -24,8 +24,8 @@
   --border-color: #{$border-color};
   --card-bg-color: #{$card-bg-color};
   --accent-text: #{$accent-text};
-  --pre-bg-color: #{$background-color-light};
-  --pre-text-color: #{$text-color-light};
+  --pre-bg-color: #16161e;
+  --pre-text-color: #{$accent-text};
 }
 
 :root {
@@ -311,6 +311,7 @@ h1, h2, h3, .accent-text {
 
 pre.src {
     background-color: var(--pre-bg-color);
+    color: var(--pre-text-color);
     font-family: 'JetBrains Mono', monospace;
     font-size: 16px;
 
@@ -320,8 +321,8 @@ pre.src {
     padding: 1em;             /* Adds space inside the block */
     /* --- End Fixes --- */
 
-    border: 1px solid #444;   /* Optional: a subtle border */
-    border-radius: 8px;       /* Optional: rounded corners */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
 }
 
 pre.example {
@@ -336,7 +337,7 @@ pre.example {
     padding: 1em;             /* Adds space inside the block */
     /* --- End Fixes --- */
 
-    border: 1px solid #444;   /* Optional: a subtle border */
-    border-radius: 8px;       /* Optional: rounded corners */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
 }
 
