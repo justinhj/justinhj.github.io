@@ -44,7 +44,7 @@ Muse came up with a number of minor issues but also ideas around optimizing the 
 </ol>
 
 <p>
-I copied Muse's feedback into Antigravity and worked with Gemini Flash (3.8) to make a series of optimizations which added up to over a 22x increase in speed. 
+I copied Muse's feedback into Antigravity and worked with Gemini Flash (3.8) to make a series of optimizations which added up to a 22.44x speedup (a 95.5% reduction in runtime). 
 </p>
 
 <p>
@@ -128,7 +128,7 @@ The benchmark has some parameters you can tune with a recompile, and you can pas
 </p>
 
 <p>
-Here's a sample of the test output:
+Here's a sample of the initial test output:
 </p>
 
 <div class="org-src-container">
@@ -164,11 +164,15 @@ Average time:   239.438 us (239437.577 ns, 0.00023944 s) per search
 </div>
 
 <p>
-Note that we're doing a combination of succeeding and failing searches (no possible route). In this initial run, I noticed that the failure rate was very high. This was because the fixed-size node pool had a capacity of only 1,000 and very quickly ran out of capacity, failing the search. This shows the importance of double-checking the model's work and reading the code to spot issues early.
+Looking at this initial run, two numbers immediately stand out: the 98% failure rate (19,609 failed searches) and the blazing 239 µs average time. On a uniform 20% obstacle grid, site percolation ensures the map is almost entirely connected, so paths should virtually always exist. Why were almost all searches failing?
 </p>
 
 <p>
-Before I made any optimizations, I ran the benchmark 5 times and measured the mean and standard deviation (to check we are getting consistent results). Here is the output of the first run of 1,000 searches across the large 1,000x1,000 grid.
+It turned out the default fixed-size node pool was clamped to only 1,000 nodes. On a 1,000x1,000 map, finding a distant path easily requires expanding thousands of nodes. The searches weren't failing due to obstacles—they were aborting because the allocator ran out of nodes, which also explains why they finished in microseconds. Only the 391 start/goal pairs that happened to be close together succeeded. This highlights the importance of sanity-checking AI-generated benchmarks and understanding data constraints before trusting numbers.
+</p>
+
+<p>
+After resizing the node pool so searches could run to completion across the entire map, I ran the real baseline benchmark (5 runs of 1,000 full searches) to measure the mean and standard deviation:
 </p>
 
 <div class="org-src-container">
@@ -210,7 +214,7 @@ std::unordered_set&lt;Node*, NodeHash, NodeEqual&gt; m_ClosedList; // Same
 </div>
 
 <p>
-The benchmark result is an incredible +249.0% faster (from 302s down to 86s). 
+The benchmark result is a 3.49x speedup (a 71.3% reduction in runtime, down from 302.5s to 86.7s). 
 </p>
 
 <div class="org-src-container">
@@ -272,7 +276,7 @@ When popping the minimum, we can also cheaply replace it by taking the tail (the
 </p>
 
 <p>
-Benching this new method reveals the algorithm is now +1375.2% faster than our original code (from 302s down to 20s).
+Benching this new method reveals a 14.75x speedup over the baseline (a 93.2% reduction in runtime, down from 302.5s to 20.5s).
 </p>
 
 <div class="org-src-container">
@@ -387,7 +391,7 @@ Furthermore, because our grid heuristic is consistent (monotonic) <sup><a id="fn
 </p>
 
 <p>
-Here are the benchmark results for this final step, which put the speedup at +2144.8% faster (22.44x)!
+Here are the benchmark results for this final step, achieving a massive 22.44x speedup over the baseline (a 95.5% reduction in runtime, down from 302.5s to 13.5s)!
 </p>
 
 <div class="org-src-container">
@@ -445,7 +449,7 @@ Here are the results for 1,000 searches across 5 runs:
 <th scope="col" class="org-left">Commit</th>
 <th scope="col" class="org-left">Description</th>
 <th scope="col" class="org-left">Mean Runtime</th>
-<th scope="col" class="org-left">Throughput vs Baseline</th>
+<th scope="col" class="org-left">Runtime Reduction</th>
 <th scope="col" class="org-right">Speedup Factor</th>
 </tr>
 </thead>
@@ -462,7 +466,7 @@ Here are the results for 1,000 searches across 5 runs:
 <td class="org-left">7424a4c</td>
 <td class="org-left">Step 1: Open set lookup O(1)</td>
 <td class="org-left">48.3634 s</td>
-<td class="org-left">-6.3% (Slower!)</td>
+<td class="org-left">-6.7% (Slower)</td>
 <td class="org-right">0.94x</td>
 </tr>
 
@@ -470,7 +474,7 @@ Here are the results for 1,000 searches across 5 runs:
 <td class="org-left">3ee685b</td>
 <td class="org-left">Step 2: Intrusive min-heap</td>
 <td class="org-left">44.4163 s</td>
-<td class="org-left">+2.1%</td>
+<td class="org-left">2.0% less time</td>
 <td class="org-right">1.02x</td>
 </tr>
 
@@ -478,7 +482,7 @@ Here are the results for 1,000 searches across 5 runs:
 <td class="org-left">a37013f</td>
 <td class="org-left">Step 3: Unified map &amp; deferred alloc</td>
 <td class="org-left">23.7850 s</td>
-<td class="org-left">+90.6% faster</td>
+<td class="org-left">47.5% less time</td>
 <td class="org-right">1.91x</td>
 </tr>
 </tbody>
@@ -586,8 +590,6 @@ Here are the final benchmark results for the unbounded case.
 
 <col  class="org-left" />
 
-<col  class="org-left" />
-
 <col  class="org-right" />
 </colgroup>
 <thead>
@@ -595,8 +597,7 @@ Here are the final benchmark results for the unbounded case.
 <th scope="col" class="org-left">Commit</th>
 <th scope="col" class="org-left">Description</th>
 <th scope="col" class="org-left">Mean Runtime</th>
-<th scope="col" class="org-left">Cumulative Speed Increase</th>
-<th scope="col" class="org-left">Cumulative Runtime Reduction</th>
+<th scope="col" class="org-left">Runtime Reduction</th>
 <th scope="col" class="org-right">Speedup Factor</th>
 </tr>
 </thead>
@@ -606,7 +607,6 @@ Here are the final benchmark results for the unbounded case.
 <td class="org-left">Baseline (Pre-optimization)</td>
 <td class="org-left">302.4745 s</td>
 <td class="org-left">—</td>
-<td class="org-left">—</td>
 <td class="org-right">1.00x</td>
 </tr>
 
@@ -614,7 +614,6 @@ Here are the final benchmark results for the unbounded case.
 <td class="org-left">7424a4c</td>
 <td class="org-left">Step 1: Open set lookup O(1)</td>
 <td class="org-left">86.6529 s</td>
-<td class="org-left">+249.0% faster</td>
 <td class="org-left">71.3% less time</td>
 <td class="org-right">3.49x</td>
 </tr>
@@ -623,7 +622,6 @@ Here are the final benchmark results for the unbounded case.
 <td class="org-left">3ee685b</td>
 <td class="org-left">Step 2: Intrusive min-heap</td>
 <td class="org-left">20.5033 s</td>
-<td class="org-left">+1375.2% faster</td>
 <td class="org-left">93.2% less time</td>
 <td class="org-right">14.75x</td>
 </tr>
@@ -632,7 +630,6 @@ Here are the final benchmark results for the unbounded case.
 <td class="org-left">a37013f</td>
 <td class="org-left">Step 3: Unified map &amp; deferred alloc</td>
 <td class="org-left">13.4744 s</td>
-<td class="org-left">+2144.8% faster</td>
 <td class="org-left">95.5% less time</td>
 <td class="org-right">22.44x</td>
 </tr>
