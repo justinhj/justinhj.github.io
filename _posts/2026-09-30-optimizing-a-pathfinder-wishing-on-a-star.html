@@ -10,7 +10,7 @@ tags: [a-star-algorithm, cpp, c++, optimization, performance, ai]
 <h2 id="org330cb39">Background</h2>
 <div class="outline-text-2" id="text-org330cb39">
 <p>
-Almost 30 years ago I wrote an <a href="https://heyes-jones.com/astar.php">A* algorithm tutorial</a> and published it (on Geocities I think), and it got a decent amount of traffic. Although the focus was on pseudocode and how the algorithm worked, I received a lot of requests for source code, and so I shared an implementation in C++ that was designed to walk that line between clarity and efficiency. You can find it here: <a href="https://github.com/justinhj/astar-algorithm-cpp">justinhj/astar-algorithm-cpp</a> 
+Almost 30 years ago I wrote an <a href="https://heyes-jones.com/astar.php">A* algorithm tutorial</a> and published it (on Geocities I think), and it got a decent amount of traffic. Although the focus was on pseudocode and how the algorithm worked, I received a lot of requests for source code, and so I shared an implementation in C++ that was reasonably optimized so that it could be used in real systems, but not overly so such that it was unsuitable for the student. You can find it here: <a href="https://github.com/justinhj/astar-algorithm-cpp">justinhj/astar-algorithm-cpp</a> 
 Although there are better tutorials around these days the code has endured quite well; it has been used by robotics researchers and video game developers, as well as being used by University and Colleges as a clear but efficient implementation. Thanks to C++'s backwards compatibility that code mostly works unchanged from the early 2000's version, although there have been some minor bug fixes over the years from helpful contributors. The first breaking change came with version 1.2 where we changed the closed list to an unordered<sub>set</sub> (now it requires the user to provide a hash function for their data type).
 At the end of 2025 I updated the code to require C++11 as the minimum version so I could make some changes in the name of modernization, and I added unit tests with doctest.
 </p>
@@ -35,21 +35,23 @@ What was good already (in Muse's review):
 </ol>
 
 <p>
-What could be improved:
+Muse came up with a number of minor issues but also ideas around optimizing the bottlnecks and potential memory issues in certain use cases.
 </p>
 
 <ol class="org-ol">
 <li>Open-list membership is still a linear scan. The agent identified the biggest open performance bottleneck, and recommended using an unordered<sub>set</sub> like we use for the closed list, but in conjunction with the existing heap so we still have fast best node popping.</li>
 <li>Issues around double free and management of the fsa.h between runs that were worth fixing.</li>
-<li>Lots of minor nits.</li>
 </ol>
 
 <p>
-Fixing the nits and memory issues seemed like a no brainer so I did those, but the optimization step required some thought so I copied Muse's feedback into the Antigravity and worked with Gemini Flash (3.8) to make a series of optimizations which added up to an over 22x increase in speed. 
+I copied Muse's feedback into the Antigravity and worked with Gemini Flash (3.8) to make a series of optimizations which added up to an over 22x increase in speed. 
+</p>
+
+<p>
+You can compare the two models used here: <a href="https://artificialanalysis.ai/models/comparisons?compare=gemini-3-8-flash-medium%2Cmuse-spark">Artifical Analyis: Comparison of Muse Spark and Gemini Flash 3.8</a>
 </p>
 </div>
 </div>
-
 <div id="outline-container-orgf370884" class="outline-2">
 <h2 id="orgf370884">Open list and Closed list access patterns</h2>
 <div class="outline-text-2" id="text-orgf370884">
@@ -95,8 +97,8 @@ As pointed out by Muse the existing architecture has a couple of bottlenecks we 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-c++">std::vector&lt;Node*&gt; m_OpenList;
-std::unordered_set&lt;Node*, NodeHash, NodeEqual&gt; m_ClosedList;
+<pre class="src src-c++"><span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">vector</span>&lt;<span style="color: #6ae4b9;">Node</span>*&gt; <span style="color: #00d3d0;">m_OpenList</span>;
+<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">unordered_set</span>&lt;<span style="color: #6ae4b9;">Node</span>*, NodeHash, NodeEqual&gt; <span style="color: #00d3d0;">m_ClosedList</span>;
 </pre>
 </div>
 
@@ -162,15 +164,11 @@ Average time:   239.438 us (239437.577 ns, 0.00023944 s) per search
 </div>
 
 <p>
-Note that we're doing a combination of succeeding and failing searches (no possible route).
+Note that we're doing a combination of succeeding and failing searches (no possible route). In this initial run I noticed that the failure rate was very high. This turned out to be that the fixed size pool of nodes was only 1000 and very quickly ran out of capacity, failing the search. This shows the importance of double checking the models working and reading the code to spot issues early.
 </p>
 
 <p>
-<b>(Correction: In our very first naive benchmark runs, we accidentally used the default FixedSizeAllocator limit of 1,000 nodes. On a 1,000x1,000 grid, this meant the searches were running out of memory instantly, artificially making the baseline look like it took 5 seconds instead of 5 minutes! The numbers below reflect the true performance with a properly sized 1,000,001 node capacity).</b>
-</p>
-
-<p>
-Now before we make any optimizations I will measure repeated sets of 5 runs of each of the stages and report the mean and standard deviation to check we are getting consistent results. Here is the output of the first run:
+Before I made any optimizations I ran the benchmark 5 times and measured the mean and standard deviation (to check we are getting consistent results). Here is the output of the first run of 1000 searchs across the large 1000x1000 grid.
 </p>
 
 <div class="org-src-container">
@@ -205,9 +203,9 @@ In this case the suggestion was to add an unordered<sub>set</sub> to live alongs
 </p>
 
 <div class="org-src-container">
-<pre class="src src-c++">std::vector&lt;Node*&gt; m_OpenList; // Kept as the priority queue
-std::unordered_set&lt;Node*, NodeHash, NodeEqual&gt; m_OpenSet; // New auxiliary set
-std::unordered_set&lt;Node*, NodeHash, NodeEqual&gt; m_ClosedList; // Same
+<pre class="src src-c++"><span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">vector</span>&lt;<span style="color: #6ae4b9;">Node</span>*&gt; <span style="color: #00d3d0;">m_OpenList</span>; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Kept as the priority queue</span>
+<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">unordered_set</span>&lt;<span style="color: #6ae4b9;">Node</span>*, NodeHash, NodeEqual&gt; <span style="color: #00d3d0;">m_OpenSet</span>; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">New auxiliary set</span>
+<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">unordered_set</span>&lt;<span style="color: #6ae4b9;">Node</span>*, NodeHash, NodeEqual&gt; <span style="color: #00d3d0;">m_ClosedList</span>; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Same</span>
 </pre>
 </div>
 
@@ -239,19 +237,19 @@ Once the first optimization was tested and benched I resumed working with the ag
 </p>
 
 <div class="org-src-container">
-<pre class="src src-c++">// ...
-else if (openlist_result != m_OpenSet.end()) {
-    // Update open node with successor node AStar data
-    //*(*openlist_result) = *(*successor);
+<pre class="src src-c++"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">...</span>
+<span style="color: #b6a0ff;">else</span> <span style="color: #b6a0ff;">if</span> (openlist_result != m_OpenSet.end()) {
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Update open node with successor node AStar data</span>
+    <span style="color: #a8a8a8;">//</span><span style="color: #a8a8a8;">*(*openlist_result) = *(*successor);</span>
     (*openlist_result)-&gt;parent = (*successor)-&gt;parent;
     (*openlist_result)-&gt;g = (*successor)-&gt;g;
     (*openlist_result)-&gt;h = (*successor)-&gt;h;
     (*openlist_result)-&gt;f = (*successor)-&gt;f;
 
-    // Free successor node
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Free successor node</span>
     FreeNode((*successor));
 
-    // re-make the heap O(n)
+    <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">re-make the heap O(n)</span>
     make_heap(m_OpenList.begin(), m_OpenList.end(), HeapCompare_f());
 }
 </pre>
@@ -343,9 +341,9 @@ Let's recap the three containers in use after the last two steps and review the 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-c++">m_OpenList (std::vector&lt;Node*&gt;); //  Min-heap priority queue.
-m_OpenSet (std::unordered_set&lt;Node*&gt;); //  Fast membership test for Open.
-m_ClosedList (std::unordered_set&lt;Node*&gt;); //  Fast membership test for Closed.
+<pre class="src src-c++">m_OpenList (<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">vector</span>&lt;<span style="color: #6ae4b9;">Node</span>*&gt;); <span style="color: #a8a8a8;">//  </span><span style="color: #a8a8a8;">Min-heap priority queue.</span>
+m_OpenSet (<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">unordered_set</span>&lt;<span style="color: #6ae4b9;">Node</span>*&gt;); <span style="color: #a8a8a8;">//  </span><span style="color: #a8a8a8;">Fast membership test for Open.</span>
+m_ClosedList (<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">unordered_set</span>&lt;<span style="color: #6ae4b9;">Node</span>*&gt;); <span style="color: #a8a8a8;">//  </span><span style="color: #a8a8a8;">Fast membership test for Closed.</span>
 </pre>
 </div>
 
@@ -354,8 +352,8 @@ Instead of having a set for open and a set for closed, the insight is that we ca
 </p>
 
 <div class="org-src-container">
-<pre class="src src-c++">// Stores every node currently discovered (whether Open or Closed)
-std::unordered_set&lt;Node*, NodeHash, NodeEqual&gt; m_NodeMap;
+<pre class="src src-c++"><span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Stores every node currently discovered (whether Open or Closed)</span>
+<span style="color: #00bcff;">std</span>::<span style="color: #6ae4b9;">unordered_set</span>&lt;<span style="color: #6ae4b9;">Node</span>*, NodeHash, NodeEqual&gt; <span style="color: #00d3d0;">m_NodeMap</span>;
 </pre>
 </div>
 </div>
@@ -373,13 +371,13 @@ These two data structure changes make operations simpler and more efficient. For
 </p>
 
 <div class="org-src-container">
-<pre class="src src-c++">Node* n = m_OpenList.front();
-swapNodes(0, m_OpenList.size() - 1); // Now the tail of the open list is the at the front
+<pre class="src src-c++"><span style="color: #6ae4b9;">Node</span>* <span style="color: #00d3d0;">n</span> = m_OpenList.front();
+swapNodes(0, m_OpenList.size() - 1); <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Now the tail of the open list is the at the front</span>
 m_OpenList.pop_back(); 
-n-&gt;heap_index = SIZE_MAX; // Conceptually, removes from open and adds to closed
+n-&gt;heap_index = SIZE_MAX; <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">Conceptually, removes from open and adds to closed</span>
 
-if (!m_OpenList.empty()) {
-  siftDown(0); // We need to fix the heap by moving the new front node
+<span style="color: #b6a0ff;">if</span> (<span style="color: #d0bc00;">!</span>m_OpenList.empty()) {
+  siftDown(0); <span style="color: #a8a8a8;">// </span><span style="color: #a8a8a8;">We need to fix the heap by moving the new front node</span>
 }
 </pre>
 </div>
@@ -413,7 +411,7 @@ Building bench target...
 <h2 id="org801c7b4">Comparing with more realistic search sizes</h2>
 <div class="outline-text-2" id="text-org801c7b4">
 <p>
-A 1,000 x 1,000 open-grid search is a brutal stress test that intentionally blows up the frontier to expose asymptotic bottlenecks. But in real-world applications (like video games or robotics), pathfinding is rarely done across 1,000,000 raw grid cells in a single frame. Usually, games use hierarchical pathfinding for long distances, and local A* searches are restricted to tactical ranges (e.g. 64x64 tiles across a room or screen).
+A 1,000 x 1,000 open-grid search is a brutal stress test that intentionally blows up the frontier to expose asymptotic bottlenecks. But in real-world applications (like video games or robotics), pathfinding is rarely done across 1,000,000 raw grid cells in a single frame. Usually, games use hierarchical pathfinding for long distances, and local A* searches are restricted to tactical ranges (e.g. 64x64 tiles or graph edges).
 </p>
 
 <p>
