@@ -316,8 +316,7 @@ Here are the final benchmark results for the unbounded case.
 | 3ee685b | Step 2: Intrusive min-heap           | 20.5033 s    | 93.2% less time   |         14.75x |
 | a37013f | Step 3: Unified map & deferred alloc | 13.4744 s    | 95.5% less time   |         22.44x |
 
-
-©2026 Justin Heyes-Jones. All Rights Reserved
+* Footnotes
 
 [fn:heuristics] An *admissible* heuristic never overestimates the actual cost to the goal (h(n) <= h*(n)), which
 guarantees A* finds the optimal shortest path. A *monotonic* (or *consistent*) heuristic adds the triangle inequality
@@ -325,3 +324,5 @@ condition: for any node A and successor B, h(A) <= cost(A, B) + h(B). Monotonici
 decreasing along any path, guaranteeing that the first time a node is expanded into the Closed list, its optimal
 distance from the start is already finalized. Consequently, under a monotonic heuristic (which includes standard grid
 metrics like Manhattan and Euclidean distance), nodes on the Closed list never need to be reopened.
+
+©2026 Justin Heyes-Jones. All Rights Reserved
