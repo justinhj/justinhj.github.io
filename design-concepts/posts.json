@@ -1,0 +1,1060 @@
+[
+ {
+  "date": "2026-04-06",
+  "title": "Refreshing your Neovim config for 0.12.0",
+  "tags": [
+   "neovim",
+   "vim",
+   "command-line"
+  ],
+  "url": "/2026/04/06/refreshing-your-neovim-config-for-0-12-0.html"
+ },
+ {
+  "date": "2026-01-19",
+  "title": "Visualizing K-Way Merge: An Interactive Guide to Database Sorting",
+  "tags": [
+   "algorithms",
+   "databases"
+  ],
+  "url": "/2026/01/19/visualizing-k-way-merge.html"
+ },
+ {
+  "date": "2025-07-30",
+  "title": "Optimizing training a GPT style Tokenizer with C++",
+  "tags": [
+   "ai",
+   "cpp",
+   "c++",
+   "python",
+   "optimization",
+   "performance",
+   "llm",
+   "tokenizer"
+  ],
+  "url": "/2025/07/30/journey-in-optimizing-a-bpe-tokenizer.html"
+ },
+ {
+  "date": "2022-11-05",
+  "title": "The Magic of Lazy Lists",
+  "tags": [
+   "pure-functional-programming",
+   "cats",
+   "scala",
+   "applicative",
+   "monads",
+   "comonads",
+   "kleisli",
+   "zio",
+   "popular"
+  ],
+  "url": "/2022/11/05/magic-of-lazy-lists.html"
+ },
+ {
+  "date": "2021-06-04",
+  "title": "Monad Transformers - the prelude to ZPure",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty",
+   "monads",
+   "category-theory",
+   "popular"
+  ],
+  "url": "/2021/06/04/monad-transformers-the-prelude-to-zpure.html"
+ },
+ {
+  "date": "2021-02-02",
+  "title": "Monads in Scala 3 for the Genius",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty",
+   "monads",
+   "category-theory"
+  ],
+  "url": "/2021/02/02/monads-in-scala-3-for-the-genius.html"
+ },
+ {
+  "date": "2021-01-21",
+  "title": "Functional Error Handling with Applicative in Scala 3",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty",
+   "applicative",
+   "monads",
+   "applicative-functor"
+  ],
+  "url": "/2021/01/21/functional-error-handling-with-applicative-in-scala-3.html"
+ },
+ {
+  "date": "2021-01-06",
+  "title": "Handling Errors functionally with Scala 3",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty"
+  ],
+  "url": "/2021/01/06/handling-errors-functionaly-with-scala-3.html"
+ },
+ {
+  "date": "2020-12-06",
+  "title": "Type classes with Scala 2",
+  "tags": [
+   "scala",
+   "functional-programming"
+  ],
+  "url": "/2020/12/06/type-classes-scala-2.html"
+ },
+ {
+  "date": "2020-11-18",
+  "title": "Scala 3 Context Functions",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty"
+  ],
+  "url": "/2020/11/18/scala-3-context-functions.html"
+ },
+ {
+  "date": "2020-08-02",
+  "title": "What's Ap with zio-prelude?",
+  "tags": [
+   "pure-functional-programming",
+   "cats",
+   "scala",
+   "applicative",
+   "monads",
+   "functors",
+   "zio",
+   "popular"
+  ],
+  "url": "/2020/08/02/whats-ap-with-zio-prelude.html"
+ },
+ {
+  "date": "2020-04-04",
+  "title": "What's Ap?",
+  "tags": [
+   "pure-functional-programming",
+   "cats",
+   "scala",
+   "applicative",
+   "monads",
+   "functors",
+   "popular"
+  ],
+  "url": "/2020/04/04/whats-ap.html"
+ },
+ {
+  "date": "2020-03-09",
+  "title": "How to blog with Org-mode",
+  "tags": [
+   "emacs",
+   "org-mode",
+   "blogging",
+   "github-pages",
+   "jekyll",
+   "popular"
+  ],
+  "url": "/2020/03/09/how-to-blog-with-org-mode.html"
+ },
+ {
+  "date": "2019-06-20",
+  "title": "Comonads for Life",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "comonads",
+   "pure-functional-programming",
+   "typelevel",
+   "cats",
+   "zio",
+   "popular"
+  ],
+  "url": "/2019/06/20/comonads-for-life.html"
+ },
+ {
+  "date": "2019-06-10",
+  "title": "Monoids for Production",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "monoids",
+   "pure-functional-programming",
+   "scalaz",
+   "typelevel",
+   "cats",
+   "popular"
+  ],
+  "url": "/2019/06/10/monoids-for-production.html"
+ },
+ {
+  "date": "2019-05-05",
+  "title": "Using 47 Degree's Fetch library with ZIO",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "zio",
+   "hacker-news-api",
+   "47-degs",
+   "fetch",
+   "popular"
+  ],
+  "url": "/2019/05/05/using-47degs-fetch-with-zio.html"
+ },
+ {
+  "date": "2019-04-07",
+  "title": "Hacker News API Part 5",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "zio",
+   "hacker-news-api",
+   "popular"
+  ],
+  "url": "/2019/04/07/hacker-news-api-5.html"
+ },
+ {
+  "date": "2018-11-19",
+  "title": "Eredis - An updated Emacs Redis API",
+  "tags": [
+   "emacs",
+   "functional-programming",
+   "redis",
+   "emacs-lisp"
+  ],
+  "url": "/2018/11/19/eredis-updated-emacs-redis-api.html"
+ },
+ {
+  "date": "2018-10-24",
+  "title": "Radix trees, Dash and Company mode",
+  "tags": [
+   "emacs",
+   "functional-programming",
+   "radix-trees",
+   "company-mode",
+   "data-structures"
+  ],
+  "url": "/2018/10/24/radix-trees-dash-and-company-mode.html"
+ },
+ {
+  "date": "2018-05-06",
+  "title": "Hacker News API Part 4",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "hacker-news-api",
+   "fetch",
+   "47-degs",
+   "typelevel",
+   "monix"
+  ],
+  "url": "/2018/05/06/hacker-news-api-4.html"
+ },
+ {
+  "date": "2017-10-11",
+  "title": "Hacker News API Part 3",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "hacker-news",
+   "hacker-news-api",
+   "fetch",
+   "typelevel",
+   "reftree",
+   "scala.js",
+   "47-degs"
+  ],
+  "url": "/2017/10/11/hacker-news-api-3.html"
+ },
+ {
+  "date": "2017-08-27",
+  "title": "Roman numeral tool with Udash",
+  "tags": [
+   "scala",
+   "scala.js",
+   "clojure-script",
+   "functional-programming",
+   "udash"
+  ],
+  "url": "/2017/08/27/roman-numeral-tool-with-udash.html"
+ },
+ {
+  "date": "2017-07-30",
+  "title": "Hacker News API Part 2",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "hacker-news-api",
+   "fetch",
+   "typelevel",
+   "47-degs"
+  ],
+  "url": "/2017/07/30/hacker-news-api-2.html"
+ },
+ {
+  "date": "2017-07-26",
+  "title": "Hacker News API Part 1",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "hacker-news-api"
+  ],
+  "url": "/2017/07/26/hacker-news-api-1.html"
+ },
+ {
+  "date": "2017-07-16",
+  "title": "Future with timeout",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "popular"
+  ],
+  "url": "/2017/07/16/future-with-timeout.html"
+ },
+ {
+  "date": "2017-06-18",
+  "title": "Future[Either] with Cats",
+  "tags": [
+   "scala",
+   "monads",
+   "eithert",
+   "functional-programming",
+   "cats",
+   "monad-transformers",
+   "popular"
+  ],
+  "url": "/2017/06/18/future-either-with-cats.html"
+ },
+ {
+  "date": "2017-06-02",
+  "title": "Future[Either] and monad transformers",
+  "tags": [
+   "scala",
+   "monads",
+   "functional-programming",
+   "scalaz",
+   "monad-transformers"
+  ],
+  "url": "/2017/06/02/future-either-and-monad-transformers.html"
+ },
+ {
+  "date": "2016-02-21",
+  "title": "Using Python in org-mode",
+  "tags": [
+   "blogging",
+   "emacs",
+   "python"
+  ],
+  "url": "/2016/02/21/python-babel.html"
+ },
+ {
+  "date": "2015-04-22",
+  "title": "Including equations in a blogger post",
+  "tags": [
+   "latex"
+  ],
+  "url": "/2015/04/22/including-equations-in-blogger-post.html"
+ },
+ {
+  "date": "2015-04-17",
+  "title": "Installing RPostgreSQL for R on Max OS Yosemite",
+  "tags": [
+   "mac",
+   "r"
+  ],
+  "url": "/2015/04/17/installing-rpostgresql-for-r-on-max-os.html"
+ },
+ {
+  "date": "2014-06-29",
+  "title": "Easy find",
+  "tags": [
+   "command-line"
+  ],
+  "url": "/2014/06/29/easy-find.html"
+ },
+ {
+  "date": "2014-05-26",
+  "title": "Sending notifications from Emacs (Mac OS X)",
+  "tags": [
+   "emacs",
+   "command-line",
+   "mac"
+  ],
+  "url": "/2014/05/26/sending-notifications-from-emacs.html"
+ },
+ {
+  "date": "2014-04-01",
+  "title": "Watch",
+  "tags": [
+   "command-line"
+  ],
+  "url": "/2014/04/01/watch.html"
+ },
+ {
+  "date": "2014-03-12",
+  "title": "Checkout out your DB tables",
+  "tags": [
+   "mysql"
+  ],
+  "url": "/2014/03/12/checkout-out-your-db-tables.html"
+ },
+ {
+  "date": "2013-02-06",
+  "title": "Configuring emacs to send iCloud mail on Mac OS X",
+  "tags": [
+   "email",
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2013/02/06/configuring-emacs-to-send-icloud-mail.html"
+ },
+ {
+  "date": "2012-04-29",
+  "title": "find grep on Mac OS X",
+  "tags": [
+   "find",
+   "command-line",
+   "mac"
+  ],
+  "url": "/2012/04/29/find-grep-on-mac-os-x.html"
+ },
+ {
+  "date": "2012-03-22",
+  "title": "Starting a program to run in the background from a DOS prompt",
+  "tags": [
+   "command-line"
+  ],
+  "url": "/2012/03/22/starting-program-to-run-in-background.html"
+ },
+ {
+  "date": "2011-12-26",
+  "title": "Making a emacs lisp expression expand itself to XML",
+  "tags": [
+   "emacs-lisp"
+  ],
+  "url": "/2011/12/26/making-emacs-lisp-expression-expand.html"
+ },
+ {
+  "date": "2011-07-30",
+  "title": "eredis update",
+  "tags": [
+   "emacs",
+   "redis",
+   "eredis",
+   "emacs-lisp"
+  ],
+  "url": "/2011/07/30/eredis-update.html"
+ },
+ {
+  "date": "2011-07-25",
+  "title": "eredis: a Redis client in emacs lisp",
+  "tags": [
+   "emacs",
+   "redis"
+  ],
+  "url": "/2011/07/25/eredis-redis-client-in-emacs-lisp.html"
+ },
+ {
+  "date": "2011-06-14",
+  "title": "Emacs progress indication",
+  "tags": [
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2011/06/14/emacs-progress-indication.html"
+ },
+ {
+  "date": "2011-06-05",
+  "title": "More on duplicate file handling in emacs dired",
+  "tags": [
+   "emacs",
+   "dired"
+  ],
+  "url": "/2011/06/05/more-on-duplicate-file-handling-in.html"
+ },
+ {
+  "date": "2011-06-01",
+  "title": "Finding duplicate files in a dired buffer",
+  "tags": [
+   "emacs",
+   "dired",
+   "emacs-lisp"
+  ],
+  "url": "/2011/06/01/finding-duplicate-files-in-dired-buffer.html"
+ },
+ {
+  "date": "2011-04-26",
+  "title": "Programmer tips for Mac OSX",
+  "tags": [
+   "mac",
+   "command-line",
+   "emacs"
+  ],
+  "url": "/2011/04/26/programmer-tips-for-mac-osx.html"
+ },
+ {
+  "date": "2011-04-26",
+  "title": "MovieRatings",
+  "tags": [
+   "clojure"
+  ],
+  "url": "/2011/04/26/movieratings.html"
+ },
+ {
+  "date": "2011-04-25",
+  "title": "Talking to mysql from Python on Mac OS X 10.6",
+  "tags": [
+   "mysql",
+   "python"
+  ],
+  "url": "/2011/04/25/talking-to-mysql-from-python-on-mac-os.html"
+ },
+ {
+  "date": "2011-01-15",
+  "title": "Grabbing Rotten Tomatoes movie ratings with Clojure",
+  "tags": [
+   "clojure"
+  ],
+  "url": "/2011/01/15/grabbing-rotten-tomatoes-movie-ratings.html"
+ },
+ {
+  "date": "2011-01-11",
+  "title": "View Data from the Clojure REPL",
+  "tags": [
+   "clojure"
+  ],
+  "url": "/2011/01/11/view-data-from-clojure-repl.html"
+ },
+ {
+  "date": "2010-12-15",
+  "title": "F# vs C#",
+  "tags": [
+   "game-dev",
+   "clojure",
+   "common-lisp",
+   "f#"
+  ],
+  "url": "/2010/12/15/f-vs-c.html"
+ },
+ {
+  "date": "2010-11-02",
+  "title": "Just browsing",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2010/11/02/just-browsing.html"
+ },
+ {
+  "date": "2010-10-19",
+  "title": "rgrep on windows 7 for emacs",
+  "tags": [
+   "emacs",
+   "windows"
+  ],
+  "url": "/2010/10/19/rgrep-on-windows-7-for-emacs.html"
+ },
+ {
+  "date": "2010-07-30",
+  "title": "Couple of mysql tips",
+  "tags": [
+   "mysql"
+  ],
+  "url": "/2010/07/30/couple-of-mysql-tips.html"
+ },
+ {
+  "date": "2010-06-08",
+  "title": "Adjusting server logging level at runtime",
+  "tags": [
+   "log4j",
+   "backend-dev"
+  ],
+  "url": "/2010/06/08/adjusting-server-logging-level-at.html"
+ },
+ {
+  "date": "2010-05-16",
+  "title": "Growling Mac",
+  "tags": [
+   "emacs",
+   "growl",
+   "mac"
+  ],
+  "url": "/2010/05/16/growling-mac.html"
+ },
+ {
+  "date": "2010-04-17",
+  "title": "Using tar and gzip",
+  "tags": [
+   "tar",
+   "gzip",
+   "linux",
+   "bash"
+  ],
+  "url": "/2010/04/17/using-tar-and-gzip.html"
+ },
+ {
+  "date": "2010-01-23",
+  "title": "Nice Code",
+  "tags": [
+   "ipin",
+   "transmission"
+  ],
+  "url": "/2010/01/23/nice-code.html"
+ },
+ {
+  "date": "2010-01-01",
+  "title": "Using screen",
+  "tags": [
+   "screen",
+   "linux"
+  ],
+  "url": "/2010/01/01/using-screen.html"
+ },
+ {
+  "date": "2010-01-01",
+  "title": "Securing an ssh server with fail2ban",
+  "tags": [
+   "ubuntu",
+   "linux",
+   "ssh",
+   "fail2ban"
+  ],
+  "url": "/2010/01/01/securing-ssh-server-with-fail2ban.html"
+ },
+ {
+  "date": "2009-10-12",
+  "title": "Transparent emacs on windows",
+  "tags": [
+   "emacs",
+   "windows",
+   "win32"
+  ],
+  "url": "/2009/10/12/transparent-emacs-on-windows.html"
+ },
+ {
+  "date": "2009-10-09",
+  "title": "MSDOS iterating filenames in a file",
+  "tags": [
+   "msdos",
+   "command-line"
+  ],
+  "url": "/2009/10/09/msdos-iterating-filenames-in-file.html"
+ },
+ {
+  "date": "2009-09-23",
+  "title": "Windows command window title",
+  "tags": [
+   "msdos",
+   "windows",
+   "command-line",
+   "win32"
+  ],
+  "url": "/2009/09/23/windows-command-window-title.html"
+ },
+ {
+  "date": "2009-09-21",
+  "title": "English quote in Common Lisp",
+  "tags": [
+   "common-lisp"
+  ],
+  "url": "/2009/09/21/english-quote-in-common-lisp.html"
+ },
+ {
+  "date": "2009-09-10",
+  "title": "Making emacs growl",
+  "tags": [
+   "emacs",
+   "growl"
+  ],
+  "url": "/2009/09/10/making-emacs-growl.html"
+ },
+ {
+  "date": "2009-09-08",
+  "title": "Directional window movement in emacs",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2009/09/08/directional-window-movement-in-emacs.html"
+ },
+ {
+  "date": "2009-09-01",
+  "title": "Handful of emacs tips",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2009/09/01/handful-of-emacs-tips.html"
+ },
+ {
+  "date": "2009-08-26",
+  "title": "Simple budget forecasts in emacs",
+  "tags": [
+   "personal-finance",
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2009/08/26/simple-budget-forecasts-in-emacs.html"
+ },
+ {
+  "date": "2009-06-17",
+  "title": "1337 on StackOverflow",
+  "tags": [
+   "geek",
+   "stack-overflow"
+  ],
+  "url": "/2009/06/17/1337-on-stackoverflow.html"
+ },
+ {
+  "date": "2009-05-27",
+  "title": "Linux: Looking at files changed recently",
+  "tags": [
+   "linux",
+   "cygwin"
+  ],
+  "url": "/2009/05/27/linux-looking-at-files-changed-recently.html"
+ },
+ {
+  "date": "2009-05-14",
+  "title": "Writing quick C++ programs in emacs without a makefile",
+  "tags": [
+   "emacs",
+   "c++"
+  ],
+  "url": "/2009/05/14/writing-quick-c-programs-in-emacs.html"
+ },
+ {
+  "date": "2009-05-14",
+  "title": "Linking MingW32 with psapi",
+  "tags": [
+   "mingw32"
+  ],
+  "url": "/2009/05/14/linking-mingw32-with-psapi.html"
+ },
+ {
+  "date": "2009-05-12",
+  "title": "Converting flac to mp3",
+  "tags": [
+   "mp3",
+   "flac"
+  ],
+  "url": "/2009/05/12/converting-flac-to-mp3.html"
+ },
+ {
+  "date": "2009-05-08",
+  "title": "emacs: Renaming multiple files at once with a regular expression",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2009/05/08/emacs-renaming-multiple-files-at-once.html"
+ },
+ {
+  "date": "2009-05-07",
+  "title": "emacs: Searching programming API''s with webjump",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2009/05/07/emacs-searching-programming-apis-with.html"
+ },
+ {
+  "date": "2009-04-15",
+  "title": "Running an elisp function on each marked file in a dired buffer",
+  "tags": [
+   "emacs",
+   "dired",
+   "emacs-lisp"
+  ],
+  "url": "/2009/04/15/running-elisp-function-on-each-marked.html"
+ },
+ {
+  "date": "2009-04-02",
+  "title": "Securely copying files to another machine",
+  "tags": [
+   "cygwin",
+   "secure-file-transfer",
+   "scp"
+  ],
+  "url": "/2009/04/02/securely-copying-files-to-another.html"
+ },
+ {
+  "date": "2009-03-18",
+  "title": "Vancouver game companies",
+  "tags": [
+   "vancouver",
+   "gamedev"
+  ],
+  "url": "/2009/03/18/vancouver-game-companies.html"
+ },
+ {
+  "date": "2009-03-09",
+  "title": "Using tags in emacs on windows",
+  "tags": [
+   "emacs",
+   "tags",
+   "win32",
+   "etags",
+   "emacs",
+   "cygwin"
+  ],
+  "url": "/2009/03/09/using-tags-in-emacs-on-windows.html"
+ },
+ {
+  "date": "2009-02-20",
+  "title": "Sending mail with emacs in Windows",
+  "tags": [
+   "emacs",
+   "smtp",
+   "windows",
+   "win32"
+  ],
+  "url": "/2009/02/20/sending-mail-with-emacs-in-windows.html"
+ },
+ {
+  "date": "2009-02-16",
+  "title": "Who uses the A* code",
+  "tags": [
+   "c++",
+   "gamedev",
+   "a-star-algorithm"
+  ],
+  "url": "/2009/02/16/who-uses-a-code.html"
+ },
+ {
+  "date": "2009-02-16",
+  "title": "A* algorithm bug fixes",
+  "tags": [
+   "c++",
+   "astar-algorithm",
+   "game-programming",
+   "gamedev",
+   "bugs"
+  ],
+  "url": "/2009/02/16/algorithm-bug-fixes.html"
+ },
+ {
+  "date": "2009-02-13",
+  "title": "Setting up lispworks personal",
+  "tags": [
+   "emacs",
+   "lispworks",
+   "slime",
+   "win32"
+  ],
+  "url": "/2009/02/13/setting-up-lispworks-personal.html"
+ },
+ {
+  "date": "2009-02-13",
+  "title": "Searching Reddit, Flickr, and Google from emacs = Rad",
+  "tags": [
+   "emacs",
+   "web-jump"
+  ],
+  "url": "/2009/02/13/search-reddit-flickr-and-google-from.html"
+ },
+ {
+  "date": "2009-02-07",
+  "title": "Sending email via gmail in emacs",
+  "tags": [
+   "emacs",
+   "smtp"
+  ],
+  "url": "/2009/02/07/sending-email-via-gmail-in-emacs.html"
+ },
+ {
+  "date": "2009-02-07",
+  "title": "Fun with RSS",
+  "tags": [
+   "rss",
+   "emacs",
+   "xml",
+   "parsing",
+   "bbc-news",
+   "emacs-lisp"
+  ],
+  "url": "/2009/02/07/fun-with-rss.html"
+ },
+ {
+  "date": "2009-01-23",
+  "title": "Simple perforce checkout in emacs using elisp",
+  "tags": [
+   "emacs",
+   "emacs-lisp",
+   "perforce",
+   "p4"
+  ],
+  "url": "/2009/01/23/simple-perforce-checkout-in-emacs-using.html"
+ },
+ {
+  "date": "2009-01-12",
+  "title": "Finding writable files in a directory in a windows command line",
+  "tags": [
+   "msdos",
+   "win32",
+   "command-line",
+   "popular"
+  ],
+  "url": "/2009/01/12/finding-writable-files-in-directory-in.html"
+ },
+ {
+  "date": "2009-01-08",
+  "title": "Who changed the line your working on last?",
+  "tags": [
+   "emacs",
+   "p4",
+   "perforce",
+   "emacs-lisp"
+  ],
+  "url": "/2009/01/08/who-changed-line-your-working-on-last.html"
+ },
+ {
+  "date": "2008-11-21",
+  "title": "How to copy an SVN repository from sourceforge to google code",
+  "tags": [
+   "svn",
+   "google-code",
+   "sourceforge",
+   "source-control"
+  ],
+  "url": "/2008/11/21/how-to-copy-svn-repository-from.html"
+ },
+ {
+  "date": "2008-11-08",
+  "title": "Grabbing info from web pages",
+  "tags": [
+   "wget"
+  ],
+  "url": "/2008/11/08/grabbing-info-from-web-pages.html"
+ },
+ {
+  "date": "2008-05-27",
+  "title": "Using find and printf",
+  "tags": [
+   "find"
+  ],
+  "url": "/2008/05/27/using-find-and-printf.html"
+ },
+ {
+  "date": "2008-05-13",
+  "title": "Batch file tip ... %~dp0",
+  "tags": [
+   "msdos",
+   "win32",
+   "command-line",
+   "batch-files"
+  ],
+  "url": "/2008/05/13/batch-file-tip-dp0.html"
+ },
+ {
+  "date": "2008-05-01",
+  "title": "Copying characters from the line above in emacs",
+  "tags": [
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2008/05/01/copying-characters-from-line-above-in.html"
+ },
+ {
+  "date": "2008-02-29",
+  "title": "Is it a leap year",
+  "tags": [
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2008/02/29/is-it-leap-year.html"
+ },
+ {
+  "date": "2008-01-29",
+  "title": "emacs - a simple search and replace function",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2008/01/29/emacs-simple-search-and-replace.html"
+ },
+ {
+  "date": "2007-12-08",
+  "title": "emacs: how-many",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2007/12/08/emacs-how-many.html"
+ },
+ {
+  "date": "2007-12-07",
+  "title": "C: Passing on variadic function arguments to another function",
+  "tags": [
+   "c",
+   "c++"
+  ],
+  "url": "/2007/12/07/c-passing-on-variadic-function.html"
+ },
+ {
+  "date": "2007-10-24",
+  "title": "Ubuntu 7.10",
+  "tags": [
+   "ubuntu"
+  ],
+  "url": "/2007/10/24/ubuntu-710.html"
+ },
+ {
+  "date": "2007-10-24",
+  "title": "C and C++ function pointers",
+  "tags": [
+   "c",
+   "c++"
+  ],
+  "url": "/2007/10/24/c-and-c-function-pointers.html"
+ },
+ {
+  "date": "2007-10-09",
+  "title": "Avoiding Ten Common Game AI Mistakes",
+  "tags": [
+   "game-development",
+   "ai"
+  ],
+  "url": "/2007/10/09/avoiding-ten-common-game-ai-mistakes.html"
+ },
+ {
+  "date": "2007-09-27",
+  "title": "11 Visual Studio tricks in Emacs",
+  "tags": [
+   "emacs",
+   "visual-studio"
+  ],
+  "url": "/2007/09/27/11-visual-studio-tricks-in-emacs.html"
+ },
+ {
+  "date": "2007-09-22",
+  "title": "Word numbers programming puzzle",
+  "tags": [
+   "lisp",
+   "common-lisp"
+  ],
+  "url": "/2007/09/22/word-numbers-programming-puzzle.html"
+ },
+ {
+  "date": "2007-09-12",
+  "title": "Commenting out a block of C++ in emacs",
+  "tags": [
+   "emacs",
+   "c++"
+  ],
+  "url": "/2007/09/12/commenting-out-block-of-c-in-emacs.html"
+ },
+ {
+  "date": "2007-09-11",
+  "title": "Adding C++ class names to a function name",
+  "tags": [
+   "c",
+   "c++",
+   "elisp"
+  ],
+  "url": "/2007/09/11/adding-c-class-names-to-function-name.html"
+ },
+ {
+  "date": "2007-09-07",
+  "title": "Fixing up windows pathnames to use in cygwin",
+  "tags": [
+   "cygwin",
+   "win32"
+  ],
+  "url": "/2007/09/07/fixing-up-windows-pathnames-to-use-in.html"
+ }
+]

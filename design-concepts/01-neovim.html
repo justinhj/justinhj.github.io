@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functional[Justin] — Concept 1 · Neovim // Buffer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #1a1b26;
+  --bg-dark: #16161e;
+  --bg-highlight: #24283b;
+  --bg-visual: #283457;
+  --fg: #c0caf5;
+  --fg-dark: #a9b1d6;
+  --comment: #565f89;
+  --blue: #7aa2f7;
+  --cyan: #7dcfff;
+  --purple: #bb9af7;
+  --magenta: #f7768e;
+  --orange: #ff9e64;
+  --yellow: #e0af68;
+  --green: #9ece6a;
+  --teal: #1abc9c;
+  --border: #292e42;
+  --status-normal: #7aa2f7;
+  --status-insert: #9ece6a;
+  --status-visual: #bb9af7;
+  --status-command: #ff9e64;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--fg);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  user-select: text;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* Corner concept badge */
+.concept-badge {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 1000;
+  background: rgba(122, 162, 247, 0.15);
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+.concept-badge:hover {
+  background: var(--blue);
+  color: var(--bg);
+  box-shadow: 0 0 12px rgba(122, 162, 247, 0.4);
+}
+
+/* Top Tabline (Bufferline) */
+.tabline {
+  height: 38px;
+  background: #13141c;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabline::-webkit-scrollbar { display: none; }
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  color: var(--comment);
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.tab:hover {
+  color: var(--fg);
+  background: #1a1b26;
+}
+.tab.active {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--border);
+  border-top: 2px solid var(--blue);
+}
+.tab .num { color: var(--purple); font-weight: bold; }
+.tab .icon { font-size: 13px; }
+.tab .icon.lua { color: var(--blue); }
+.tab .icon.rs { color: var(--orange); }
+.tab .icon.scala { color: var(--magenta); }
+.tab .icon.md { color: var(--yellow); }
+.tab .close {
+  color: var(--comment);
+  margin-left: 4px;
+  font-size: 10px;
+  opacity: 0.7;
+}
+.tab .close:hover { color: var(--magenta); }
+
+/* App container */
+.app-container {
+  flex: 1;
+  display: flex;
+  height: calc(100vh - 38px - 28px - 26px);
+  min-height: 560px;
+  position: relative;
+  background: var(--bg);
+}
+
+/* Sidebar (Neo-tree) */
+.sidebar {
+  width: 280px;
+  background: #161620;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex-shrink: 0;
+  transition: transform 0.25s ease, width 0.25s ease;
+}
+.sidebar.collapsed {
+  width: 0;
+  transform: translateX(-100%);
+  border-right: none;
+}
+
+.tree-header {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--comment);
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.tree-header .toggle-btn {
+  cursor: pointer;
+  color: var(--comment);
+  padding: 2px 4px;
+}
+.tree-header .toggle-btn:hover { color: var(--cyan); }
+
+.tree-content {
+  padding: 8px 4px;
+  font-size: 12px;
+}
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--fg-dark);
+  transition: all 0.1s ease;
+}
+.tree-item:hover {
+  background: var(--bg-highlight);
+  color: var(--fg);
+}
+.tree-item.active {
+  background: var(--bg-visual);
+  color: var(--cyan);
+}
+.tree-item .arrow {
+  width: 12px;
+  font-size: 10px;
+  color: var(--comment);
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.tree-item.open > .arrow {
+  transform: rotate(90deg);
+}
+.tree-sub {
+  padding-left: 16px;
+  display: none;
+}
+.tree-sub.show { display: block; }
+.badge-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--comment);
+  background: rgba(255,255,255,0.05);
+  padding: 1px 5px;
+  border-radius: 10px;
+}
+
+/* Main Editor Pane */
+.editor-pane {
+  flex: 1;
+  display: flex;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Gutter (Line Numbers) */
+.gutter {
+  width: 52px;
+  padding: 16px 8px 16px 0;
+  text-align: right;
+  color: var(--comment);
+  user-select: none;
+  font-size: 13px;
+  opacity: 0.6;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255,255,255,0.03);
+}
+.gutter div {
+  height: 24px;
+  line-height: 24px;
+}
+.gutter div.current {
+  color: var(--yellow);
+  font-weight: bold;
+  opacity: 1;
+}
+
+/* Buffer text content */
+.buffer-body {
+  flex: 1;
+  padding: 16px 28px 60px 24px;
+  max-width: 1100px;
+  overflow-x: hidden;
+}
+
+/* Code syntax colors */
+.syn-kw { color: var(--purple); font-weight: 500; }
+.syn-fn { color: var(--blue); }
+.syn-str { color: var(--green); }
+.syn-num { color: var(--orange); }
+.syn-cmt { color: var(--comment); font-style: italic; }
+.syn-type { color: var(--yellow); }
+.syn-prop { color: var(--cyan); }
+.syn-op { color: var(--magenta); }
+.syn-bracket { color: var(--purple); font-weight: bold; }
+
+/* Hero card: Justin init config */
+.hero-block {
+  background: rgba(22, 22, 30, 0.75);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+}
+.hero-block::before {
+  content: "FUNCTIONAL[JUSTIN] // INIT.LUA";
+  position: absolute;
+  top: -9px;
+  left: 16px;
+  background: var(--bg-dark);
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: 0.1em;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+.hero-profile-float {
+  float: right;
+  margin-left: 20px;
+  margin-bottom: 12px;
+  text-align: center;
+  border: 1px solid var(--cyan);
+  background: #13141c;
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.hero-profile-float img {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  display: block;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+.hero-profile-float .caption {
+  font-size: 10px;
+  color: var(--cyan);
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+}
+
+.hero-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-title .cursor {
+  display: inline-block;
+  width: 10px;
+  height: 22px;
+  background: var(--blue);
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.key-chip {
+  background: var(--bg-highlight);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--fg-dark);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.key-chip kbd {
+  background: var(--bg-dark);
+  color: var(--yellow);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  font-weight: bold;
+}
+.key-chip:hover {
+  background: var(--blue);
+  color: var(--bg-dark);
+  border-color: var(--blue);
+}
+.key-chip:hover kbd {
+  background: var(--bg-dark);
+  color: var(--yellow);
+}
+
+/* Post entries in buffer */
+.posts-section-hdr {
+  margin: 24px 0 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 6px;
+}
+.posts-section-hdr h3 {
+  color: var(--purple);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-info {
+  font-size: 12px;
+  color: var(--comment);
+}
+
+.post-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 12px;
+  margin: 2px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  border-left: 2px solid transparent;
+}
+.post-row:hover, .post-row.selected {
+  background: var(--bg-highlight);
+  border-left-color: var(--blue);
+  transform: translateX(4px);
+}
+.post-row.selected {
+  background: var(--bg-visual);
+  border-left-color: var(--yellow);
+}
+
+.post-date {
+  color: var(--comment);
+  font-size: 12px;
+  width: 95px;
+  flex-shrink: 0;
+}
+.post-title-link {
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+}
+.post-row:hover .post-title-link {
+  color: var(--cyan);
+}
+.post-tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.post-tag {
+  color: var(--purple);
+  background: rgba(187, 154, 247, 0.1);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  transition: background 0.15s;
+}
+.post-tag:hover {
+  background: var(--purple);
+  color: var(--bg);
+}
+
+/* Lualine Statusline */
+.statusline {
+  height: 28px;
+  background: #13141c;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  overflow: hidden;
+}
+.status-left, .status-right {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.mode-pill {
+  background: var(--status-normal);
+  color: #1a1b26;
+  font-weight: 800;
+  padding: 0 14px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.08em;
+  transition: background 0.2s ease;
+}
+.status-seg {
+  padding: 0 12px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-dark);
+}
+.status-seg.branch {
+  background: #1f2335;
+  color: var(--purple);
+}
+.status-seg.file {
+  background: #24283b;
+  color: var(--cyan);
+}
+
+.status-seg.meta {
+  background: #1f2335;
+  color: var(--comment);
+}
+.status-seg.pos {
+  background: var(--blue);
+  color: #1a1b26;
+  font-weight: 700;
+}
+
+/* Command Line / Message area at bottom */
+.cmdline-area {
+  height: 26px;
+  background: #0f1017;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--fg-dark);
+  font-size: 12px;
+  border-top: 1px solid rgba(255,255,255,0.03);
+}
+.cmdline-input {
+  background: transparent;
+  border: none;
+  color: var(--yellow);
+  font-family: inherit;
+  font-size: 12px;
+  flex: 1;
+  outline: none;
+}
+.cmdline-prompt {
+  color: var(--orange);
+  margin-right: 6px;
+  font-weight: bold;
+}
+
+/* Telescope Fuzzy Finder Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 11, 16, 0.75);
+  backdrop-filter: blur(5px);
+  z-index: 900;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open {
+  display: flex;
+}
+
+.telescope-window {
+  width: 900px;
+  max-width: 95vw;
+  height: 560px;
+  max-height: 85vh;
+  background: var(--bg);
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(122, 162, 247, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: popIn 0.15s ease-out;
+}
+@keyframes popIn {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.telescope-top {
+  padding: 12px 16px;
+  background: #14151f;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.telescope-prompt-icon { color: var(--magenta); font-size: 16px; font-weight: bold; }
+.telescope-input {
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 14px;
+  flex: 1;
+  outline: none;
+}
+.telescope-help { font-size: 11px; color: var(--comment); }
+
+.telescope-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.telescope-list {
+  width: 55%;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 8px;
+}
+.telescope-item {
+  padding: 7px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 2px;
+  color: var(--fg-dark);
+}
+.telescope-item:hover, .telescope-item.active {
+  background: var(--bg-visual);
+  color: var(--cyan);
+}
+.telescope-item .item-title {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.telescope-item .item-meta {
+  font-size: 11px;
+  color: var(--comment);
+  display: flex;
+  gap: 8px;
+}
+
+.telescope-preview {
+  flex: 1;
+  padding: 18px;
+  background: #15161f;
+  overflow-y: auto;
+}
+.preview-title {
+  color: var(--blue);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.preview-meta {
+  color: var(--comment);
+  font-size: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.preview-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.preview-btn {
+  display: inline-block;
+  margin-top: 18px;
+  background: var(--blue);
+  color: var(--bg-dark);
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Which-Key popup */
+.which-key {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #141520;
+  border: 1px solid var(--purple);
+  border-radius: 6px;
+  padding: 12px 18px;
+  display: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+  z-index: 850;
+  min-width: 480px;
+}
+.which-key.open { display: block; }
+.which-key-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 18px;
+  font-size: 12px;
+}
+.wk-item { display: flex; gap: 8px; }
+.wk-key { color: var(--magenta); font-weight: bold; min-width: 28px; }
+.wk-desc { color: var(--fg-dark); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    box-shadow: 10px 0 20px rgba(0,0,0,0.5);
+  }
+  .gutter { width: 38px; font-size: 11px; }
+  .buffer-body { padding: 12px 14px; }
+  .hero-profile-float { float: none; margin: 0 0 14px 0; text-align: left; display: inline-flex; gap: 12px; align-items: center; }
+  .hero-profile-float img { width: 64px; height: 64px; }
+  .status-seg.branch, .status-seg.meta { display: none; }
+  .telescope-body { flex-direction: column; }
+  .telescope-list { width: 100%; height: 50%; }
+}
+</style>
+</head>
+<body>
+
+<a href="/design-concepts/index.html" class="concept-badge">← Concept 1 · Neovim // Buffer</a>
+
+<!-- Tabline / Bufferline -->
+<div class="tabline">
+  <div class="tab active" data-buf="init" onclick="switchBuffer('init')">
+    <span class="num">1</span>
+    <span class="icon lua"></span>
+    <span class="name">init.lua</span>
+    <span class="close">×</span>
+  </div>
+  <div class="tab" data-buf="posts" onclick="switchBuffer('posts')">
+    <span class="num">2</span>
+    <span class="icon rs">󰈙</span>
+    <span class="name">all_posts.lua</span>
+    <span class="close">×</span>
+  </div>
+  <div class="tab" data-buf="popular" onclick="switchBuffer('popular')">
+    <span class="num">3</span>
+    <span class="icon scala"></span>
+    <span class="name">popular.scala</span>
+    <span class="close">×</span>
+  </div>
+  <div class="tab" data-buf="about" onclick="switchBuffer('about')">
+    <span class="num">4</span>
+    <span class="icon md"></span>
+    <span class="name">justin.md</span>
+    <span class="close">×</span>
+  </div>
+</div>
+
+<div class="app-container">
+  <!-- Sidebar / Neo-Tree -->
+  <div class="sidebar" id="sidebar">
+    <div class="tree-header">
+      <span>EXPLORER [POSTS]</span>
+      <span class="toggle-btn" title="Toggle Sidebar (Ctrl+B)" onclick="toggleSidebar()">◨</span>
+    </div>
+    <div class="tree-content" id="treeContent">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <!-- Main Editor Pane -->
+  <div class="editor-pane" id="editorPane">
+    <div class="gutter" id="gutter"></div>
+    <div class="buffer-body" id="bufferBody">
+      <!-- Buffer content loaded here -->
+    </div>
+  </div>
+</div>
+
+<!-- Lualine Statusline -->
+<div class="statusline">
+  <div class="status-left">
+    <div class="mode-pill" id="modePill">NORMAL</div>
+    <div class="status-seg branch"> main</div>
+    <div class="status-seg file" id="statusFile">init.lua</div>
+  </div>
+  <div class="status-right">
+    <div class="status-seg meta">utf-8</div>
+    <div class="status-seg meta" id="totalPostsStat">104 posts</div>
+    <div class="status-seg pos" id="cursorPos">Ln 1, Col 1</div>
+  </div>
+</div>
+
+<!-- Command Line -->
+<div class="cmdline-area">
+  <span class="cmdline-prompt" id="cmdPrompt">:</span>
+  <input type="text" class="cmdline-input" id="cmdInput" placeholder="Press '/' for Telescope fuzzy search, ':' for commands, 'space' for which-key, j/k to navigate">
+</div>
+
+<!-- Telescope Modal -->
+<div class="modal-overlay" id="telescopeModal">
+  <div class="telescope-window">
+    <div class="telescope-top">
+      <span class="telescope-prompt-icon">🔍</span>
+      <input type="text" class="telescope-input" id="telescopeInput" placeholder="Find post by title or tag (type to filter, ↑/↓ to choose, Enter to open, Esc to close)...">
+      <span class="telescope-help">[Telescope live_grep]</span>
+    </div>
+    <div class="telescope-body">
+      <div class="telescope-list" id="telescopeList"></div>
+      <div class="telescope-preview" id="telescopePreview"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Which Key popup -->
+<div class="which-key" id="whichKey">
+  <div class="which-key-grid">
+    <div class="wk-item"><span class="wk-key">&lt;space&gt; ff</span><span class="wk-desc">Telescope fuzzy find posts</span></div>
+    <div class="wk-item"><span class="wk-key">&lt;space&gt; fp</span><span class="wk-desc">Filter popular posts</span></div>
+    <div class="wk-item"><span class="wk-key">&lt;space&gt; e</span><span class="wk-desc">Toggle Neo-tree sidebar</span></div>
+    <div class="wk-item"><span class="wk-key">&lt;space&gt; 1..4</span><span class="wk-desc">Switch buffer tabs</span></div>
+    <div class="wk-item"><span class="wk-key">j / k</span><span class="wk-desc">Move down / up</span></div>
+    <div class="wk-item"><span class="wk-key">:help</span><span class="wk-desc">Show commands list</span></div>
+  </div>
+</div>
+
+<script>
+const POSTS = [{"date": "2026-04-06", "title": "Refreshing your Neovim config for 0.12.0", "tags": ["neovim", "vim", "command-line"], "url": "/2026/04/06/refreshing-your-neovim-config-for-0-12-0.html"}, {"date": "2026-01-19", "title": "Visualizing K-Way Merge: An Interactive Guide to Database Sorting", "tags": ["algorithms", "databases"], "url": "/2026/01/19/visualizing-k-way-merge.html"}, {"date": "2025-07-30", "title": "Optimizing training a GPT style Tokenizer with C++", "tags": ["ai", "cpp", "c++", "python", "optimization", "performance", "llm", "tokenizer"], "url": "/2025/07/30/journey-in-optimizing-a-bpe-tokenizer.html"}, {"date": "2022-11-05", "title": "The Magic of Lazy Lists", "tags": ["pure-functional-programming", "cats", "scala", "applicative", "monads", "comonads", "kleisli", "zio", "popular"], "url": "/2022/11/05/magic-of-lazy-lists.html"}, {"date": "2021-06-04", "title": "Monad Transformers - the prelude to ZPure", "tags": ["scala", "scala-3", "dotty", "monads", "category-theory", "popular"], "url": "/2021/06/04/monad-transformers-the-prelude-to-zpure.html"}, {"date": "2021-02-02", "title": "Monads in Scala 3 for the Genius", "tags": ["scala", "scala-3", "dotty", "monads", "category-theory"], "url": "/2021/02/02/monads-in-scala-3-for-the-genius.html"}, {"date": "2021-01-21", "title": "Functional Error Handling with Applicative in Scala 3", "tags": ["scala", "scala-3", "dotty", "applicative", "monads", "applicative-functor"], "url": "/2021/01/21/functional-error-handling-with-applicative-in-scala-3.html"}, {"date": "2021-01-06", "title": "Handling Errors functionally with Scala 3", "tags": ["scala", "scala-3", "dotty"], "url": "/2021/01/06/handling-errors-functionaly-with-scala-3.html"}, {"date": "2020-12-06", "title": "Type classes with Scala 2", "tags": ["scala", "functional-programming"], "url": "/2020/12/06/type-classes-scala-2.html"}, {"date": "2020-11-18", "title": "Scala 3 Context Functions", "tags": ["scala", "scala-3", "dotty"], "url": "/2020/11/18/scala-3-context-functions.html"}, {"date": "2020-08-02", "title": "What's Ap with zio-prelude?", "tags": ["pure-functional-programming", "cats", "scala", "applicative", "monads", "functors", "zio", "popular"], "url": "/2020/08/02/whats-ap-with-zio-prelude.html"}, {"date": "2020-04-04", "title": "What's Ap?", "tags": ["pure-functional-programming", "cats", "scala", "applicative", "monads", "functors", "popular"], "url": "/2020/04/04/whats-ap.html"}, {"date": "2020-03-09", "title": "How to blog with Org-mode", "tags": ["emacs", "org-mode", "blogging", "github-pages", "jekyll", "popular"], "url": "/2020/03/09/how-to-blog-with-org-mode.html"}, {"date": "2019-06-20", "title": "Comonads for Life", "tags": ["scala", "functional-programming", "comonads", "pure-functional-programming", "typelevel", "cats", "zio", "popular"], "url": "/2019/06/20/comonads-for-life.html"}, {"date": "2019-06-10", "title": "Monoids for Production", "tags": ["scala", "functional-programming", "monoids", "pure-functional-programming", "scalaz", "typelevel", "cats", "popular"], "url": "/2019/06/10/monoids-for-production.html"}, {"date": "2019-05-05", "title": "Using 47 Degree's Fetch library with ZIO", "tags": ["scala", "functional-programming", "zio", "hacker-news-api", "47-degs", "fetch", "popular"], "url": "/2019/05/05/using-47degs-fetch-with-zio.html"}, {"date": "2019-04-07", "title": "Hacker News API Part 5", "tags": ["scala", "functional-programming", "zio", "hacker-news-api", "popular"], "url": "/2019/04/07/hacker-news-api-5.html"}, {"date": "2018-11-19", "title": "Eredis - An updated Emacs Redis API", "tags": ["emacs", "functional-programming", "redis", "emacs-lisp"], "url": "/2018/11/19/eredis-updated-emacs-redis-api.html"}, {"date": "2018-10-24", "title": "Radix trees, Dash and Company mode", "tags": ["emacs", "functional-programming", "radix-trees", "company-mode", "data-structures"], "url": "/2018/10/24/radix-trees-dash-and-company-mode.html"}, {"date": "2018-05-06", "title": "Hacker News API Part 4", "tags": ["scala", "functional-programming", "hacker-news-api", "fetch", "47-degs", "typelevel", "monix"], "url": "/2018/05/06/hacker-news-api-4.html"}, {"date": "2017-10-11", "title": "Hacker News API Part 3", "tags": ["scala", "functional-programming", "hacker-news", "hacker-news-api", "fetch", "typelevel", "reftree", "scala.js", "47-degs"], "url": "/2017/10/11/hacker-news-api-3.html"}, {"date": "2017-08-27", "title": "Roman numeral tool with Udash", "tags": ["scala", "scala.js", "clojure-script", "functional-programming", "udash"], "url": "/2017/08/27/roman-numeral-tool-with-udash.html"}, {"date": "2017-07-30", "title": "Hacker News API Part 2", "tags": ["scala", "functional-programming", "hacker-news-api", "fetch", "typelevel", "47-degs"], "url": "/2017/07/30/hacker-news-api-2.html"}, {"date": "2017-07-26", "title": "Hacker News API Part 1", "tags": ["scala", "functional-programming", "hacker-news-api"], "url": "/2017/07/26/hacker-news-api-1.html"}, {"date": "2017-07-16", "title": "Future with timeout", "tags": ["scala", "functional-programming", "popular"], "url": "/2017/07/16/future-with-timeout.html"}, {"date": "2017-06-18", "title": "Future[Either] with Cats", "tags": ["scala", "monads", "eithert", "functional-programming", "cats", "monad-transformers", "popular"], "url": "/2017/06/18/future-either-with-cats.html"}, {"date": "2017-06-02", "title": "Future[Either] and monad transformers", "tags": ["scala", "monads", "functional-programming", "scalaz", "monad-transformers"], "url": "/2017/06/02/future-either-and-monad-transformers.html"}, {"date": "2016-02-21", "title": "Using Python in org-mode", "tags": ["blogging", "emacs", "python"], "url": "/2016/02/21/python-babel.html"}, {"date": "2015-04-22", "title": "Including equations in a blogger post", "tags": ["latex"], "url": "/2015/04/22/including-equations-in-blogger-post.html"}, {"date": "2015-04-17", "title": "Installing RPostgreSQL for R on Max OS Yosemite", "tags": ["mac", "r"], "url": "/2015/04/17/installing-rpostgresql-for-r-on-max-os.html"}, {"date": "2014-06-29", "title": "Easy find", "tags": ["command-line"], "url": "/2014/06/29/easy-find.html"}, {"date": "2014-05-26", "title": "Sending notifications from Emacs (Mac OS X)", "tags": ["emacs", "command-line", "mac"], "url": "/2014/05/26/sending-notifications-from-emacs.html"}, {"date": "2014-04-01", "title": "Watch", "tags": ["command-line"], "url": "/2014/04/01/watch.html"}, {"date": "2014-03-12", "title": "Checkout out your DB tables", "tags": ["mysql"], "url": "/2014/03/12/checkout-out-your-db-tables.html"}, {"date": "2013-02-06", "title": "Configuring emacs to send iCloud mail on Mac OS X", "tags": ["email", "emacs", "emacs-lisp"], "url": "/2013/02/06/configuring-emacs-to-send-icloud-mail.html"}, {"date": "2012-04-29", "title": "find grep on Mac OS X", "tags": ["find", "command-line", "mac"], "url": "/2012/04/29/find-grep-on-mac-os-x.html"}, {"date": "2012-03-22", "title": "Starting a program to run in the background from a DOS prompt", "tags": ["command-line"], "url": "/2012/03/22/starting-program-to-run-in-background.html"}, {"date": "2011-12-26", "title": "Making a emacs lisp expression expand itself to XML", "tags": ["emacs-lisp"], "url": "/2011/12/26/making-emacs-lisp-expression-expand.html"}, {"date": "2011-07-30", "title": "eredis update", "tags": ["emacs", "redis", "eredis", "emacs-lisp"], "url": "/2011/07/30/eredis-update.html"}, {"date": "2011-07-25", "title": "eredis: a Redis client in emacs lisp", "tags": ["emacs", "redis"], "url": "/2011/07/25/eredis-redis-client-in-emacs-lisp.html"}, {"date": "2011-06-14", "title": "Emacs progress indication", "tags": ["emacs", "emacs-lisp"], "url": "/2011/06/14/emacs-progress-indication.html"}, {"date": "2011-06-05", "title": "More on duplicate file handling in emacs dired", "tags": ["emacs", "dired"], "url": "/2011/06/05/more-on-duplicate-file-handling-in.html"}, {"date": "2011-06-01", "title": "Finding duplicate files in a dired buffer", "tags": ["emacs", "dired", "emacs-lisp"], "url": "/2011/06/01/finding-duplicate-files-in-dired-buffer.html"}, {"date": "2011-04-26", "title": "Programmer tips for Mac OSX", "tags": ["mac", "command-line", "emacs"], "url": "/2011/04/26/programmer-tips-for-mac-osx.html"}, {"date": "2011-04-26", "title": "MovieRatings", "tags": ["clojure"], "url": "/2011/04/26/movieratings.html"}, {"date": "2011-04-25", "title": "Talking to mysql from Python on Mac OS X 10.6", "tags": ["mysql", "python"], "url": "/2011/04/25/talking-to-mysql-from-python-on-mac-os.html"}, {"date": "2011-01-15", "title": "Grabbing Rotten Tomatoes movie ratings with Clojure", "tags": ["clojure"], "url": "/2011/01/15/grabbing-rotten-tomatoes-movie-ratings.html"}, {"date": "2011-01-11", "title": "View Data from the Clojure REPL", "tags": ["clojure"], "url": "/2011/01/11/view-data-from-clojure-repl.html"}, {"date": "2010-12-15", "title": "F# vs C#", "tags": ["game-dev", "clojure", "common-lisp", "f#"], "url": "/2010/12/15/f-vs-c.html"}, {"date": "2010-11-02", "title": "Just browsing", "tags": ["emacs"], "url": "/2010/11/02/just-browsing.html"}, {"date": "2010-10-19", "title": "rgrep on windows 7 for emacs", "tags": ["emacs", "windows"], "url": "/2010/10/19/rgrep-on-windows-7-for-emacs.html"}, {"date": "2010-07-30", "title": "Couple of mysql tips", "tags": ["mysql"], "url": "/2010/07/30/couple-of-mysql-tips.html"}, {"date": "2010-06-08", "title": "Adjusting server logging level at runtime", "tags": ["log4j", "backend-dev"], "url": "/2010/06/08/adjusting-server-logging-level-at.html"}, {"date": "2010-05-16", "title": "Growling Mac", "tags": ["emacs", "growl", "mac"], "url": "/2010/05/16/growling-mac.html"}, {"date": "2010-04-17", "title": "Using tar and gzip", "tags": ["tar", "gzip", "linux", "bash"], "url": "/2010/04/17/using-tar-and-gzip.html"}, {"date": "2010-01-23", "title": "Nice Code", "tags": ["ipin", "transmission"], "url": "/2010/01/23/nice-code.html"}, {"date": "2010-01-01", "title": "Using screen", "tags": ["screen", "linux"], "url": "/2010/01/01/using-screen.html"}, {"date": "2010-01-01", "title": "Securing an ssh server with fail2ban", "tags": ["ubuntu", "linux", "ssh", "fail2ban"], "url": "/2010/01/01/securing-ssh-server-with-fail2ban.html"}, {"date": "2009-10-12", "title": "Transparent emacs on windows", "tags": ["emacs", "windows", "win32"], "url": "/2009/10/12/transparent-emacs-on-windows.html"}, {"date": "2009-10-09", "title": "MSDOS iterating filenames in a file", "tags": ["msdos", "command-line"], "url": "/2009/10/09/msdos-iterating-filenames-in-file.html"}, {"date": "2009-09-23", "title": "Windows command window title", "tags": ["msdos", "windows", "command-line", "win32"], "url": "/2009/09/23/windows-command-window-title.html"}, {"date": "2009-09-21", "title": "English quote in Common Lisp", "tags": ["common-lisp"], "url": "/2009/09/21/english-quote-in-common-lisp.html"}, {"date": "2009-09-10", "title": "Making emacs growl", "tags": ["emacs", "growl"], "url": "/2009/09/10/making-emacs-growl.html"}, {"date": "2009-09-08", "title": "Directional window movement in emacs", "tags": ["emacs"], "url": "/2009/09/08/directional-window-movement-in-emacs.html"}, {"date": "2009-09-01", "title": "Handful of emacs tips", "tags": ["emacs"], "url": "/2009/09/01/handful-of-emacs-tips.html"}, {"date": "2009-08-26", "title": "Simple budget forecasts in emacs", "tags": ["personal-finance", "emacs", "emacs-lisp"], "url": "/2009/08/26/simple-budget-forecasts-in-emacs.html"}, {"date": "2009-06-17", "title": "1337 on StackOverflow", "tags": ["geek", "stack-overflow"], "url": "/2009/06/17/1337-on-stackoverflow.html"}, {"date": "2009-05-27", "title": "Linux: Looking at files changed recently", "tags": ["linux", "cygwin"], "url": "/2009/05/27/linux-looking-at-files-changed-recently.html"}, {"date": "2009-05-14", "title": "Writing quick C++ programs in emacs without a makefile", "tags": ["emacs", "c++"], "url": "/2009/05/14/writing-quick-c-programs-in-emacs.html"}, {"date": "2009-05-14", "title": "Linking MingW32 with psapi", "tags": ["mingw32"], "url": "/2009/05/14/linking-mingw32-with-psapi.html"}, {"date": "2009-05-12", "title": "Converting flac to mp3", "tags": ["mp3", "flac"], "url": "/2009/05/12/converting-flac-to-mp3.html"}, {"date": "2009-05-08", "title": "emacs: Renaming multiple files at once with a regular expression", "tags": ["emacs"], "url": "/2009/05/08/emacs-renaming-multiple-files-at-once.html"}, {"date": "2009-05-07", "title": "emacs: Searching programming API''s with webjump", "tags": ["emacs"], "url": "/2009/05/07/emacs-searching-programming-apis-with.html"}, {"date": "2009-04-15", "title": "Running an elisp function on each marked file in a dired buffer", "tags": ["emacs", "dired", "emacs-lisp"], "url": "/2009/04/15/running-elisp-function-on-each-marked.html"}, {"date": "2009-04-02", "title": "Securely copying files to another machine", "tags": ["cygwin", "secure-file-transfer", "scp"], "url": "/2009/04/02/securely-copying-files-to-another.html"}, {"date": "2009-03-18", "title": "Vancouver game companies", "tags": ["vancouver", "gamedev"], "url": "/2009/03/18/vancouver-game-companies.html"}, {"date": "2009-03-09", "title": "Using tags in emacs on windows", "tags": ["emacs", "tags", "win32", "etags", "emacs", "cygwin"], "url": "/2009/03/09/using-tags-in-emacs-on-windows.html"}, {"date": "2009-02-20", "title": "Sending mail with emacs in Windows", "tags": ["emacs", "smtp", "windows", "win32"], "url": "/2009/02/20/sending-mail-with-emacs-in-windows.html"}, {"date": "2009-02-16", "title": "Who uses the A* code", "tags": ["c++", "gamedev", "a-star-algorithm"], "url": "/2009/02/16/who-uses-a-code.html"}, {"date": "2009-02-16", "title": "A* algorithm bug fixes", "tags": ["c++", "astar-algorithm", "game-programming", "gamedev", "bugs"], "url": "/2009/02/16/algorithm-bug-fixes.html"}, {"date": "2009-02-13", "title": "Setting up lispworks personal", "tags": ["emacs", "lispworks", "slime", "win32"], "url": "/2009/02/13/setting-up-lispworks-personal.html"}, {"date": "2009-02-13", "title": "Searching Reddit, Flickr, and Google from emacs = Rad", "tags": ["emacs", "web-jump"], "url": "/2009/02/13/search-reddit-flickr-and-google-from.html"}, {"date": "2009-02-07", "title": "Sending email via gmail in emacs", "tags": ["emacs", "smtp"], "url": "/2009/02/07/sending-email-via-gmail-in-emacs.html"}, {"date": "2009-02-07", "title": "Fun with RSS", "tags": ["rss", "emacs", "xml", "parsing", "bbc-news", "emacs-lisp"], "url": "/2009/02/07/fun-with-rss.html"}, {"date": "2009-01-23", "title": "Simple perforce checkout in emacs using elisp", "tags": ["emacs", "emacs-lisp", "perforce", "p4"], "url": "/2009/01/23/simple-perforce-checkout-in-emacs-using.html"}, {"date": "2009-01-12", "title": "Finding writable files in a directory in a windows command line", "tags": ["msdos", "win32", "command-line", "popular"], "url": "/2009/01/12/finding-writable-files-in-directory-in.html"}, {"date": "2009-01-08", "title": "Who changed the line your working on last?", "tags": ["emacs", "p4", "perforce", "emacs-lisp"], "url": "/2009/01/08/who-changed-line-your-working-on-last.html"}, {"date": "2008-11-21", "title": "How to copy an SVN repository from sourceforge to google code", "tags": ["svn", "google-code", "sourceforge", "source-control"], "url": "/2008/11/21/how-to-copy-svn-repository-from.html"}, {"date": "2008-11-08", "title": "Grabbing info from web pages", "tags": ["wget"], "url": "/2008/11/08/grabbing-info-from-web-pages.html"}, {"date": "2008-05-27", "title": "Using find and printf", "tags": ["find"], "url": "/2008/05/27/using-find-and-printf.html"}, {"date": "2008-05-13", "title": "Batch file tip ... %~dp0", "tags": ["msdos", "win32", "command-line", "batch-files"], "url": "/2008/05/13/batch-file-tip-dp0.html"}, {"date": "2008-05-01", "title": "Copying characters from the line above in emacs", "tags": ["emacs", "emacs-lisp"], "url": "/2008/05/01/copying-characters-from-line-above-in.html"}, {"date": "2008-02-29", "title": "Is it a leap year", "tags": ["emacs", "emacs-lisp"], "url": "/2008/02/29/is-it-leap-year.html"}, {"date": "2008-01-29", "title": "emacs - a simple search and replace function", "tags": ["emacs"], "url": "/2008/01/29/emacs-simple-search-and-replace.html"}, {"date": "2007-12-08", "title": "emacs: how-many", "tags": ["emacs"], "url": "/2007/12/08/emacs-how-many.html"}, {"date": "2007-12-07", "title": "C: Passing on variadic function arguments to another function", "tags": ["c", "c++"], "url": "/2007/12/07/c-passing-on-variadic-function.html"}, {"date": "2007-10-24", "title": "Ubuntu 7.10", "tags": ["ubuntu"], "url": "/2007/10/24/ubuntu-710.html"}, {"date": "2007-10-24", "title": "C and C++ function pointers", "tags": ["c", "c++"], "url": "/2007/10/24/c-and-c-function-pointers.html"}, {"date": "2007-10-09", "title": "Avoiding Ten Common Game AI Mistakes", "tags": ["game-development", "ai"], "url": "/2007/10/09/avoiding-ten-common-game-ai-mistakes.html"}, {"date": "2007-09-27", "title": "11 Visual Studio tricks in Emacs", "tags": ["emacs", "visual-studio"], "url": "/2007/09/27/11-visual-studio-tricks-in-emacs.html"}, {"date": "2007-09-22", "title": "Word numbers programming puzzle", "tags": ["lisp", "common-lisp"], "url": "/2007/09/22/word-numbers-programming-puzzle.html"}, {"date": "2007-09-12", "title": "Commenting out a block of C++ in emacs", "tags": ["emacs", "c++"], "url": "/2007/09/12/commenting-out-block-of-c-in-emacs.html"}, {"date": "2007-09-11", "title": "Adding C++ class names to a function name", "tags": ["c", "c++", "elisp"], "url": "/2007/09/11/adding-c-class-names-to-function-name.html"}, {"date": "2007-09-07", "title": "Fixing up windows pathnames to use in cygwin", "tags": ["cygwin", "win32"], "url": "/2007/09/07/fixing-up-windows-pathnames-to-use-in.html"}];
+let currentBuffer = 'init';
+let selectedIndex = 0;
+let filteredPosts = [...POSTS];
+let currentMode = 'NORMAL';
+
+// Group posts by Year
+const postsByYear = {};
+POSTS.forEach(p => {
+  const y = p.date.substring(0, 4);
+  if(!postsByYear[y]) postsByYear[y] = [];
+  postsByYear[y].push(p);
+});
+
+// Initialize Neo-tree sidebar
+function initTree() {
+  const container = document.getElementById('treeContent');
+  let html = `
+    <div class="tree-item open" onclick="toggleTreeSub(this)">
+      <span class="arrow">▶</span>
+      <span>📁 blog_root/</span>
+    </div>
+    <div class="tree-sub show">
+  `;
+
+  // Years folders
+  const years = Object.keys(postsByYear).sort((a,b) => b - a);
+  years.forEach((yr, idx) => {
+    const count = postsByYear[yr].length;
+    html += `
+      <div class="tree-item ${idx === 0 ? 'open' : ''}" onclick="toggleTreeSub(this)">
+        <span class="arrow">▶</span>
+        <span>📁 ${yr}/</span>
+        <span class="badge-count">${count}</span>
+      </div>
+      <div class="tree-sub ${idx === 0 ? 'show' : ''}">
+    `;
+    postsByYear[yr].slice(0, 8).forEach(p => {
+      const safeTitle = p.title.replace(/"/g, '&quot;');
+      html += `
+        <div class="tree-item" onclick="openPost('${p.url}')" title="${safeTitle}">
+          <span style="color:var(--blue)"></span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title}</span>
+        </div>
+      `;
+    });
+    if (postsByYear[yr].length > 8) {
+      html += `
+        <div class="tree-item" onclick="filterByYear('${yr}')" style="color:var(--comment);font-style:italic">
+          <span>... and ${postsByYear[yr].length - 8} more</span>
+        </div>
+      `;
+    }
+    html += `</div>`;
+  });
+
+  // Tags folder
+  html += `
+    <div class="tree-item" onclick="toggleTreeSub(this)">
+      <span class="arrow">▶</span>
+      <span>🏷️ tags/</span>
+    </div>
+    <div class="tree-sub">
+  `;
+  const tagCounts = {};
+  POSTS.forEach(p => p.tags.forEach(t => tagCounts[t] = (tagCounts[t]||0) + 1));
+  const topTags = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+  topTags.forEach(([tag, cnt]) => {
+    html += `
+      <div class="tree-item" onclick="filterByTag('${tag}')">
+        <span style="color:var(--purple)">#</span>
+        <span>${tag}</span>
+        <span class="badge-count">${cnt}</span>
+      </div>
+    `;
+  });
+  html += `</div></div>`;
+  container.innerHTML = html;
+}
+
+function toggleTreeSub(el) {
+  el.classList.toggle('open');
+  const sub = el.nextElementSibling;
+  if (sub && sub.classList.contains('tree-sub')) {
+    sub.classList.toggle('show');
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// Render Buffer Content
+function renderBuffer(name) {
+  const body = document.getElementById('bufferBody');
+  const statusFile = document.getElementById('statusFile');
+  
+  if (name === 'init') {
+    statusFile.textContent = 'init.lua';
+    let postsRows = filteredPosts.slice(0, 20).map((p, idx) => `
+      <div class="post-row ${idx === selectedIndex ? 'selected' : ''}" data-idx="${idx}" onclick="openPost('${p.url}')">
+        <span class="post-date">${p.date}</span>
+        <a href="${p.url}" class="post-title-link">${p.title}</a>
+        <div class="post-tags">
+          ${p.tags.slice(0,3).map(t => `<span class="post-tag" onclick="event.stopPropagation();filterByTag('${t}')">#${t}</span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    body.innerHTML = `
+      <div class="hero-block">
+        <div class="hero-profile-float">
+          <img src="/images/justinblog.webp" alt="Justin Heyes-Jones">
+          <div class="caption">justin.webp</div>
+        </div>
+        <div class="hero-title">
+          <span>Functional[Justin]</span>
+          <span class="cursor"></span>
+        </div>
+        <div>
+          <span class="syn-cmt">-- Principal Software Engineer & Creator of Functional[Justin]</span>
+        </div>
+        <div style="margin-top: 8px;">
+          <span class="syn-kw">local</span> <span class="syn-type">Justin</span> = {<br>
+          &nbsp;&nbsp;<span class="syn-prop">role</span> = <span class="syn-str">"Principal Software Engineer"</span>,<br>
+          &nbsp;&nbsp;<span class="syn-prop">focus</span> = { <span class="syn-str">"Streaming Data at Scale"</span>, <span class="syn-str">"Generative AI"</span>, <span class="syn-str">"Functional Programming"</span> },<br>
+          &nbsp;&nbsp;<span class="syn-prop">editors</span> = { <span class="syn-str">"Neovim"</span>, <span class="syn-str">"Emacs / Org-mode"</span> },<br>
+          &nbsp;&nbsp;<span class="syn-prop">links</span> = {
+            github = <span class="syn-str">"<a href="https://github.com/justinhj" target="_blank" style="color:var(--cyan)">@justinhj</a>"</span>,
+            twitter = <span class="syn-str">"<a href="https://x.com/justinhj" target="_blank" style="color:var(--cyan)">@justinhj</a>"</span>,
+            email = <span class="syn-str">"<a href="mailto:justinhj+blog@gmail.com" style="color:var(--cyan)">justinhj+blog@gmail.com</a>"</span>
+          }<br>
+          }
+        </div>
+        <div class="quick-actions">
+          <div class="key-chip" onclick="openTelescope()"><kbd>/</kbd> Telescope Find Post</div>
+          <div class="key-chip" onclick="filterPopular()"><kbd>&lt;leader&gt;fp</kbd> Popular Posts</div>
+          <div class="key-chip" onclick="toggleSidebar()"><kbd>&lt;C-b&gt;</kbd> Toggle Neo-Tree</div>
+          <div class="key-chip" onclick="showHelp()"><kbd>:help</kbd> Commands</div>
+        </div>
+      </div>
+
+      <div class="posts-section-hdr">
+        <h3><span>󰈙</span> RECENT ENTRIES</h3>
+        <span class="filter-info" id="filterInfo">Showing ${filteredPosts.length} posts (press j/k to navigate, Enter to read)</span>
+      </div>
+
+      <div id="postsList">
+        ${postsRows}
+      </div>
+    `;
+  } else if (name === 'posts') {
+    statusFile.textContent = 'all_posts.lua';
+    let allRows = filteredPosts.map((p, idx) => `
+      <div class="post-row ${idx === selectedIndex ? 'selected' : ''}" data-idx="${idx}" onclick="openPost('${p.url}')">
+        <span class="post-date">${p.date}</span>
+        <a href="${p.url}" class="post-title-link">${p.title}</a>
+        <div class="post-tags">
+          ${p.tags.map(t => `<span class="post-tag" onclick="event.stopPropagation();filterByTag('${t}')">#${t}</span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+    body.innerHTML = `
+      <div class="posts-section-hdr">
+        <h3><span>󰈙</span> ARCHIVE (ALL 104 POSTS)</h3>
+        <span class="filter-info">${filteredPosts.length} posts matching filter</span>
+      </div>
+      <div>${allRows}</div>
+    `;
+  } else if (name === 'popular') {
+    statusFile.textContent = 'popular.scala';
+    const popPosts = POSTS.filter(p => p.tags.includes('popular'));
+    let popRows = popPosts.map((p, idx) => `
+      <div class="post-row" onclick="openPost('${p.url}')">
+        <span class="post-date">${p.date}</span>
+        <a href="${p.url}" class="post-title-link">${p.title}</a>
+        <div class="post-tags">
+          ${p.tags.map(t => `<span class="post-tag">#${t}</span>`).join('')}
+        </div>
+      </div>
+    `).join('');
+    body.innerHTML = `
+      <div style="margin-bottom: 20px;">
+        <span class="syn-cmt">// Curated popular articles on Functional Programming, Scala, Emacs & Algorithms</span><br>
+        <span class="syn-kw">package</span> functional.justin<br><br>
+        <span class="syn-kw">object</span> <span class="syn-type">PopularReads</span> {
+      </div>
+      <div>${popRows}</div>
+      <div style="margin-top: 20px;"><span class="syn-bracket">}</span></div>
+    `;
+  } else if (name === 'about') {
+    statusFile.textContent = 'justin.md';
+    body.innerHTML = `
+      <div style="max-width: 720px; line-height: 1.8;">
+        <h1 style="color:var(--blue); font-size: 24px; margin-bottom: 16px;"># About Justin Heyes-Jones</h1>
+        <p style="margin-bottom: 14px;">I am a Principal Software Engineer specializing in streaming data at scale, Generative AI applications, and functional programming methodologies.</p>
+        <p style="margin-bottom: 14px;">This blog is where I publish deep-dive explorations into functional programming (Scala, Cats, ZIO), text editing craftsmanship (Neovim, Emacs, Org-mode), systems programming, and algorithmic optimization.</p>
+        <h2 style="color:var(--yellow); font-size: 18px; margin: 24px 0 12px;">## Links & Presence</h2>
+        <ul style="list-style-type: square; padding-left: 20px; color: var(--fg-dark);">
+          <li><strong>GitHub:</strong> <a href="https://github.com/justinhj" target="_blank" style="color:var(--cyan)">github.com/justinhj</a></li>
+          <li><strong>YouTube Channel:</strong> <a href="https://www.youtube.com/c/JustinHeyesJones" target="_blank" style="color:var(--cyan)">Functional[Justin] on YouTube</a></li>
+          <li><strong>X / Twitter:</strong> <a href="https://x.com/justinhj" target="_blank" style="color:var(--cyan)">@justinhj</a></li>
+          <li><strong>Speaking:</strong> Keynotes & conference sessions on high-throughput data and FP.</li>
+        </ul>
+      </div>
+    `;
+  }
+
+  updateGutter();
+  updateCursorPos();
+}
+
+function updateGutter() {
+  const gutter = document.getElementById('gutter');
+  const count = 55;
+  let html = '';
+  for (let i = 1; i <= count; i++) {
+    const rel = Math.abs(i - (selectedIndex + 1));
+    const isCur = i === (selectedIndex + 1);
+    html += `<div class="${isCur ? 'current' : ''}">${isCur ? i : (rel === 0 ? i : rel)}</div>`;
+  }
+  gutter.innerHTML = html;
+}
+
+function updateCursorPos() {
+  document.getElementById('cursorPos').textContent = `Ln ${selectedIndex + 1}, Col 1`;
+}
+
+function switchBuffer(name) {
+  currentBuffer = name;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.buf === name);
+  });
+  selectedIndex = 0;
+  renderBuffer(name);
+}
+
+function openPost(url) {
+  window.location.href = url;
+}
+
+function filterByTag(tag) {
+  filteredPosts = POSTS.filter(p => p.tags.includes(tag));
+  selectedIndex = 0;
+  renderBuffer(currentBuffer);
+  setCommandMessage(`Filtered by tag: #${tag} (${filteredPosts.length} posts)`);
+}
+
+function filterByYear(yr) {
+  filteredPosts = POSTS.filter(p => p.date.startsWith(yr));
+  selectedIndex = 0;
+  renderBuffer(currentBuffer);
+  setCommandMessage(`Filtered by year: ${yr} (${filteredPosts.length} posts)`);
+}
+
+function filterPopular() {
+  switchBuffer('popular');
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  const pill = document.getElementById('modePill');
+  pill.textContent = mode;
+  if (mode === 'NORMAL') pill.style.background = 'var(--status-normal)';
+  else if (mode === 'INSERT') pill.style.background = 'var(--status-insert)';
+  else if (mode === 'VISUAL') pill.style.background = 'var(--status-visual)';
+  else if (mode === 'COMMAND') pill.style.background = 'var(--status-command)';
+}
+
+function setCommandMessage(msg) {
+  document.getElementById('cmdInput').value = msg;
+}
+
+// Telescope Logic
+let telescopeIndex = 0;
+let telescopeResults = [...POSTS];
+
+function openTelescope() {
+  const modal = document.getElementById('telescopeModal');
+  modal.classList.add('open');
+  const input = document.getElementById('telescopeInput');
+  input.value = '';
+  input.focus();
+  telescopeIndex = 0;
+  updateTelescopeResults('');
+  setMode('COMMAND');
+}
+
+function closeTelescope() {
+  document.getElementById('telescopeModal').classList.remove('open');
+  setMode('NORMAL');
+}
+
+function updateTelescopeResults(query) {
+  const q = query.toLowerCase().trim();
+  telescopeResults = POSTS.filter(p => {
+    return p.title.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q));
+  });
+  if (telescopeIndex >= telescopeResults.length) telescopeIndex = 0;
+  renderTelescope();
+}
+
+function renderTelescope() {
+  const listEl = document.getElementById('telescopeList');
+  const prevEl = document.getElementById('telescopePreview');
+  
+  if (telescopeResults.length === 0) {
+    listEl.innerHTML = `<div style="padding:20px;color:var(--comment)">No matching posts found.</div>`;
+    prevEl.innerHTML = ``;
+    return;
+  }
+
+  listEl.innerHTML = telescopeResults.map((p, idx) => `
+    <div class="telescope-item ${idx === telescopeIndex ? 'active' : ''}" onclick="selectTelescope(${idx})">
+      <div class="item-title">${p.title}</div>
+      <div class="item-meta">
+        <span>📅 ${p.date}</span>
+        <span>🏷️ ${p.tags.slice(0,3).join(', ')}</span>
+      </div>
+    </div>
+  `).join('');
+
+  const active = telescopeResults[telescopeIndex];
+  if (active) {
+    prevEl.innerHTML = `
+      <div class="preview-title">${active.title}</div>
+      <div class="preview-meta">Published: ${active.date}</div>
+      <p style="color:var(--fg-dark);font-size:13px;line-height:1.6;">
+        Deep dive into <strong>${active.title}</strong>. Written for engineering teams working in modern software systems.
+      </p>
+      <div class="preview-tags">
+        ${active.tags.map(t => `<span class="post-tag">#${t}</span>`).join('')}
+      </div>
+      <a href="${active.url}" class="preview-btn">Open Post in Buffer ↵</a>
+    `;
+  }
+}
+
+function selectTelescope(idx) {
+  telescopeIndex = idx;
+  renderTelescope();
+}
+
+// Keyboard Navigation
+document.addEventListener('keydown', e => {
+  const tModal = document.getElementById('telescopeModal');
+  const isTelescopeOpen = tModal.classList.contains('open');
+
+  if (isTelescopeOpen) {
+    if (e.key === 'Escape') {
+      closeTelescope();
+    } else if (e.key === 'ArrowDown' || (e.ctrlKey && e.key === 'n')) {
+      e.preventDefault();
+      telescopeIndex = Math.min(telescopeIndex + 1, telescopeResults.length - 1);
+      renderTelescope();
+    } else if (e.key === 'ArrowUp' || (e.ctrlKey && e.key === 'p')) {
+      e.preventDefault();
+      telescopeIndex = Math.max(telescopeIndex - 1, 0);
+      renderTelescope();
+    } else if (e.key === 'Enter') {
+      if (telescopeResults[telescopeIndex]) {
+        openPost(telescopeResults[telescopeIndex].url);
+      }
+    }
+    return;
+  }
+
+  if (document.activeElement === document.getElementById('cmdInput')) {
+    if (e.key === 'Escape') {
+      document.getElementById('cmdInput').blur();
+      setMode('NORMAL');
+    } else if (e.key === 'Enter') {
+      handleCommand(document.getElementById('cmdInput').value);
+      document.getElementById('cmdInput').blur();
+      setMode('NORMAL');
+    }
+    return;
+  }
+
+  // Normal mode keys
+  if (e.key === '/') {
+    e.preventDefault();
+    openTelescope();
+  } else if (e.key === ':') {
+    e.preventDefault();
+    setMode('COMMAND');
+    const ci = document.getElementById('cmdInput');
+    ci.value = ':';
+    ci.focus();
+  } else if (e.key === ' ') {
+    e.preventDefault();
+    const wk = document.getElementById('whichKey');
+    wk.classList.toggle('open');
+    setTimeout(() => wk.classList.remove('open'), 3000);
+  } else if (e.key === 'j' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    selectedIndex = Math.min(selectedIndex + 1, Math.min(20, filteredPosts.length - 1));
+    renderBuffer(currentBuffer);
+  } else if (e.key === 'k' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    selectedIndex = Math.max(selectedIndex - 1, 0);
+    renderBuffer(currentBuffer);
+  } else if (e.key === 'Enter') {
+    if (filteredPosts[selectedIndex]) {
+      openPost(filteredPosts[selectedIndex].url);
+    }
+  } else if (e.key === '1') switchBuffer('init');
+  else if (e.key === '2') switchBuffer('posts');
+  else if (e.key === '3') switchBuffer('popular');
+  else if (e.key === '4') switchBuffer('about');
+  else if (e.ctrlKey && e.key === 'b') {
+    e.preventDefault();
+    toggleSidebar();
+  }
+});
+
+document.getElementById('telescopeInput').addEventListener('input', e => {
+  updateTelescopeResults(e.target.value);
+});
+
+function handleCommand(cmd) {
+  cmd = cmd.trim();
+  if (cmd.startsWith(':')) cmd = cmd.substring(1);
+  const parts = cmd.split(' ');
+  const c = parts[0].toLowerCase();
+  
+  if (c === 'q' || c === 'quit') {
+    alert("E37: No write since last change (use :q! to override). Just kidding! You're in Neovim mode.");
+  } else if (c === 'help') {
+    alert("Available commands:\n:w (save buffer simulation)\n:b 1..4 (switch buffer)\n:popular (view popular posts)\n:all (view all posts)\n:reset (clear filters)\n/ (Telescope search)");
+  } else if (c === 'popular') {
+    switchBuffer('popular');
+  } else if (c === 'all') {
+    switchBuffer('posts');
+  } else if (c === 'reset') {
+    filteredPosts = [...POSTS];
+    renderBuffer(currentBuffer);
+  } else if (c === 'b' && parts[1]) {
+    const idx = parseInt(parts[1]);
+    const map = ['init','posts','popular','about'];
+    if (map[idx-1]) switchBuffer(map[idx-1]);
+  } else {
+    setCommandMessage('Not an editor command: ' + cmd);
+  }
+}
+
+// Initialize
+initTree();
+renderBuffer('init');
+</script>
+</body>
+</html>

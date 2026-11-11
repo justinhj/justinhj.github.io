@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Functional[Justin] — Design Concepts</title>
+<style>
+  @font-face{font-family:'JetBrains Mono';src:url('/fonts/jetbrains-mono-v24-latin-regular.woff2') format('woff2');font-weight:400}
+  @font-face{font-family:'Sora';src:url('/fonts/sora-v17-latin-regular.woff2') format('woff2');font-weight:400}
+  @font-face{font-family:'Sora';src:url('/fonts/sora-v17-latin-700.woff2') format('woff2');font-weight:700}
+  *{box-sizing:border-box;margin:0}
+  body{background:#0b0b10;color:#e8e6f0;font-family:Sora,sans-serif;min-height:100vh;padding:clamp(24px,6vw,80px)}
+  header{max-width:1200px;margin:0 auto 56px}
+  .k{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#8a87a0}
+  h1{font-size:clamp(40px,7vw,88px);line-height:.95;letter-spacing:-.04em;margin:16px 0}
+  h1 b{color:#7aa2f7;font-weight:700}
+  p.lead{color:#a8a5bb;max-width:60ch;line-height:1.6}
+  .grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
+  a.card{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:300px;padding:28px;border-radius:20px;text-decoration:none;color:inherit;overflow:hidden;border:1px solid #ffffff14;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+  a.card:hover{transform:translateY(-6px) rotate(-.4deg);box-shadow:0 30px 60px -20px #000}
+  .n{font-family:'JetBrains Mono',monospace;font-size:13px;opacity:.7}
+  .t{font-size:30px;font-weight:700;letter-spacing:-.03em;margin:10px 0 8px}
+  .d{font-size:14px;line-height:1.55;opacity:.8}
+  .c1{background:#1a1b26;color:#c0caf5;font-family:'JetBrains Mono',monospace}
+  .c1 .t{color:#7aa2f7}.c1::after{content:"-- NORMAL --";position:absolute;right:20px;top:24px;font-size:11px;background:#7aa2f7;color:#1a1b26;padding:3px 8px;border-radius:4px}
+  .c2{background:#f4efe6;color:#111}.c2 .t{font-family:Georgia,serif;font-weight:400;font-size:40px;font-style:italic}
+  .c2::after{content:"[ ]";position:absolute;right:16px;bottom:-30px;font-size:180px;color:#ff3b1f;font-family:Georgia,serif;line-height:1}
+  .c3{background:radial-gradient(circle at 80% 20%,#8b5cf6 0,transparent 45%),radial-gradient(circle at 10% 90%,#22d3ee55 0,transparent 50%),#07061a;color:#e0e7ff}
+  .c4{background:repeating-linear-gradient(90deg,transparent 0 46px,#0000000d 46px 47px),#e9e9e4;color:#111}
+  .c4 .t{text-transform:uppercase;letter-spacing:-.02em}.c4::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;background:repeating-linear-gradient(-45deg,#ff5f00 0 10px,#111 10px 20px)}
+  .c5{background:#faf7f0;color:#1d1b16}.c5 .t{font-family:Georgia,serif;font-weight:400}.c5 .t::before{content:"* ";color:#0f766e}
+  .c6{background:linear-gradient(135deg,#ffb86b,#ff5ea0 45%,#6a5cff);color:#fff}
+  footer{max-width:1200px;margin:56px auto 0;color:#6d6a80;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">Design concepts · Nov 2026</div>
+  <h1>Functional<b>[</b>Justin<b>]</b><br>reimagined ×5</h1>
+  <p class="lead">Five completely different directions for the blog. Four homepages and one article page. Each one is a working prototype built on real post data, so click around, use the keyboard, and hover over things.</p>
+</header>
+<main class="grid">
+  <a class="card c1" href="01-neovim.html"><span class="n">01 / homepage</span><div><div class="t">:Neovim //buffer</div><div class="d">The homepage is a Neovim session. Use j/k to move, / to open a Telescope finder, : for commands, and space for which-key.</div></div></a>
+  <a class="card c2" href="02-type-signature.html"><span class="n">02 / homepage</span><div><div class="t">Type Signature</div><div class="d">A Swiss editorial programming journal. The brackets in the name become the frame of the page, and each post is written as a Scala signature.</div></div></a>
+  <a class="card c3" href="03-category.html"><span class="n">03 / homepage</span><div><div class="t">The Category</div><div class="d">A glowing graph in deep space. Tags are objects and posts are morphisms. Pick two tags to compose them and see the posts they share.</div></div></a>
+  <a class="card c4" href="04-stream.html"><span class="n">04 / homepage</span><div><div class="t">The Stream</div><div class="d">The archive as a Kafka topic, styled like an industrial control room. Partitions, offsets and consumer-group filters.</div></div></a>
+  <a class="card c5" href="05-literate.html"><span class="n">05 / article page</span><div><div class="t">Literate</div><div class="d">A post page that mixes Tufte, Knuth and Org-mode. Sidenotes, foldable star headings and src blocks, with light and dark themes.</div></div></a>
+</main>
+<footer>Prototypes only. Nothing on the live site has changed.</footer>
+</body>
+</html>

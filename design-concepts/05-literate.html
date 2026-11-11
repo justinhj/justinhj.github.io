@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Refreshing your Neovim config for 0.12.0 — Functional[Justin]</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root[data-theme="light"] {
+  --bg: #faf7f0;
+  --bg-subtle: #f2eee3;
+  --ink: #1c1917;
+  --ink-secondary: #57534e;
+  --ink-mute: #8c827a;
+  --border: #e7e0d3;
+  --accent: #0f766e; /* Deep teal */
+  --accent-light: rgba(15, 118, 110, 0.1);
+  --code-bg: #22252a;
+  --code-fg: #e2e8f0;
+  --org-star: #0f766e;
+  --sidenote-border: #0f766e;
+}
+
+:root[data-theme="dark"] {
+  --bg: #16161e;
+  --bg-subtle: #1f202e;
+  --ink: #e0e2ee;
+  --ink-secondary: #9aa5ce;
+  --ink-mute: #565f89;
+  --border: #292e42;
+  --accent: #7aa2f7; /* Tokyo blue */
+  --accent-light: rgba(122, 162, 247, 0.15);
+  --code-bg: #13141c;
+  --code-fg: #c0caf5;
+  --org-star: #bb9af7;
+  --sidenote-border: #7aa2f7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.65;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  overflow-x: hidden;
+}
+
+a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
+a:hover { border-bottom-style: solid; }
+
+.concept-badge {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 1000;
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(8px);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent);
+}
+
+/* Header */
+header.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 18px 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+.brand {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  border: none;
+}
+.brand img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.theme-toggle-btn {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Article Layout Grid */
+.article-grid {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 720px) 280px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 48px 32px 100px 32px;
+  gap: 40px;
+  position: relative;
+}
+
+/* Left Sidebar: Outline (TOC) & Lazy list evaluation */
+aside.left-outline {
+  position: sticky;
+  top: 90px;
+  height: calc(100vh - 120px);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+}
+.outline-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  letter-spacing: 0.1em;
+  margin-bottom: 14px;
+}
+.outline-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.outline-link {
+  color: var(--ink-secondary);
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  transition: all 0.15s;
+}
+.outline-link:hover, .outline-link.active {
+  color: var(--accent);
+  transform: translateX(4px);
+  font-weight: 600;
+}
+.outline-star {
+  color: var(--org-star);
+  font-size: 12px;
+}
+
+/* Lazy List Progress meter */
+.lazy-progress {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.lazy-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-bottom: 8px;
+}
+.lazy-stream-dots {
+  display: flex;
+  gap: 5px;
+}
+.lazy-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.lazy-dot.eval {
+  background: var(--accent);
+}
+
+/* Main Article Content */
+article.article-body {
+  min-width: 0;
+}
+
+.article-header {
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.article-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-mute);
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.meta-tag {
+  background: var(--accent-light);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+h1.article-title {
+  font-size: clamp(34px, 4vw, 44px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.article-dropcap::first-letter {
+  font-size: 3.4em;
+  float: left;
+  line-height: 0.8;
+  margin-right: 0.12em;
+  margin-top: 0.05em;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+p {
+  margin-bottom: 1.4em;
+}
+
+/* Org mode Foldable Headings */
+.org-heading {
+  margin: 2.2em 0 0.8em 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.org-heading:hover .org-fold-icon {
+  transform: rotate(90deg);
+}
+.org-stars {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--org-star);
+  font-size: 0.9em;
+  font-weight: 600;
+}
+.org-heading h2 {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.org-fold-icon {
+  font-size: 12px;
+  color: var(--ink-mute);
+  transition: transform 0.2s;
+}
+.org-section-content {
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+.org-section-content.collapsed {
+  display: none;
+}
+
+/* Org Src Blocks */
+.org-src-block {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 8px;
+  margin: 1.8em 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.org-src-hdr {
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+.org-src-lang {
+  color: var(--org-star);
+  font-weight: bold;
+}
+.copy-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.copy-btn:hover {
+  background: var(--accent);
+}
+.org-src-body {
+  padding: 14px 18px;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+pre {
+  margin: 0;
+  font-family: inherit;
+}
+
+/* Right Sidebar: Tufte Margin Sidenotes */
+aside.right-sidenotes {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+}
+.sidenote {
+  position: relative;
+  border-left: 2px solid var(--sidenote-border);
+  padding-left: 12px;
+  background: var(--bg-subtle);
+  padding: 10px 12px;
+  border-radius: 0 6px 6px 0;
+}
+.sidenote-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+/* Author box at bottom */
+.author-card {
+  margin-top: 60px;
+  padding: 28px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.author-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+}
+.author-info h4 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+.author-info p {
+  font-size: 15px;
+  margin-bottom: 0;
+  color: var(--ink-secondary);
+}
+
+@media (max-width: 1024px) {
+  .article-grid { grid-template-columns: minmax(0, 1fr); padding: 24px 20px; }
+  aside.left-outline, aside.right-sidenotes { display: none; }
+}
+</style>
+</head>
+<body>
+
+<a href="/design-concepts/index.html" class="concept-badge">← Concept 5 · Literate Reading Mode</a>
+
+<header class="site-header">
+  <a href="/design-concepts/index.html" class="brand">
+    <img src="/images/justinblog.webp" alt="Justin">
+    <span>Functional[Justin]</span>
+  </a>
+  <div class="header-actions">
+    <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn">◐ Dark Mode</button>
+  </div>
+</header>
+
+<div class="article-grid">
+  <!-- Left Outline -->
+  <aside class="left-outline">
+    <div class="outline-title">#+CONTENTS</div>
+    <nav class="outline-nav">
+      <a href="#intro" class="outline-link active"><span class="outline-star">*</span> Introduction</a>
+      <a href="#two-configs" class="outline-link"><span class="outline-star">*</span> Running Two Configs</a>
+      <a href="#replicating" class="outline-link"><span class="outline-star">*</span> Replicating The Config</a>
+      <a href="#author" class="outline-link"><span class="outline-star">*</span> Author Notes</a>
+    </nav>
+
+    <div class="lazy-progress">
+      <div class="lazy-label">LAZY STREAM PROGRESS</div>
+      <div class="lazy-stream-dots" id="streamDots">
+        <div class="lazy-dot eval"></div>
+        <div class="lazy-dot"></div>
+        <div class="lazy-dot"></div>
+        <div class="lazy-dot"></div>
+        <div class="lazy-dot"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Article -->
+  <article class="article-body">
+    <header class="article-header">
+      <div class="article-meta">
+        <time datetime="2026-04-06">APR 6, 2026</time>
+        <span>•</span>
+        <span>5 MIN READ</span>
+        <span>•</span>
+        <span class="meta-tag">#neovim</span>
+        <span class="meta-tag">#command-line</span>
+      </div>
+      <h1 class="article-title">Refreshing your Neovim config for 0.12.0</h1>
+    </header>
+
+    <!-- Section 1 -->
+    <div class="org-heading" onclick="toggleSection('sec-intro', this)" id="intro">
+      <span class="org-stars">*</span>
+      <h2>Introduction</h2>
+      <span class="org-fold-icon">▼</span>
+    </div>
+    <div class="org-section-content" id="sec-intro">
+      <p class="article-dropcap">
+        Neovim version 0.12.1 was just released and you can check the release news here at the official documentation. This is a massive release bringing a number of core capabilities that used to require external plugins directly into Neovim as first-class, built-in features.
+      </p>
+      <p>
+        I took this opportunity to do a full refresh of my config. This was required as over the last few years I had pulled in many plugins only to forget what they are for. My config had accumulated too many files, creating far too much surface area when trying to make changes or fix daily annoyances.
+      </p>
+      <p>
+        Rather than use an off-the-shelf config distribution, I had built it all by hand to meet my needs perfectly, but without careful maintenance it becomes an overgrown garden. In particular, my LSP configurations and key mappings were scattered in different places, accompanied by cruft I wasn't even using.
+      </p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="org-heading" onclick="toggleSection('sec-two-configs', this)" id="two-configs">
+      <span class="org-stars">*</span>
+      <h2>Running two configs on the same machine</h2>
+      <span class="org-fold-icon">▼</span>
+    </div>
+    <div class="org-section-content" id="sec-two-configs">
+      <p>
+        It is immensely easier to develop a new configuration if you keep your existing one readily available for reference, allowing you to run the new and the old side-by-side. The key to making this work seamlessly is the <code>NVIM_APPNAME</code> environment variable.
+      </p>
+      <p>
+        Normally Neovim expects the various configuration folders to reside in <code>~/.config/nvim</code>. By using <code>NVIM_APPNAME</code>, you can point to a secondary identity—I chose <code>nvim-next</code>. This lets you construct an entirely new config while leaving your daily driver completely untouched.
+      </p>
+
+      <div class="org-src-block">
+        <div class="org-src-hdr">
+          <span class="org-src-lang">#+BEGIN_SRC bash :tangle ~/.setup.sh</span>
+          <button class="copy-btn" onclick="copySrc(this)">COPY</button>
+        </div>
+        <div class="org-src-body">
+<pre>mkdir -p ~/.config/nvim-next
+mkdir -p ~/.local/share/nvim-next
+mkdir -p ~/.local/state/nvim-next
+mkdir -p ~/.cache/nvim-next</pre>
+        </div>
+      </div>
+
+      <p>
+        With folders in place, you can launch the isolated instance immediately:
+      </p>
+
+      <div class="org-src-block">
+        <div class="org-src-hdr">
+          <span class="org-src-lang">#+BEGIN_SRC bash</span>
+          <button class="copy-btn" onclick="copySrc(this)">COPY</button>
+        </div>
+        <div class="org-src-body">
+<pre>NVIM_APPNAME=nvim-next nvim</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="org-heading" onclick="toggleSection('sec-replicating', this)" id="replicating">
+      <span class="org-stars">*</span>
+      <h2>Replicating the config</h2>
+      <span class="org-fold-icon">▼</span>
+    </div>
+    <div class="org-section-content" id="sec-replicating">
+      <p>
+        I needed a structured method to migrate options without overlooking critical behaviors. I began with the essential editor settings in <code>init.lua</code>:
+      </p>
+
+      <div class="org-src-block">
+        <div class="org-src-hdr">
+          <span class="org-src-lang">#+BEGIN_SRC lua :file init.lua</span>
+          <button class="copy-btn" onclick="copySrc(this)">COPY</button>
+        </div>
+        <div class="org-src-body">
+<pre>vim.g.mapleader = ","
+vim.opt.shortmess:append("c")
+vim.opt.cmdheight = 2
+vim.opt.number = true
+vim.opt.relativenumber = true
+vim.opt.timeoutlen = 500
+vim.opt.ignorecase = true
+vim.opt.smartcase = true</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Author Bio Card -->
+    <div class="author-card" id="author">
+      <img src="/images/justinblog.webp" alt="Justin" class="author-img">
+      <div class="author-info">
+        <h4>Justin Heyes-Jones</h4>
+        <p>Principal Software Engineer. Focusing on high-throughput streaming systems, functional programming (Scala/Cats/ZIO), generative AI architectures, and text editor craftsmanship in Neovim and Emacs.</p>
+      </div>
+    </div>
+  </article>
+
+  <!-- Right Sidenotes -->
+  <aside class="right-sidenotes">
+    <div class="sidenote">
+      <div class="sidenote-num">[SIDENOTE 1]</div>
+      <p><strong>Neovim 0.12 Highlights:</strong> Native comment toggling, treesitter parser management, and upgraded LSP diagnostics client are now bundled in the core runtime.</p>
+    </div>
+    <div class="sidenote" style="margin-top: 140px;">
+      <div class="sidenote-num">[SIDENOTE 2]</div>
+      <p><strong>Org-Mode Tip:</strong> In Emacs Org-mode, sections can be exported directly with <code>C-c C-e</code> or batch exported via <code>org-publish</code> as outlined in Justin's publishing workflow.</p>
+    </div>
+    <div class="sidenote" style="margin-top: 80px;">
+      <div class="sidenote-num">[SIDENOTE 3]</div>
+      <p><strong>Shell Alias:</strong> Set <code>alias nnext='NVIM_APPNAME=nvim-next nvim'</code> in your zshrc to switch effortlessly during migration weeks.</p>
+    </div>
+  </aside>
+</div>
+
+<script>
+function toggleTheme() {
+  const root = document.documentElement;
+  const isDark = root.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+  root.setAttribute('data-theme', newTheme);
+  document.getElementById('themeBtn').textContent = isDark ? '◐ Dark Mode' : '☼ Light Mode';
+}
+
+function toggleSection(id, hdrEl) {
+  const sec = document.getElementById(id);
+  sec.classList.toggle('collapsed');
+  const icon = hdrEl.querySelector('.org-fold-icon');
+  icon.textContent = sec.classList.contains('collapsed') ? '▶' : '▼';
+}
+
+function copySrc(btn) {
+  const pre = btn.closest('.org-src-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.textContent = 'COPIED!';
+    setTimeout(() => btn.textContent = 'COPY', 1500);
+  });
+}
+
+// Scroll progress for lazy stream dots
+window.addEventListener('scroll', () => {
+  const st = window.scrollY;
+  const dh = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = Math.min(1, Math.max(0, st / dh));
+  const dots = document.querySelectorAll('.lazy-dot');
+  const activeCount = Math.ceil(pct * dots.length);
+  dots.forEach((d, idx) => {
+    d.classList.toggle('eval', idx < activeCount);
+  });
+});
+</script>
+</body>
+</html>

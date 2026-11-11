@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Functional[Justin] — Concept 2 · Type Signature</title>
+<meta name="theme-color" content="#f4efe6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'JetBrains Mono';src:url('/fonts/jetbrains-mono-v24-latin-regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('/fonts/jetbrains-mono-v24-latin-500.woff2') format('woff2');font-weight:500 800;font-display:swap}
+
+:root{
+  --paper:#f4efe6; --paper-2:#ebe4d6; --ink:#111; --ink-2:#3a3732; --mute:#8b847a; --red:#ff3b1f;
+  --rule:rgba(17,17,17,.9); --hair:rgba(17,17,17,.16);
+  --serif:'Instrument Serif',Georgia,'Times New Roman',serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:'Inter Tight',system-ui,-apple-system,sans-serif;
+  --pad:clamp(18px,3.4vw,56px);
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --kw:var(--ink); --ty:var(--red); --pn:var(--mute); --id:var(--ink);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--red);color:var(--ink)}
+/* paper grain */
+body::after{content:"";position:fixed;inset:-50%;pointer-events:none;z-index:200;opacity:.38;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1  0 0 0 0 .08  0 0 0 0 .05  0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:199;
+  background:radial-gradient(120% 80% at 50% 0%,transparent 60%,rgba(120,90,40,.10) 100%)}
+
+.wrap{max-width:1480px;margin:0 auto;padding:0 var(--pad)}
+.mono{font-family:var(--mono)}
+.k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+sup.fn{font-family:var(--mono);font-size:.42em;color:var(--red);vertical-align:super;line-height:0;margin-left:.08em;letter-spacing:0;font-style:normal;font-weight:500}
+
+/* progress */
+#progress{position:fixed;top:0;left:0;height:3px;width:100%;background:var(--red);transform-origin:0 50%;transform:scaleX(0);z-index:300}
+
+/* ---------- top bar ---------- */
+.topbar{border-bottom:1px solid var(--rule)}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:24px;height:46px}
+.topbar nav{display:flex;gap:clamp(12px,2vw,30px)}
+.topbar nav a{position:relative;padding:4px 0}
+.topbar nav a::before,.topbar nav a::after{position:absolute;top:2px;color:var(--red);opacity:0;transition:transform .3s var(--ease),opacity .3s}
+.topbar nav a::before{content:"[";left:-10px;transform:translateX(6px)}
+.topbar nav a::after{content:"]";right:-10px;transform:translateX(-6px)}
+.topbar nav a:hover::before,.topbar nav a:hover::after,.topbar nav a:focus-visible::before,.topbar nav a:focus-visible::after{opacity:1;transform:none}
+.topbar .issue b{color:var(--red);font-weight:500}
+
+/* ---------- masthead ---------- */
+.masthead{padding:clamp(18px,2.6vw,36px) 0 0;position:relative}
+.mast-meta{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:clamp(4px,1vw,10px)}
+.mast-meta .k{color:var(--ink-2)}
+h1.logo{font-family:var(--serif);font-weight:400;font-size:clamp(50px,12.4vw,198px);line-height:.86;letter-spacing:-.035em;white-space:nowrap;
+  display:flex;align-items:baseline;justify-content:space-between;}
+h1.logo .br{color:var(--red);font-size:1.22em;line-height:0;display:inline-block;transform:translateY(.04em);font-weight:400;transition:transform .9s var(--ease)}
+h1.logo .lb{margin-left:.02em}
+h1.logo .param{font-style:italic;display:inline-flex;align-items:baseline;position:relative}
+h1.logo .param .caret{display:inline-block;width:.06em;height:.72em;background:var(--red);margin-left:.04em;transform:translateY(.06em);animation:blink 1s steps(1) infinite}
+h1.logo .param .caret.done{animation:blink 1s steps(1) 3 forwards;}
+@keyframes blink{50%{opacity:0}}
+h1.logo .func{display:inline-block}
+.mast-left{display:flex;align-items:baseline}
+.mast-sub{display:grid;grid-template-columns:repeat(12,1fr);gap:0 24px;border-top:6px solid var(--ink);border-bottom:1px solid var(--rule);margin-top:clamp(10px,1.4vw,18px);padding:12px 0 12px}
+.mast-sub .tl{grid-column:1/9;display:flex;flex-wrap:wrap;gap:4px 0;font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.mast-sub .tl span{padding-right:14px;margin-right:14px;border-right:1px solid var(--hair)}
+.mast-sub .tl span:last-child{border:0}
+.mast-sub .ty{grid-column:9/13;text-align:right;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+.mast-sub .ty em{font-style:normal;color:var(--red)}
+
+/* ---------- signature syntax ---------- */
+.sig{font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--id);word-break:break-word}
+.sig .kw{color:var(--kw);font-weight:700}
+.sig .ty{color:var(--ty)}
+.sig .pn{color:var(--pn)}
+.sig .nm{font-style:italic}
+.sig .cm{color:var(--pn)}
+
+/* ---------- cover ---------- */
+.cover{display:grid;grid-template-columns:repeat(12,1fr);gap:0 24px;padding:clamp(28px,4vw,56px) 0 clamp(40px,5vw,72px);align-items:stretch}
+.frame{grid-column:1/9;position:relative;padding:clamp(28px,3.6vw,56px) clamp(34px,4.6vw,74px);display:flex;flex-direction:column;min-height:560px}
+.frame .bk{position:absolute;top:0;bottom:0;width:clamp(16px,2vw,30px);border:clamp(5px,.6vw,9px) solid var(--red);transform:scaleY(0);transition:transform 1s var(--ease)}
+.frame .bk.l{left:0;border-right:0}
+.frame .bk.r{right:0;border-left:0;transition-delay:.12s}
+.frame.in .bk{transform:scaleY(1)}
+.cover-kick{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;margin-bottom:clamp(16px,2vw,28px)}
+.pill{display:inline-block;background:var(--ink);color:var(--paper);padding:5px 9px 4px}
+.pill.red{background:var(--red);color:var(--ink)}
+.cover h2{font-family:var(--serif);font-weight:400;font-size:clamp(46px,7vw,124px);line-height:.9;letter-spacing:-.03em;margin-bottom:clamp(18px,2vw,28px);text-wrap:balance}
+.cover h2 em{color:var(--red)}
+.cover h2 a{background:linear-gradient(var(--ink),var(--ink)) 0 92%/0 3px no-repeat;transition:background-size .6s var(--ease)}
+.cover h2 a:hover{background-size:100% 3px}
+.cover .bigsig{font-size:clamp(14px,1.45vw,20px);padding:14px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:22px}
+.cover .dek{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:auto}
+.cover .dek p{font-size:17px;line-height:1.5;color:var(--ink-2);max-width:42ch}
+.cover .dek p:first-child::first-letter{font-family:var(--serif);float:left;font-size:4.1em;line-height:.8;padding:.05em .08em 0 0;color:var(--red)}
+.readmore{display:inline-flex;align-items:center;gap:12px;font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;border:2px solid var(--ink);padding:12px 18px;align-self:flex-start;transition:all .25s var(--ease);background:var(--paper)}
+.readmore .arr{transition:transform .25s var(--ease)}
+.readmore:hover{background:var(--red);transform:translate(-4px,-4px);box-shadow:4px 4px 0 var(--ink)}
+.readmore:hover .arr{transform:translateX(6px)}
+.cover .meta-row{display:flex;flex-direction:column;gap:18px}
+.bignum{position:absolute;right:clamp(40px,5vw,84px);top:clamp(20px,3vw,44px);font-family:var(--serif);font-style:italic;font-size:clamp(80px,10vw,170px);line-height:.8;color:transparent;-webkit-text-stroke:1.2px var(--ink);opacity:.2;pointer-events:none;user-select:none}
+
+.side{grid-column:9/13;display:flex;flex-direction:column;border-left:1px solid var(--rule);padding-left:24px}
+.side h3{display:flex;justify-content:space-between;border-bottom:6px solid var(--ink);padding-bottom:8px;margin-bottom:4px}
+.toc a{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--hair);transition:padding .3s var(--ease)}
+.toc a:hover{padding-left:8px}
+.toc .pg{font-family:var(--serif);font-size:34px;line-height:.9;color:var(--red)}
+.toc .t{font-family:var(--serif);font-size:23px;line-height:1.05;margin-bottom:6px}
+.toc .sig{font-size:11.5px}
+.editor{margin-top:auto;padding-top:22px;display:grid;grid-template-columns:96px 1fr;gap:16px;align-items:start}
+.editor .ph{width:96px;height:120px;overflow:hidden;background:var(--ink);position:relative}
+.editor .ph img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.15);mix-blend-mode:screen;opacity:.95;transition:transform .6s var(--ease)}
+.editor .ph::after{content:"";position:absolute;inset:0;background:var(--red);mix-blend-mode:multiply;opacity:0;transition:opacity .4s}
+.editor:hover .ph::after{opacity:.85}
+.editor:hover .ph img{transform:scale(1.06)}
+.editor p{font-size:14px;color:var(--ink-2);line-height:1.45}
+.editor p b{font-weight:600;color:var(--ink)}
+.socials{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.socials a{font-family:var(--mono);font-size:11px;border:1px solid var(--ink);padding:4px 7px;transition:all .2s}
+.socials a:hover{background:var(--ink);color:var(--paper)}
+
+/* ---------- marquee ---------- */
+.marquee{background:var(--ink);color:var(--paper);overflow:hidden;border-top:1px solid var(--ink);user-select:none}
+.marquee .row{display:flex;width:max-content;animation:mq 60s linear infinite}
+.marquee .row span{font-family:var(--serif);font-size:clamp(44px,6.4vw,104px);line-height:1.12;padding:0 .26em;white-space:nowrap;letter-spacing:-.02em}
+.marquee .row span:nth-child(4n+2){font-style:italic}
+.marquee .row span.o{color:var(--red);font-style:normal}
+.marquee .row span.m{font-family:var(--mono);font-size:clamp(18px,2vw,30px);text-transform:uppercase;letter-spacing:.1em;align-self:center}
+.marquee.b{background:var(--red);color:var(--ink)}
+.marquee.b .row{animation-duration:42s;animation-direction:reverse}
+.marquee.b .row span{font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.16em;line-height:2.8;font-style:normal!important;padding:0 18px}
+.marquee:hover .row{animation-play-state:paused}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+/* ---------- section heads ---------- */
+.sect{padding:clamp(56px,7vw,110px) 0 0}
+.shead{display:grid;grid-template-columns:repeat(12,1fr);gap:0 24px;align-items:end;border-bottom:6px solid var(--ink);padding-bottom:14px;margin-bottom:clamp(24px,3vw,40px)}
+.shead .no{grid-column:1/3;font-family:var(--serif);font-size:clamp(60px,7vw,120px);line-height:.8;color:var(--red)}
+.shead h2{grid-column:3/9;font-family:var(--serif);font-weight:400;font-size:clamp(44px,5.6vw,96px);line-height:.88;letter-spacing:-.03em}
+.shead h2 i{color:var(--red)}
+.shead p{grid-column:9/13;font-size:14px;color:var(--ink-2);max-width:40ch;justify-self:end}
+
+/* ---------- hits grid ---------- */
+.hits{display:grid;grid-template-columns:repeat(12,1fr);gap:24px}
+.card{position:relative;display:flex;flex-direction:column;gap:14px;padding:22px 22px 18px;border:1.5px solid var(--ink);background:var(--paper);min-height:250px;
+  transition:transform .28s var(--ease),box-shadow .28s var(--ease),background-color .2s,color .2s}
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.card .top .k{color:var(--ink-2)}
+.card .n{font-family:var(--mono);font-size:11px;color:var(--red);letter-spacing:.08em}
+.card h3{font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.4vw,38px);line-height:.98;letter-spacing:-.015em;text-wrap:balance}
+.card .sig{margin-top:auto;padding-top:14px;border-top:1px dashed var(--hair)}
+.card .fns{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:2px 10px}
+.card .fns b{color:var(--red);font-weight:500}
+.card.xl h3{font-size:clamp(40px,4.4vw,72px);line-height:.9}
+.card.xl .sig{font-size:clamp(14px,1.2vw,17px)}
+.card.l h3{font-size:clamp(34px,3.2vw,52px)}
+.card.dark{background:var(--ink);color:var(--paper);--kw:var(--paper);--id:var(--paper);--pn:#8f877b;border-color:var(--ink)}
+.card.dark .top .k,.card.dark .fns{color:#b8b0a3}
+.card.dark .sig{border-color:rgba(244,239,230,.2)}
+.card .corner{position:absolute;right:14px;bottom:10px;font-family:var(--serif);font-size:90px;line-height:.6;color:var(--red);opacity:0;transform:translate(10px,10px);transition:all .3s var(--ease);pointer-events:none}
+.card:hover,.card:focus-visible{background:var(--red);color:var(--ink);transform:translate(-7px,-7px);box-shadow:7px 7px 0 var(--ink);outline:none;
+  --kw:var(--ink);--ty:var(--paper);--pn:rgba(17,17,17,.6);--id:var(--ink);border-color:var(--ink)}
+.card:hover .n,.card:hover .fns b,.card:focus-visible .n{color:var(--paper)}
+.card:hover .top .k,.card:hover .fns{color:var(--ink)}
+.card:hover .sig{border-color:rgba(17,17,17,.35)}
+.card:hover .corner{opacity:1;transform:none;color:var(--ink)}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}.s8{grid-column:span 8}
+
+/* ---------- archive ---------- */
+.archive{display:grid;grid-template-columns:repeat(12,1fr);gap:0 24px;align-items:start}
+.rail{grid-column:1/3;position:sticky;top:24px;max-height:calc(100vh - 48px);overflow:auto;scrollbar-width:none;padding-bottom:20px}
+.rail::-webkit-scrollbar{display:none}
+.rail .k{display:block;color:var(--mute);margin-bottom:12px}
+.rail a{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--serif);font-size:28px;line-height:1.12;color:var(--mute);transition:color .2s,transform .3s var(--ease);position:relative;padding-left:16px}
+.rail a small{font-family:var(--mono);font-size:10px;color:var(--mute)}
+.rail a::before{content:"[";position:absolute;left:0;color:var(--red);opacity:0;transition:opacity .2s,transform .3s var(--ease);transform:translateX(6px)}
+.rail a:hover{color:var(--ink)}
+.rail a.on{color:var(--ink);transform:translateX(4px)}
+.rail a.on::before{opacity:1;transform:none}
+.rail a.on small{color:var(--red)}
+.rail a.off{opacity:.25;pointer-events:none}
+.rail .bar{height:2px;background:var(--hair);margin:16px 0 0;position:relative;overflow:hidden}
+.rail .bar i{position:absolute;inset:0;background:var(--red);transform-origin:0 50%;transform:scaleX(0)}
+
+.idx{grid-column:3/13;min-width:0}
+.tools{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:0 0 22px;position:sticky;top:0;z-index:5;background:var(--paper);padding-top:12px;border-bottom:1px solid var(--rule);margin-bottom:8px}
+.grep{display:flex;align-items:center;gap:8px;border:2px solid var(--ink);padding:8px 12px;min-width:280px;flex:0 1 380px;background:var(--paper);transition:box-shadow .2s,transform .2s}
+.grep:focus-within{box-shadow:4px 4px 0 var(--red);transform:translate(-2px,-2px)}
+.grep label{font-family:var(--mono);font-size:13px;color:var(--red);white-space:nowrap}
+.grep input{border:0;background:transparent;font-family:var(--mono);font-size:14px;color:var(--ink);outline:none;width:100%}
+.grep kbd{font-family:var(--mono);font-size:10px;border:1px solid var(--hair);padding:1px 6px;color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--mono);font-size:11.5px;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:5px 9px;cursor:pointer;transition:all .18s;letter-spacing:.02em}
+.chip sup{color:var(--red);font-size:9px;margin-right:2px}
+.chip:hover{background:var(--ink);color:var(--paper)}
+.chip.on{background:var(--red);border-color:var(--ink);box-shadow:3px 3px 0 var(--ink);transform:translate(-2px,-2px)}
+.chip.on sup{color:var(--ink)}
+.count{font-family:var(--mono);font-size:12px;color:var(--ink-2);margin-left:auto}
+.count b{color:var(--red);font-weight:500}
+
+.year{padding-top:26px;scroll-margin-top:70px}
+.year.hide{display:none}
+.yhead{display:flex;align-items:baseline;gap:18px;margin-bottom:6px}
+.yhead h3{font-family:var(--serif);font-weight:400;font-size:clamp(64px,8vw,132px);line-height:.85;letter-spacing:-.04em}
+.yhead h3 .br{color:var(--red)}
+.yhead .k{color:var(--mute)}
+.yhead .ln{flex:1;height:1px;background:var(--rule);align-self:center}
+.rows{display:grid;grid-template-columns:repeat(2,1fr);gap:0 24px}
+.row{position:relative;display:grid;grid-template-columns:62px 1fr;gap:4px 16px;padding:16px 14px 16px 10px;border-top:1px solid var(--hair);
+  transition:transform .25s var(--ease),box-shadow .25s var(--ease),background-color .18s;--ty:var(--red)}
+.row.hide{display:none}
+.row .d{font-family:var(--mono);font-size:11px;color:var(--mute);padding-top:6px;line-height:1.4}
+.row .d b{display:block;color:var(--red);font-weight:500}
+.row h4{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.08;letter-spacing:-.01em}
+.row .sig{font-size:12px;grid-column:2;margin-top:4px}
+.row .fns{grid-column:2;font-family:var(--mono);font-size:10px;color:var(--mute);display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:4px}
+.row .fns b{color:var(--red);font-weight:500}
+.row .star{position:absolute;right:12px;top:16px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--red)}
+.row:hover,.row:focus-visible{background:var(--red);transform:translate(-5px,-5px);box-shadow:5px 5px 0 var(--ink);outline:none;z-index:2;border-top-color:transparent;
+  --ty:var(--paper);--pn:rgba(17,17,17,.6);--kw:var(--ink)}
+.row:hover .d,.row:hover .fns,.row:hover .d b,.row:hover .fns b,.row:hover .star{color:var(--ink)}
+.row mark{background:var(--ink);color:var(--paper);padding:0 .1em}
+.empty{display:none;padding:60px 0;font-family:var(--serif);font-size:42px;line-height:1.1}
+.empty.show{display:block}
+.empty code{font-family:var(--mono);font-size:18px;color:var(--red);display:block;margin-top:12px}
+
+/* footnotes legend */
+.legend{columns:5 180px;column-gap:24px;column-rule:1px solid var(--hair);font-family:var(--mono);font-size:12px}
+.legend button{display:flex;gap:8px;width:100%;background:none;border:0;font:inherit;color:var(--ink);text-align:left;padding:3px 4px;cursor:pointer;break-inside:avoid;transition:background .15s,padding .2s}
+.legend button sup{color:var(--red);min-width:22px;font-size:10px;line-height:1.8}
+.legend button span{flex:1}
+.legend button i{font-style:normal;color:var(--mute)}
+.legend button:hover{background:var(--red);padding-left:10px}
+.legend button:hover sup,.legend button:hover i{color:var(--ink)}
+
+/* ---------- footer ---------- */
+footer{margin-top:clamp(70px,9vw,140px);border-top:6px solid var(--ink);position:relative;overflow:hidden}
+.foot{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;padding:36px 0 30px}
+.foot .closing{grid-column:1/8;font-family:var(--serif);font-size:clamp(40px,5vw,84px);line-height:.92;letter-spacing:-.03em}
+.foot .closing em{color:var(--red)}
+.foot .col{grid-column:span 2;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.foot .col .k{color:var(--mute);margin-bottom:6px}
+.foot .col a{width:max-content;background:linear-gradient(var(--red),var(--red)) 0 100%/0 2px no-repeat;transition:background-size .3s var(--ease)}
+.foot .col a:hover{background-size:100% 2px}
+.giant{font-family:var(--serif);font-size:clamp(90px,24vw,400px);line-height:.72;letter-spacing:-.05em;white-space:nowrap;display:flex;justify-content:space-between;color:var(--ink);padding-bottom:20px;user-select:none}
+.giant .br{color:var(--red)}
+.giant i{font-size:.32em;align-self:center;font-family:var(--mono);font-style:normal;letter-spacing:0;color:var(--ink-2)}
+.colophon{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid var(--rule);padding:14px 0 70px}
+.colophon .k{color:var(--ink-2)}
+
+/* badge */
+.badge{position:fixed;left:16px;bottom:16px;z-index:400;font-family:var(--mono);font-size:11px;letter-spacing:.06em;background:var(--ink);color:var(--paper);padding:9px 12px;border:1.5px solid var(--ink);box-shadow:4px 4px 0 var(--red);transition:all .2s var(--ease)}
+.badge b{color:var(--red);font-weight:500}
+.badge:hover{background:var(--red);color:var(--ink);box-shadow:4px 4px 0 var(--ink)}
+.badge:hover b{color:var(--paper)}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(24px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+.rv.in{opacity:1;transform:none}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  .frame{grid-column:1/13;min-height:0}
+  .side{grid-column:1/13;border-left:0;padding-left:0;margin-top:40px}
+  .editor{margin-top:20px}
+  .s3,.s4{grid-column:span 6}.s5,.s7,.s8{grid-column:span 12}.s6{grid-column:span 6}
+  .rows{grid-template-columns:1fr}
+}
+@media (max-width:820px){
+  .topbar nav{display:none}
+  .mast-sub .tl,.mast-sub .ty{grid-column:1/13;text-align:left}
+  .mast-sub .ty{margin-top:8px}
+  .cover .dek{grid-template-columns:1fr}
+  .shead .no{grid-column:1/13}
+  .shead h2{grid-column:1/13;margin-top:8px}
+  .shead p{grid-column:1/13;justify-self:start;margin-top:12px}
+  .rail{display:none}
+  .idx{grid-column:1/13}
+  .foot .closing{grid-column:1/13}
+  .foot .col{grid-column:span 4}
+}
+@media (max-width:600px){
+  .hits{gap:18px}
+  .s3,.s4,.s5,.s6,.s7,.s8{grid-column:span 12}
+  .card{min-height:0}
+  .card.xl h3{font-size:44px}
+  .frame{padding:26px 26px 30px}
+  .cover h2{font-size:50px}
+  .bignum{display:none}
+  .mast-meta .hide-sm{display:none}
+  .mast-sub .tl{font-size:10.5px}
+  .mast-sub .tl span{padding-right:8px;margin-right:8px}
+  .grep{min-width:0;flex:1 1 100%}
+  .count{margin-left:0}
+  .tools{position:static}
+  .row{grid-template-columns:50px 1fr;gap:4px 12px}
+  .row h4{font-size:22px;padding-right:20px}
+  .foot .col{grid-column:span 6}
+  .badge{left:10px;bottom:10px;font-size:10px}
+  .yhead h3{font-size:72px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .rv{opacity:1;transform:none}
+  .frame .bk{transform:none}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="k issue">Vol. 2026 · No. <b id="issueNo">104</b></div>
+    <nav class="k" aria-label="Primary">
+      <a href="#index">All Posts</a>
+      <a href="#hits">Popular Posts</a>
+      <a href="https://www.youtube.com/@justinhj">YouTube Channel</a>
+      <a href="#">Speaking Events</a>
+      <a href="#">Privacy</a>
+    </nav>
+    <div class="k" id="today">—</div>
+  </div>
+</header>
+
+<main>
+<section class="masthead wrap" aria-label="Masthead">
+  <div class="mast-meta">
+    <span class="k">A programming journal · est. 2007</span>
+    <span class="k hide-sm">trait Blog[A] { def read: A }</span>
+  </div>
+  <h1 class="logo" aria-label="Functional[Justin]">
+    <span class="mast-left"><span class="func">Functional</span><span class="br lb" aria-hidden="true">[</span><span class="param" id="param" aria-hidden="true"><span id="ptext">Justin</span><span class="caret" id="caret"></span></span></span><span class="br rb" aria-hidden="true">]</span>
+  </h1>
+  <div class="mast-sub">
+    <div class="tl">
+      <span>Principal Software Engineer</span><span>Streaming data at scale</span><span>Generative AI</span><span>Functional Programming</span><span>Neovim</span><span>Emacs</span>
+    </div>
+    <div class="ty">type <em>Blog</em> = Functional[<em>Justin</em>] <span style="color:var(--mute)">// 104 entries, 19 years</span></div>
+  </div>
+</section>
+
+<section class="cover wrap" aria-label="Cover story">
+  <article class="frame" id="frame">
+    <span class="bk l" aria-hidden="true"></span><span class="bk r" aria-hidden="true"></span>
+    <div class="bignum" aria-hidden="true">104</div>
+    <div class="cover-kick">
+      <span class="k pill red">Cover Story</span>
+      <span class="k">No. 104</span>
+      <span class="k">06 April 2026</span>
+      <span class="k" id="coverTags"></span>
+    </div>
+    <h2><a href="/2026/04/06/refreshing-your-neovim-config-for-0-12-0.html">Refreshing your Neovim config for <em>0.12.0</em></a></h2>
+    <div class="sig bigsig" id="coverSig"></div>
+    <div class="dek">
+      <p>A new major release is the perfect excuse to take stock. What to keep, what to cut, and what the editor now does for you out of the box.</p>
+      <div class="meta-row">
+        <p>Fewer plugins, faster startup, and a config you can actually read again — a practical guide for long‑time Vim users.</p>
+        <a class="readmore" href="/2026/04/06/refreshing-your-neovim-config-for-0-12-0.html">Read the story <span class="arr">⟶</span></a>
+      </div>
+    </div>
+  </article>
+
+  <aside class="side" aria-label="In this issue">
+    <h3 class="k"><span>In this issue</span><span>p.</span></h3>
+    <div class="toc" id="toc"></div>
+    <div class="editor">
+      <div class="ph"><img src="/images/justinblog.webp" alt="Justin Heyes-Jones" width="96" height="120"></div>
+      <div>
+        <p><b>Justin Heyes-Jones</b>, editor. Writing about streaming systems, generative AI and the joy of typed, functional code since 2007.</p>
+        <div class="socials">
+          <a href="mailto:justinhj+blog@gmail.com">email</a><a href="https://github.com/justinhj">github</a><a href="https://x.com/justinhj">x</a><a href="https://www.linkedin.com/in/justinhj/">linkedin</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+</section>
+
+<div class="marquee" aria-hidden="true"><div class="row" id="mq1"></div></div>
+<div class="marquee b" aria-hidden="true"><div class="row" id="mq2"></div></div>
+
+<section class="sect wrap" id="hits" aria-labelledby="hitsH">
+  <div class="shead rv">
+    <div class="no">§1</div>
+    <h2 id="hitsH">Greatest <i>Hits</i></h2>
+    <p>The most-read essays from the archive — monads, comonads, applicatives and the occasional DOS prompt. Each one typeset as its own type signature.</p>
+  </div>
+  <div class="hits" id="hitsGrid"></div>
+</section>
+
+<section class="sect wrap" id="index" aria-labelledby="idxH">
+  <div class="shead rv">
+    <div class="no">§2</div>
+    <h2 id="idxH">The <i>Index</i></h2>
+    <p>Every entry, 2007 → 2026. Filter by footnote, or grep the signatures. Press <span class="mono">/</span> to search.</p>
+  </div>
+  <div class="archive">
+    <nav class="rail" id="rail" aria-label="Years"><span class="k">Years</span><div id="railList"></div><div class="bar"><i id="railBar"></i></div></nav>
+    <div class="idx">
+      <div class="tools">
+        <div class="grep"><label for="q">grep&nbsp;›</label><input id="q" type="search" placeholder="monad, emacs, LazyList…" autocomplete="off"><kbd>/</kbd></div>
+        <div class="chips" id="chips"></div>
+        <div class="count" id="count"></div>
+      </div>
+      <div id="years"></div>
+      <div class="empty" id="empty">Nothing typechecks.<code>error: not found: value <span id="emptyQ"></span></code></div>
+    </div>
+  </div>
+</section>
+
+<section class="sect wrap" id="footnotes" aria-labelledby="fnH">
+  <div class="shead rv">
+    <div class="no">§3</div>
+    <h2 id="fnH">Foot<i>notes</i></h2>
+    <p>Each superscript in this journal points here. Click a footnote to filter the index.</p>
+  </div>
+  <div class="legend" id="legend"></div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div class="closing">Thanks for reading.<br><em>flatMap</em> your way back soon.</div>
+      <div class="col"><span class="k">Sections</span><a href="#index">All Posts</a><a href="#hits">Popular Posts</a><a href="https://www.youtube.com/@justinhj">YouTube Channel</a><a href="#">Speaking Events</a><a href="#">Privacy</a></div>
+      <div class="col"><span class="k">Elsewhere</span><a href="mailto:justinhj+blog@gmail.com">Email</a><a href="https://github.com/justinhj">GitHub</a><a href="https://x.com/justinhj">X / Twitter</a><a href="https://www.linkedin.com/in/justinhj/">LinkedIn</a></div>
+    </div>
+    <div class="giant" aria-hidden="true"><span class="br">[</span><i>end of issue</i><span class="br">]</span></div>
+    <div class="colophon">
+      <span class="k">©2026 Justin Heyes-Jones. All Rights Reserved</span>
+      <span class="k">Set in Instrument Serif &amp; JetBrains Mono · Printed on warm pixels</span>
+    </div>
+  </div>
+</footer>
+
+<a class="badge" href="/design-concepts/index.html">Concept 2 — <b>Type Signature</b></a>
+
+<script>
+const POSTS = [
+ {
+  "date": "2026-04-06",
+  "title": "Refreshing your Neovim config for 0.12.0",
+  "tags": [
+   "neovim",
+   "vim",
+   "command-line"
+  ],
+  "url": "/2026/04/06/refreshing-your-neovim-config-for-0-12-0.html"
+ },
+ {
+  "date": "2026-01-19",
+  "title": "Visualizing K-Way Merge: An Interactive Guide to Database Sorting",
+  "tags": [
+   "algorithms",
+   "databases"
+  ],
+  "url": "/2026/01/19/visualizing-k-way-merge.html"
+ },
+ {
+  "date": "2025-07-30",
+  "title": "Optimizing training a GPT style Tokenizer with C++",
+  "tags": [
+   "ai",
+   "cpp",
+   "c++",
+   "python",
+   "optimization",
+   "performance",
+   "llm",
+   "tokenizer"
+  ],
+  "url": "/2025/07/30/journey-in-optimizing-a-bpe-tokenizer.html"
+ },
+ {
+  "date": "2022-11-05",
+  "title": "The Magic of Lazy Lists",
+  "tags": [
+   "pure-functional-programming",
+   "cats",
+   "scala",
+   "applicative",
+   "monads",
+   "comonads",
+   "kleisli",
+   "zio",
+   "popular"
+  ],
+  "url": "/2022/11/05/magic-of-lazy-lists.html"
+ },
+ {
+  "date": "2021-06-04",
+  "title": "Monad Transformers - the prelude to ZPure",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty",
+   "monads",
+   "category-theory",
+   "popular"
+  ],
+  "url": "/2021/06/04/monad-transformers-the-prelude-to-zpure.html"
+ },
+ {
+  "date": "2021-02-02",
+  "title": "Monads in Scala 3 for the Genius",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty",
+   "monads",
+   "category-theory"
+  ],
+  "url": "/2021/02/02/monads-in-scala-3-for-the-genius.html"
+ },
+ {
+  "date": "2021-01-21",
+  "title": "Functional Error Handling with Applicative in Scala 3",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty",
+   "applicative",
+   "monads",
+   "applicative-functor"
+  ],
+  "url": "/2021/01/21/functional-error-handling-with-applicative-in-scala-3.html"
+ },
+ {
+  "date": "2021-01-06",
+  "title": "Handling Errors functionally with Scala 3",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty"
+  ],
+  "url": "/2021/01/06/handling-errors-functionaly-with-scala-3.html"
+ },
+ {
+  "date": "2020-12-06",
+  "title": "Type classes with Scala 2",
+  "tags": [
+   "scala",
+   "functional-programming"
+  ],
+  "url": "/2020/12/06/type-classes-scala-2.html"
+ },
+ {
+  "date": "2020-11-18",
+  "title": "Scala 3 Context Functions",
+  "tags": [
+   "scala",
+   "scala-3",
+   "dotty"
+  ],
+  "url": "/2020/11/18/scala-3-context-functions.html"
+ },
+ {
+  "date": "2020-08-02",
+  "title": "What's Ap with zio-prelude?",
+  "tags": [
+   "pure-functional-programming",
+   "cats",
+   "scala",
+   "applicative",
+   "monads",
+   "functors",
+   "zio",
+   "popular"
+  ],
+  "url": "/2020/08/02/whats-ap-with-zio-prelude.html"
+ },
+ {
+  "date": "2020-04-04",
+  "title": "What's Ap?",
+  "tags": [
+   "pure-functional-programming",
+   "cats",
+   "scala",
+   "applicative",
+   "monads",
+   "functors",
+   "popular"
+  ],
+  "url": "/2020/04/04/whats-ap.html"
+ },
+ {
+  "date": "2020-03-09",
+  "title": "How to blog with Org-mode",
+  "tags": [
+   "emacs",
+   "org-mode",
+   "blogging",
+   "github-pages",
+   "jekyll",
+   "popular"
+  ],
+  "url": "/2020/03/09/how-to-blog-with-org-mode.html"
+ },
+ {
+  "date": "2019-06-20",
+  "title": "Comonads for Life",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "comonads",
+   "pure-functional-programming",
+   "typelevel",
+   "cats",
+   "zio",
+   "popular"
+  ],
+  "url": "/2019/06/20/comonads-for-life.html"
+ },
+ {
+  "date": "2019-06-10",
+  "title": "Monoids for Production",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "monoids",
+   "pure-functional-programming",
+   "scalaz",
+   "typelevel",
+   "cats",
+   "popular"
+  ],
+  "url": "/2019/06/10/monoids-for-production.html"
+ },
+ {
+  "date": "2019-05-05",
+  "title": "Using 47 Degree's Fetch library with ZIO",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "zio",
+   "hacker-news-api",
+   "47-degs",
+   "fetch",
+   "popular"
+  ],
+  "url": "/2019/05/05/using-47degs-fetch-with-zio.html"
+ },
+ {
+  "date": "2019-04-07",
+  "title": "Hacker News API Part 5",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "zio",
+   "hacker-news-api",
+   "popular"
+  ],
+  "url": "/2019/04/07/hacker-news-api-5.html"
+ },
+ {
+  "date": "2018-11-19",
+  "title": "Eredis - An updated Emacs Redis API",
+  "tags": [
+   "emacs",
+   "functional-programming",
+   "redis",
+   "emacs-lisp"
+  ],
+  "url": "/2018/11/19/eredis-updated-emacs-redis-api.html"
+ },
+ {
+  "date": "2018-10-24",
+  "title": "Radix trees, Dash and Company mode",
+  "tags": [
+   "emacs",
+   "functional-programming",
+   "radix-trees",
+   "company-mode",
+   "data-structures"
+  ],
+  "url": "/2018/10/24/radix-trees-dash-and-company-mode.html"
+ },
+ {
+  "date": "2018-05-06",
+  "title": "Hacker News API Part 4",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "hacker-news-api",
+   "fetch",
+   "47-degs",
+   "typelevel",
+   "monix"
+  ],
+  "url": "/2018/05/06/hacker-news-api-4.html"
+ },
+ {
+  "date": "2017-10-11",
+  "title": "Hacker News API Part 3",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "hacker-news",
+   "hacker-news-api",
+   "fetch",
+   "typelevel",
+   "reftree",
+   "scala.js",
+   "47-degs"
+  ],
+  "url": "/2017/10/11/hacker-news-api-3.html"
+ },
+ {
+  "date": "2017-08-27",
+  "title": "Roman numeral tool with Udash",
+  "tags": [
+   "scala",
+   "scala.js",
+   "clojure-script",
+   "functional-programming",
+   "udash"
+  ],
+  "url": "/2017/08/27/roman-numeral-tool-with-udash.html"
+ },
+ {
+  "date": "2017-07-30",
+  "title": "Hacker News API Part 2",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "hacker-news-api",
+   "fetch",
+   "typelevel",
+   "47-degs"
+  ],
+  "url": "/2017/07/30/hacker-news-api-2.html"
+ },
+ {
+  "date": "2017-07-26",
+  "title": "Hacker News API Part 1",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "hacker-news-api"
+  ],
+  "url": "/2017/07/26/hacker-news-api-1.html"
+ },
+ {
+  "date": "2017-07-16",
+  "title": "Future with timeout",
+  "tags": [
+   "scala",
+   "functional-programming",
+   "popular"
+  ],
+  "url": "/2017/07/16/future-with-timeout.html"
+ },
+ {
+  "date": "2017-06-18",
+  "title": "Future[Either] with Cats",
+  "tags": [
+   "scala",
+   "monads",
+   "eithert",
+   "functional-programming",
+   "cats",
+   "monad-transformers",
+   "popular"
+  ],
+  "url": "/2017/06/18/future-either-with-cats.html"
+ },
+ {
+  "date": "2017-06-02",
+  "title": "Future[Either] and monad transformers",
+  "tags": [
+   "scala",
+   "monads",
+   "functional-programming",
+   "scalaz",
+   "monad-transformers"
+  ],
+  "url": "/2017/06/02/future-either-and-monad-transformers.html"
+ },
+ {
+  "date": "2016-02-21",
+  "title": "Using Python in org-mode",
+  "tags": [
+   "blogging",
+   "emacs",
+   "python"
+  ],
+  "url": "/2016/02/21/python-babel.html"
+ },
+ {
+  "date": "2015-04-22",
+  "title": "Including equations in a blogger post",
+  "tags": [
+   "latex"
+  ],
+  "url": "/2015/04/22/including-equations-in-blogger-post.html"
+ },
+ {
+  "date": "2015-04-17",
+  "title": "Installing RPostgreSQL for R on Max OS Yosemite",
+  "tags": [
+   "mac",
+   "r"
+  ],
+  "url": "/2015/04/17/installing-rpostgresql-for-r-on-max-os.html"
+ },
+ {
+  "date": "2014-06-29",
+  "title": "Easy find",
+  "tags": [
+   "command-line"
+  ],
+  "url": "/2014/06/29/easy-find.html"
+ },
+ {
+  "date": "2014-05-26",
+  "title": "Sending notifications from Emacs (Mac OS X)",
+  "tags": [
+   "emacs",
+   "command-line",
+   "mac"
+  ],
+  "url": "/2014/05/26/sending-notifications-from-emacs.html"
+ },
+ {
+  "date": "2014-04-01",
+  "title": "Watch",
+  "tags": [
+   "command-line"
+  ],
+  "url": "/2014/04/01/watch.html"
+ },
+ {
+  "date": "2014-03-12",
+  "title": "Checkout out your DB tables",
+  "tags": [
+   "mysql"
+  ],
+  "url": "/2014/03/12/checkout-out-your-db-tables.html"
+ },
+ {
+  "date": "2013-02-06",
+  "title": "Configuring emacs to send iCloud mail on Mac OS X",
+  "tags": [
+   "email",
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2013/02/06/configuring-emacs-to-send-icloud-mail.html"
+ },
+ {
+  "date": "2012-04-29",
+  "title": "find grep on Mac OS X",
+  "tags": [
+   "find",
+   "command-line",
+   "mac"
+  ],
+  "url": "/2012/04/29/find-grep-on-mac-os-x.html"
+ },
+ {
+  "date": "2012-03-22",
+  "title": "Starting a program to run in the background from a DOS prompt",
+  "tags": [
+   "command-line"
+  ],
+  "url": "/2012/03/22/starting-program-to-run-in-background.html"
+ },
+ {
+  "date": "2011-12-26",
+  "title": "Making a emacs lisp expression expand itself to XML",
+  "tags": [
+   "emacs-lisp"
+  ],
+  "url": "/2011/12/26/making-emacs-lisp-expression-expand.html"
+ },
+ {
+  "date": "2011-07-30",
+  "title": "eredis update",
+  "tags": [
+   "emacs",
+   "redis",
+   "eredis",
+   "emacs-lisp"
+  ],
+  "url": "/2011/07/30/eredis-update.html"
+ },
+ {
+  "date": "2011-07-25",
+  "title": "eredis: a Redis client in emacs lisp",
+  "tags": [
+   "emacs",
+   "redis"
+  ],
+  "url": "/2011/07/25/eredis-redis-client-in-emacs-lisp.html"
+ },
+ {
+  "date": "2011-06-14",
+  "title": "Emacs progress indication",
+  "tags": [
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2011/06/14/emacs-progress-indication.html"
+ },
+ {
+  "date": "2011-06-05",
+  "title": "More on duplicate file handling in emacs dired",
+  "tags": [
+   "emacs",
+   "dired"
+  ],
+  "url": "/2011/06/05/more-on-duplicate-file-handling-in.html"
+ },
+ {
+  "date": "2011-06-01",
+  "title": "Finding duplicate files in a dired buffer",
+  "tags": [
+   "emacs",
+   "dired",
+   "emacs-lisp"
+  ],
+  "url": "/2011/06/01/finding-duplicate-files-in-dired-buffer.html"
+ },
+ {
+  "date": "2011-04-26",
+  "title": "Programmer tips for Mac OSX",
+  "tags": [
+   "mac",
+   "command-line",
+   "emacs"
+  ],
+  "url": "/2011/04/26/programmer-tips-for-mac-osx.html"
+ },
+ {
+  "date": "2011-04-26",
+  "title": "MovieRatings",
+  "tags": [
+   "clojure"
+  ],
+  "url": "/2011/04/26/movieratings.html"
+ },
+ {
+  "date": "2011-04-25",
+  "title": "Talking to mysql from Python on Mac OS X 10.6",
+  "tags": [
+   "mysql",
+   "python"
+  ],
+  "url": "/2011/04/25/talking-to-mysql-from-python-on-mac-os.html"
+ },
+ {
+  "date": "2011-01-15",
+  "title": "Grabbing Rotten Tomatoes movie ratings with Clojure",
+  "tags": [
+   "clojure"
+  ],
+  "url": "/2011/01/15/grabbing-rotten-tomatoes-movie-ratings.html"
+ },
+ {
+  "date": "2011-01-11",
+  "title": "View Data from the Clojure REPL",
+  "tags": [
+   "clojure"
+  ],
+  "url": "/2011/01/11/view-data-from-clojure-repl.html"
+ },
+ {
+  "date": "2010-12-15",
+  "title": "F# vs C#",
+  "tags": [
+   "game-dev",
+   "clojure",
+   "common-lisp",
+   "f#"
+  ],
+  "url": "/2010/12/15/f-vs-c.html"
+ },
+ {
+  "date": "2010-11-02",
+  "title": "Just browsing",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2010/11/02/just-browsing.html"
+ },
+ {
+  "date": "2010-10-19",
+  "title": "rgrep on windows 7 for emacs",
+  "tags": [
+   "emacs",
+   "windows"
+  ],
+  "url": "/2010/10/19/rgrep-on-windows-7-for-emacs.html"
+ },
+ {
+  "date": "2010-07-30",
+  "title": "Couple of mysql tips",
+  "tags": [
+   "mysql"
+  ],
+  "url": "/2010/07/30/couple-of-mysql-tips.html"
+ },
+ {
+  "date": "2010-06-08",
+  "title": "Adjusting server logging level at runtime",
+  "tags": [
+   "log4j",
+   "backend-dev"
+  ],
+  "url": "/2010/06/08/adjusting-server-logging-level-at.html"
+ },
+ {
+  "date": "2010-05-16",
+  "title": "Growling Mac",
+  "tags": [
+   "emacs",
+   "growl",
+   "mac"
+  ],
+  "url": "/2010/05/16/growling-mac.html"
+ },
+ {
+  "date": "2010-04-17",
+  "title": "Using tar and gzip",
+  "tags": [
+   "tar",
+   "gzip",
+   "linux",
+   "bash"
+  ],
+  "url": "/2010/04/17/using-tar-and-gzip.html"
+ },
+ {
+  "date": "2010-01-23",
+  "title": "Nice Code",
+  "tags": [
+   "ipin",
+   "transmission"
+  ],
+  "url": "/2010/01/23/nice-code.html"
+ },
+ {
+  "date": "2010-01-01",
+  "title": "Using screen",
+  "tags": [
+   "screen",
+   "linux"
+  ],
+  "url": "/2010/01/01/using-screen.html"
+ },
+ {
+  "date": "2010-01-01",
+  "title": "Securing an ssh server with fail2ban",
+  "tags": [
+   "ubuntu",
+   "linux",
+   "ssh",
+   "fail2ban"
+  ],
+  "url": "/2010/01/01/securing-ssh-server-with-fail2ban.html"
+ },
+ {
+  "date": "2009-10-12",
+  "title": "Transparent emacs on windows",
+  "tags": [
+   "emacs",
+   "windows",
+   "win32"
+  ],
+  "url": "/2009/10/12/transparent-emacs-on-windows.html"
+ },
+ {
+  "date": "2009-10-09",
+  "title": "MSDOS iterating filenames in a file",
+  "tags": [
+   "msdos",
+   "command-line"
+  ],
+  "url": "/2009/10/09/msdos-iterating-filenames-in-file.html"
+ },
+ {
+  "date": "2009-09-23",
+  "title": "Windows command window title",
+  "tags": [
+   "msdos",
+   "windows",
+   "command-line",
+   "win32"
+  ],
+  "url": "/2009/09/23/windows-command-window-title.html"
+ },
+ {
+  "date": "2009-09-21",
+  "title": "English quote in Common Lisp",
+  "tags": [
+   "common-lisp"
+  ],
+  "url": "/2009/09/21/english-quote-in-common-lisp.html"
+ },
+ {
+  "date": "2009-09-10",
+  "title": "Making emacs growl",
+  "tags": [
+   "emacs",
+   "growl"
+  ],
+  "url": "/2009/09/10/making-emacs-growl.html"
+ },
+ {
+  "date": "2009-09-08",
+  "title": "Directional window movement in emacs",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2009/09/08/directional-window-movement-in-emacs.html"
+ },
+ {
+  "date": "2009-09-01",
+  "title": "Handful of emacs tips",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2009/09/01/handful-of-emacs-tips.html"
+ },
+ {
+  "date": "2009-08-26",
+  "title": "Simple budget forecasts in emacs",
+  "tags": [
+   "personal-finance",
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2009/08/26/simple-budget-forecasts-in-emacs.html"
+ },
+ {
+  "date": "2009-06-17",
+  "title": "1337 on StackOverflow",
+  "tags": [
+   "geek",
+   "stack-overflow"
+  ],
+  "url": "/2009/06/17/1337-on-stackoverflow.html"
+ },
+ {
+  "date": "2009-05-27",
+  "title": "Linux: Looking at files changed recently",
+  "tags": [
+   "linux",
+   "cygwin"
+  ],
+  "url": "/2009/05/27/linux-looking-at-files-changed-recently.html"
+ },
+ {
+  "date": "2009-05-14",
+  "title": "Writing quick C++ programs in emacs without a makefile",
+  "tags": [
+   "emacs",
+   "c++"
+  ],
+  "url": "/2009/05/14/writing-quick-c-programs-in-emacs.html"
+ },
+ {
+  "date": "2009-05-14",
+  "title": "Linking MingW32 with psapi",
+  "tags": [
+   "mingw32"
+  ],
+  "url": "/2009/05/14/linking-mingw32-with-psapi.html"
+ },
+ {
+  "date": "2009-05-12",
+  "title": "Converting flac to mp3",
+  "tags": [
+   "mp3",
+   "flac"
+  ],
+  "url": "/2009/05/12/converting-flac-to-mp3.html"
+ },
+ {
+  "date": "2009-05-08",
+  "title": "emacs: Renaming multiple files at once with a regular expression",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2009/05/08/emacs-renaming-multiple-files-at-once.html"
+ },
+ {
+  "date": "2009-05-07",
+  "title": "emacs: Searching programming API''s with webjump",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2009/05/07/emacs-searching-programming-apis-with.html"
+ },
+ {
+  "date": "2009-04-15",
+  "title": "Running an elisp function on each marked file in a dired buffer",
+  "tags": [
+   "emacs",
+   "dired",
+   "emacs-lisp"
+  ],
+  "url": "/2009/04/15/running-elisp-function-on-each-marked.html"
+ },
+ {
+  "date": "2009-04-02",
+  "title": "Securely copying files to another machine",
+  "tags": [
+   "cygwin",
+   "secure-file-transfer",
+   "scp"
+  ],
+  "url": "/2009/04/02/securely-copying-files-to-another.html"
+ },
+ {
+  "date": "2009-03-18",
+  "title": "Vancouver game companies",
+  "tags": [
+   "vancouver",
+   "gamedev"
+  ],
+  "url": "/2009/03/18/vancouver-game-companies.html"
+ },
+ {
+  "date": "2009-03-09",
+  "title": "Using tags in emacs on windows",
+  "tags": [
+   "emacs",
+   "tags",
+   "win32",
+   "etags",
+   "emacs",
+   "cygwin"
+  ],
+  "url": "/2009/03/09/using-tags-in-emacs-on-windows.html"
+ },
+ {
+  "date": "2009-02-20",
+  "title": "Sending mail with emacs in Windows",
+  "tags": [
+   "emacs",
+   "smtp",
+   "windows",
+   "win32"
+  ],
+  "url": "/2009/02/20/sending-mail-with-emacs-in-windows.html"
+ },
+ {
+  "date": "2009-02-16",
+  "title": "Who uses the A* code",
+  "tags": [
+   "c++",
+   "gamedev",
+   "a-star-algorithm"
+  ],
+  "url": "/2009/02/16/who-uses-a-code.html"
+ },
+ {
+  "date": "2009-02-16",
+  "title": "A* algorithm bug fixes",
+  "tags": [
+   "c++",
+   "astar-algorithm",
+   "game-programming",
+   "gamedev",
+   "bugs"
+  ],
+  "url": "/2009/02/16/algorithm-bug-fixes.html"
+ },
+ {
+  "date": "2009-02-13",
+  "title": "Setting up lispworks personal",
+  "tags": [
+   "emacs",
+   "lispworks",
+   "slime",
+   "win32"
+  ],
+  "url": "/2009/02/13/setting-up-lispworks-personal.html"
+ },
+ {
+  "date": "2009-02-13",
+  "title": "Searching Reddit, Flickr, and Google from emacs = Rad",
+  "tags": [
+   "emacs",
+   "web-jump"
+  ],
+  "url": "/2009/02/13/search-reddit-flickr-and-google-from.html"
+ },
+ {
+  "date": "2009-02-07",
+  "title": "Sending email via gmail in emacs",
+  "tags": [
+   "emacs",
+   "smtp"
+  ],
+  "url": "/2009/02/07/sending-email-via-gmail-in-emacs.html"
+ },
+ {
+  "date": "2009-02-07",
+  "title": "Fun with RSS",
+  "tags": [
+   "rss",
+   "emacs",
+   "xml",
+   "parsing",
+   "bbc-news",
+   "emacs-lisp"
+  ],
+  "url": "/2009/02/07/fun-with-rss.html"
+ },
+ {
+  "date": "2009-01-23",
+  "title": "Simple perforce checkout in emacs using elisp",
+  "tags": [
+   "emacs",
+   "emacs-lisp",
+   "perforce",
+   "p4"
+  ],
+  "url": "/2009/01/23/simple-perforce-checkout-in-emacs-using.html"
+ },
+ {
+  "date": "2009-01-12",
+  "title": "Finding writable files in a directory in a windows command line",
+  "tags": [
+   "msdos",
+   "win32",
+   "command-line",
+   "popular"
+  ],
+  "url": "/2009/01/12/finding-writable-files-in-directory-in.html"
+ },
+ {
+  "date": "2009-01-08",
+  "title": "Who changed the line your working on last?",
+  "tags": [
+   "emacs",
+   "p4",
+   "perforce",
+   "emacs-lisp"
+  ],
+  "url": "/2009/01/08/who-changed-line-your-working-on-last.html"
+ },
+ {
+  "date": "2008-11-21",
+  "title": "How to copy an SVN repository from sourceforge to google code",
+  "tags": [
+   "svn",
+   "google-code",
+   "sourceforge",
+   "source-control"
+  ],
+  "url": "/2008/11/21/how-to-copy-svn-repository-from.html"
+ },
+ {
+  "date": "2008-11-08",
+  "title": "Grabbing info from web pages",
+  "tags": [
+   "wget"
+  ],
+  "url": "/2008/11/08/grabbing-info-from-web-pages.html"
+ },
+ {
+  "date": "2008-05-27",
+  "title": "Using find and printf",
+  "tags": [
+   "find"
+  ],
+  "url": "/2008/05/27/using-find-and-printf.html"
+ },
+ {
+  "date": "2008-05-13",
+  "title": "Batch file tip ... %~dp0",
+  "tags": [
+   "msdos",
+   "win32",
+   "command-line",
+   "batch-files"
+  ],
+  "url": "/2008/05/13/batch-file-tip-dp0.html"
+ },
+ {
+  "date": "2008-05-01",
+  "title": "Copying characters from the line above in emacs",
+  "tags": [
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2008/05/01/copying-characters-from-line-above-in.html"
+ },
+ {
+  "date": "2008-02-29",
+  "title": "Is it a leap year",
+  "tags": [
+   "emacs",
+   "emacs-lisp"
+  ],
+  "url": "/2008/02/29/is-it-leap-year.html"
+ },
+ {
+  "date": "2008-01-29",
+  "title": "emacs - a simple search and replace function",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2008/01/29/emacs-simple-search-and-replace.html"
+ },
+ {
+  "date": "2007-12-08",
+  "title": "emacs: how-many",
+  "tags": [
+   "emacs"
+  ],
+  "url": "/2007/12/08/emacs-how-many.html"
+ },
+ {
+  "date": "2007-12-07",
+  "title": "C: Passing on variadic function arguments to another function",
+  "tags": [
+   "c",
+   "c++"
+  ],
+  "url": "/2007/12/07/c-passing-on-variadic-function.html"
+ },
+ {
+  "date": "2007-10-24",
+  "title": "Ubuntu 7.10",
+  "tags": [
+   "ubuntu"
+  ],
+  "url": "/2007/10/24/ubuntu-710.html"
+ },
+ {
+  "date": "2007-10-24",
+  "title": "C and C++ function pointers",
+  "tags": [
+   "c",
+   "c++"
+  ],
+  "url": "/2007/10/24/c-and-c-function-pointers.html"
+ },
+ {
+  "date": "2007-10-09",
+  "title": "Avoiding Ten Common Game AI Mistakes",
+  "tags": [
+   "game-development",
+   "ai"
+  ],
+  "url": "/2007/10/09/avoiding-ten-common-game-ai-mistakes.html"
+ },
+ {
+  "date": "2007-09-27",
+  "title": "11 Visual Studio tricks in Emacs",
+  "tags": [
+   "emacs",
+   "visual-studio"
+  ],
+  "url": "/2007/09/27/11-visual-studio-tricks-in-emacs.html"
+ },
+ {
+  "date": "2007-09-22",
+  "title": "Word numbers programming puzzle",
+  "tags": [
+   "lisp",
+   "common-lisp"
+  ],
+  "url": "/2007/09/22/word-numbers-programming-puzzle.html"
+ },
+ {
+  "date": "2007-09-12",
+  "title": "Commenting out a block of C++ in emacs",
+  "tags": [
+   "emacs",
+   "c++"
+  ],
+  "url": "/2007/09/12/commenting-out-block-of-c-in-emacs.html"
+ },
+ {
+  "date": "2007-09-11",
+  "title": "Adding C++ class names to a function name",
+  "tags": [
+   "c",
+   "c++",
+   "elisp"
+  ],
+  "url": "/2007/09/11/adding-c-class-names-to-function-name.html"
+ },
+ {
+  "date": "2007-09-07",
+  "title": "Fixing up windows pathnames to use in cygwin",
+  "tags": [
+   "cygwin",
+   "win32"
+  ],
+  "url": "/2007/09/07/fixing-up-windows-pathnames-to-use-in.html"
+ }
+];
+
+/* ---------- hand-set signatures ---------- */
+const SIGS = {
+  "Refreshing your Neovim config for 0.12.0": "def refreshNeovim: Config[0.11] => Config[0.12]",
+  "Visualizing K-Way Merge: An Interactive Guide to Database Sorting": "def kWayMerge[A: Ordering](runs: List[Sorted[A]]): Sorted[A]",
+  "Optimizing training a GPT style Tokenizer with C++": "def trainBPE(corpus: Text): Vocab[Fast]",
+  "The Magic of Lazy Lists": "def lazyLists: LazyList[Magic]",
+  "Monad Transformers - the prelude to ZPure": "def transform[F[_]: Monad]: StateT[F, S, A] => ZPure[S, A]",
+  "Monads in Scala 3 for the Genius": "given genius: Monad[Scala3]",
+  "Functional Error Handling with Applicative in Scala 3": "def validate[F[_]: Applicative]: F[Either[E, A]]",
+  "Handling Errors functionally with Scala 3": "def handle[A](fa: => A): Either[Throwable, A]",
+  "Type classes with Scala 2": "implicit def show[A]: Show[A]",
+  "Scala 3 Context Functions": "type Ctx[A] = Context ?=> A",
+  "What's Ap with zio-prelude?": "def both[A, B]: (F[A], F[B]) => F[(A, B)]",
+  "What's Ap?": "def ap[A, B](ff: F[A => B]): F[A] => F[B]",
+  "How to blog with Org-mode": "def publish: Org => Html",
+  "Comonads for Life": "def coflatMap: Life[Cell] => Life[Life[Cell]]",
+  "Monoids for Production": "def combineAll[A: Monoid](xs: List[A]): A",
+  "Using 47 Degree's Fetch library with ZIO": "def fetch[A](id: Id): Fetch[ZIO, A]",
+  "Hacker News API Part 5": "def topStories: ZIO[HN, Error, List[Item]]",
+  "Hacker News API Part 4": "def comments(id: Id): Fetch[Task, Tree[Item]]",
+  "Hacker News API Part 3": "def render: Fetch[Item] => RefTree",
+  "Hacker News API Part 2": "def items(ids: List[Id]): Fetch[Item]",
+  "Hacker News API Part 1": "def hn: Future[List[Story]]",
+  "Future with timeout": "def timeout[A](f: Future[A], d: Duration): Future[A]",
+  "Future[Either] with Cats": "def run: EitherT[Future, E, A]",
+  "Future[Either] and monad transformers": "def lift: Future[Either[E, A]] => EitherT[Future, E, A]",
+  "Finding writable files in a directory in a windows command line": "def writable(dir: Path): List[File]",
+  "Eredis - An updated Emacs Redis API": "def eredis: Elisp => Redis[Reply]",
+  "Radix trees, Dash and Company mode": "def complete(prefix: String): RadixTree[Candidate]",
+  "Roman numeral tool with Udash": "def roman(n: Int): String",
+  "A* algorithm bug fixes": "def aStar[N](start: N, goal: N): Option[Path[N]]",
+  "Is it a leap year": "def isLeap(y: Year): Boolean",
+  "F# vs C#": "def compare: (FSharp, CSharp) => Opinion",
+  "1337 on StackOverflow": "val rep: Reputation[1337]"
+};
+const STOP = new Set(["a","an","the","to","of","in","on","for","with","and","from","your","you","it","is","at","by","via","using","how","what","s","my","&","vs","on","into","out","up","a"]);
+const TAGTYPE = [
+  [["emacs","emacs-lisp","dired","org-mode","company-mode","elisp"],"Emacs"],
+  [["neovim","vim"],"Vim"],
+  [["scala","scala-3","dotty","zio","cats"],"IO"],
+  [["clojure","clojure-script","common-lisp","lisp"],"Lisp"],
+  [["c++","cpp","c"],"Cpp"],
+  [["python"],"Py"],
+  [["mysql","databases","redis"],"Query"],
+  [["msdos","win32","windows","cygwin","command-line","linux","mac","unix"],"Shell"],
+  [["gamedev","algorithms"],"Algo"],
+];
+function camel(title){
+  const w = title.replace(/[’'"]/g,"").replace(/[^A-Za-z0-9#+ ]+/g," ").split(/\s+/).filter(x=>x && !STOP.has(x.toLowerCase()));
+  const pick = w.slice(0,3);
+  if(!pick.length) return "post";
+  let s = pick.map((x,i)=>{x=x.replace(/[#+]/g,"");return i? x[0].toUpperCase()+x.slice(1).toLowerCase() : x.toLowerCase()}).join("");
+  if(/^[0-9]/.test(s)) s = "_"+s;
+  return s || "post";
+}
+function genSig(p){
+  if(SIGS[p.title]) return SIGS[p.title];
+  let T = "Post";
+  for(const [tags,t] of TAGTYPE){ if(p.tags.some(x=>tags.includes(x))){T=t;break;} }
+  const inner = {Emacs:"Unit",Vim:"Config",IO:"A",Lisp:"Sexp",Cpp:"Int",Py:"Any",Query:"Row",Shell:"ExitCode",Algo:"Path",Post:"Unit"}[T];
+  return `def ${camel(p.title)}: ${T}[${inner}]`;
+}
+const esc = s => s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function hl(sig){
+  const e = esc(sig);
+  return e.replace(/(\/\/.*$)|\b(def|given|type|implicit|val|with)\b(\s+)([a-zA-Z_][\w]*)?|([A-Z][A-Za-z0-9]*|\b\d+(?:\.\d+)*\b)|(\?=&gt;|=&gt;|[\[\]\(\):,_])/g,
+    (m,cm,kw,sp,nm,ty,pn)=>{
+      if(cm) return `<span class="cm">${cm}</span>`;
+      if(kw) return `<span class="kw">${kw}</span>${sp}${nm?`<span class="nm">${nm}</span>`:""}`;
+      if(ty) return `<span class="ty">${ty}</span>`;
+      if(pn) return `<span class="pn">${pn}</span>`;
+      return m;
+    });
+}
+
+/* ---------- data prep ---------- */
+const N = POSTS.length;
+POSTS.forEach((p,i)=>{p.no = N - i; p.sig = genSig(p); p.year = p.date.slice(0,4);});
+const tagCount = {};
+POSTS.forEach(p=>p.tags.forEach(t=>{ if(t!=="popular") tagCount[t]=(tagCount[t]||0)+1; }));
+const TAGS = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([t,c],i)=>({t,c,n:i+1}));
+const FN = Object.fromEntries(TAGS.map(x=>[x.t,x.n]));
+const pad3 = n => String(n).padStart(3,"0");
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmt = d => { const [y,m,dd] = d.split("-"); return `${dd} ${MONTHS[+m-1]} ${y}`; };
+const realTags = p => p.tags.filter(t=>t!=="popular");
+const supStr = p => realTags(p).slice(0,4).map(t=>FN[t]).join(",");
+const fnList = (p,max=4) => realTags(p).slice(0,max).map(t=>`<span><b>${FN[t]}</b> ${esc(t)}</span>`).join("");
+
+document.getElementById("issueNo").textContent = N;
+document.getElementById("today").textContent = new Date().toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
+
+/* cover */
+const cover = POSTS[0];
+document.getElementById("coverSig").innerHTML = hl(cover.sig);
+document.getElementById("coverTags").innerHTML = realTags(cover).map(t=>`${esc(t)}<sup class="fn">${FN[t]}</sup>`).join(" &nbsp;");
+
+/* table of contents */
+document.getElementById("toc").innerHTML = POSTS.slice(1,4).map(p=>`
+  <a href="${p.url}"><span class="pg">${p.no}</span><span><div class="t">${esc(p.title)}<sup class="fn">${supStr(p)}</sup></div><div class="sig">${hl(p.sig)}</div></span></a>`).join("");
+
+/* marquees */
+const topics = ["Functional Programming","∘","Scala","∘","Neovim","∘","Generative AI","∘","Emacs","∘","Streaming Data","∘","Monads","∘","Comonads","∘","C++","∘","Category Theory","∘","LLMs","∘","Elisp","∘","Algorithms","∘"];
+const mq1 = topics.map(t=>`<span class="${t==="∘"?"o":""}">${t}</span>`).join("");
+document.getElementById("mq1").innerHTML = mq1 + mq1;
+const small = ["flatMap","map","ap","pure","traverse","fold","coflatMap","extract","combine","empty","sequence","zipWith","unfold","andThen","compose","lift"];
+const mq2 = small.map(t=>`<span>${t} ]</span>`).join("");
+document.getElementById("mq2").innerHTML = mq2 + mq2;
+
+/* hits */
+const hits = POSTS.filter(p=>p.tags.includes("popular"));
+const layout = ["s7 xl","s5 l dark","s4","s4","s4","s5 l","s7 xl dark","s3","s3","s6 l","s8 xl","s4 dark"];
+document.getElementById("hitsGrid").innerHTML = hits.map((p,i)=>`
+  <a class="card rv ${layout[i%layout.length]}" href="${p.url}" style="transition-delay:${(i%3)*60}ms">
+    <div class="top"><span class="n">No. ${pad3(p.no)}</span><span class="k">${fmt(p.date)}</span></div>
+    <h3>${esc(p.title)}<sup class="fn">${supStr(p)}</sup></h3>
+    <div class="sig">${hl(p.sig)}</div>
+    <div class="fns">${fnList(p)}</div>
+    <span class="corner" aria-hidden="true">]</span>
+  </a>`).join("");
+
+/* chips */
+const CHIPS = ["emacs","scala","functional-programming","monads","command-line","c++","zio","clojure","neovim","ai"];
+let activeTag = null;
+document.getElementById("chips").innerHTML = CHIPS.filter(t=>FN[t]).map(t=>`<button class="chip" data-tag="${t}"><sup>${FN[t]}</sup>${t}</button>`).join("");
+
+/* years */
+const years = [...new Set(POSTS.map(p=>p.year))];
+const byYear = y => POSTS.filter(p=>p.year===y);
+document.getElementById("years").innerHTML = years.map(y=>`
+  <section class="year" id="y${y}" data-year="${y}">
+    <div class="yhead rv"><h3>${y}</h3><span class="ln"></span><span class="k" data-yc>${byYear(y).length} ${byYear(y).length>1?"entries":"entry"}</span></div>
+    <div class="rows">${byYear(y).map(p=>{const [,m,d]=p.date.split("-");return `
+      <a class="row" href="${p.url}" data-hay="${esc((p.title+" "+p.sig+" "+p.tags.join(" ")).toLowerCase())}" data-tags="${p.tags.join(" ")}">
+        <span class="d"><b>${pad3(p.no)}</b>${d}.${m}</span>
+        <h4 data-t="${esc(p.title)}">${esc(p.title)}${supStr(p)?`<sup class="fn">${supStr(p)}</sup>`:""}</h4>
+        <div class="sig">${hl(p.sig)}</div>
+        <div class="fns">${fnList(p,5)}</div>
+        ${p.tags.includes("popular")?'<span class="star">★ HIT</span>':""}
+      </a>`}).join("")}</div>
+  </section>`).join("");
+document.getElementById("railList").innerHTML = years.map(y=>`<a href="#y${y}" data-y="${y}">${y}<small>${byYear(y).length}</small></a>`).join("");
+
+/* legend */
+document.getElementById("legend").innerHTML = TAGS.map(x=>`<button data-tag="${x.t}"><sup>${x.n}</sup><span>${esc(x.t)}</span><i>${x.c}</i></button>`).join("");
+
+/* ---------- filtering ---------- */
+const q = document.getElementById("q");
+const rows = [...document.querySelectorAll(".rows .row")];
+function applyFilter(){
+  const term = q.value.trim().toLowerCase();
+  let shown = 0;
+  rows.forEach(r=>{
+    const ok = (!term || r.dataset.hay.includes(term)) && (!activeTag || r.dataset.tags.split(" ").includes(activeTag));
+    r.classList.toggle("hide",!ok);
+    if(ok) shown++;
+    const h = r.querySelector("h4"), t = h.dataset.t, sup = h.querySelector("sup");
+    let html = esc(t);
+    if(term && ok){ const i = t.toLowerCase().indexOf(term); if(i>=0) html = esc(t.slice(0,i))+"<mark>"+esc(t.slice(i,i+term.length))+"</mark>"+esc(t.slice(i+term.length)); }
+    h.innerHTML = html + (sup?sup.outerHTML:"");
+  });
+  document.querySelectorAll(".year").forEach(s=>{
+    const n = s.querySelectorAll(".row:not(.hide)").length;
+    s.classList.toggle("hide",n===0);
+    s.querySelector("[data-yc]").textContent = `${n} ${n===1?"entry":"entries"}`;
+    const ra = document.querySelector(`.rail a[data-y="${s.dataset.year}"]`);
+    if(ra) { ra.classList.toggle("off",n===0); const sm = ra.querySelector("small"); if(sm) sm.textContent = n; }
+  });
+  document.getElementById("count").innerHTML = `<b>${shown}</b> / ${N} entries${activeTag?` · tag <b>${FN[activeTag]}</b> ${esc(activeTag)}`:""}`;
+  const em = document.getElementById("empty");
+  em.classList.toggle("show",shown===0);
+  document.getElementById("emptyQ").textContent = term || activeTag || "";
+}
+q.addEventListener("input",applyFilter);
+function setTag(t){
+  activeTag = activeTag===t ? null : t;
+  document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.dataset.tag===activeTag));
+  applyFilter();
+}
+document.getElementById("chips").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) setTag(b.dataset.tag);});
+document.getElementById("legend").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; setTag(b.dataset.tag); document.getElementById("index").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});});
+document.addEventListener("keydown",e=>{
+  if(e.key==="/" && document.activeElement!==q){e.preventDefault(); q.focus({preventScroll:true}); document.getElementById("index").scrollIntoView({behavior:"smooth"});}
+  if(e.key==="Escape" && document.activeElement===q){q.value="";applyFilter();q.blur();}
+});
+applyFilter();
+
+/* ---------- year rail scroll spy ---------- */
+const railLinks = [...document.querySelectorAll(".rail a")];
+const railBar = document.getElementById("railBar");
+const yearSecs = [...document.querySelectorAll(".year")];
+const idxSec = document.getElementById("index");
+const prog = document.getElementById("progress");
+function onScroll(){
+  const h = document.documentElement;
+  prog.style.transform = `scaleX(${h.scrollTop/(h.scrollHeight-h.clientHeight)})`;
+  let cur = null;
+  for(const s of yearSecs){ if(s.classList.contains("hide")) continue; if(s.getBoundingClientRect().top < innerHeight*.35) cur = s.dataset.year; }
+  railLinks.forEach(a=>a.classList.toggle("on",a.dataset.y===cur));
+  const r = idxSec.getBoundingClientRect();
+  const p = Math.min(1,Math.max(0,(innerHeight*.35 - r.top)/(r.height - innerHeight*.35)));
+  railBar.style.transform = `scaleX(${p})`;
+}
+addEventListener("scroll",onScroll,{passive:true}); onScroll();
+
+/* ---------- reveals ---------- */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+if(!reduce && "IntersectionObserver" in window){
+  const io = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){e.target.classList.add("in"); io.unobserve(e.target);} }),{rootMargin:"0px 0px -8% 0px"});
+  document.querySelectorAll(".rv").forEach(el=>io.observe(el));
+} else document.querySelectorAll(".rv").forEach(el=>el.classList.add("in"));
+
+/* ---------- masthead: apply the type parameter ---------- */
+const ptext = document.getElementById("ptext"), caret = document.getElementById("caret"), frame = document.getElementById("frame");
+if(reduce){ caret.style.display="none"; frame.classList.add("in"); }
+else{
+  ptext.textContent = "A";
+  const target = "Justin"; let i = 0;
+  setTimeout(function erase(){
+    ptext.textContent = "";
+    (function type(){
+      if(i < target.length){ ptext.textContent = target.slice(0,++i); setTimeout(type, 85 + Math.random()*60); }
+      else { caret.classList.add("done"); frame.classList.add("in"); }
+    })();
+  }, 700);
+}
+</script>
+</body>
+</html>
