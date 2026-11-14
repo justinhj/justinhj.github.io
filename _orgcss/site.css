@@ -60,6 +60,10 @@ th {
 table {
   border-collapse: collapse;
   margin-bottom: 1em;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 td, th {

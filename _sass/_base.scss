@@ -75,9 +75,9 @@ ul, ol, dl, figure,
 }
 
 /**
- * Images
+ * Images & Embedded Media
  */
-img {
+img, iframe, video, embed, object {
     max-width: 100%;
     vertical-align: middle;
 }
@@ -220,6 +220,11 @@ code {
 }
 
 /* Custom styles to extend Tailwind */
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
 body {
     background-color: var(--background-color);
     color: var(--text-color);
@@ -229,6 +234,12 @@ body {
     -webkit-text-size-adjust: 100%;
     font-kerning: auto;
     transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.page-content, .wrapper, .post, .post-content, .home {
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 /* Applying the monospaced font for a "coder" feel on specific elements */
@@ -274,6 +285,8 @@ h1, h2, h3, h4, h5, h6, .accent-text {
 .post-content a {
     color: var(--brand-color);
     border-bottom: 1px dotted var(--brand-color);
+    overflow-wrap: anywhere;
+    word-break: break-word;
 
     &:hover {
         color: var(--accent-hover-color);
@@ -358,6 +371,17 @@ h1, h2, h3, h4, h5, h6, .accent-text {
   margin: 1.4em 0;
 }
 
+.post-content p.flex {
+  flex-wrap: wrap;
+}
+
+.post-content table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 :not(pre) > code {
     font-family: $mono-font-family;
     font-size: 0.84em;
@@ -367,6 +391,8 @@ h1, h2, h3, h4, h5, h6, .accent-text {
     border-radius: 4px;
     border: 1px solid var(--border-color);
     font-weight: 500;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 pre.src,
