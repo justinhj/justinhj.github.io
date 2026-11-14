@@ -39,39 +39,52 @@
   src: url('../fonts/sora-v17-latin-700.woff2') format('woff2');
 }
 
-// Our variables
-$base-font-family: 'Sora', sans-serif;
-$base-font-size:   16px;
+// Our variables (Concept 5: Literate typography & palette)
+$base-font-family: 'Newsreader', Georgia, serif;
+$sans-font-family: 'Plus Jakarta Sans', 'Sora', sans-serif;
+$mono-font-family: 'JetBrains Mono', monospace;
+$base-font-size:   19px;
 $base-font-weight: 400;
-$small-font-size:  $base-font-size * 0.875;
-$base-line-height: 1.5;
+$small-font-size:  $base-font-size * 0.82;
+$base-line-height: 1.65;
 
 $spacing-unit:     30px;
 
-$text-color:       #a9b1d6;
-$brand-color:      #2a7ae2;
-$background-color: #1a1b26;
-
-$background-color-light: #fffaf0;
-$text-color-light: #586e75;
-$brand-color-light: #1a73e8;
-
-$grey-color:       #848484;
-$grey-color-light: lighten($grey-color, 40%);
-$grey-color-dark:  darken($grey-color, 25%);
-
+// Dark Mode (Tokyo Night Literate)
+$background-color: #16161e;
+$card-bg-color: #1f202e;
+$text-color: #e0e2ee;
+$secondary-text-color: #9aa5ce;
+$muted-text-color: #565f89;
+$border-color: #292e42;
+$brand-color: #7aa2f7;
 $accent-color: #7aa2f7;
 $accent-hover-color: #9eceff;
-$secondary-text-color: lighten(#5c6370, 20%);
-$secondary-text-color-light: #5c6370;
-$border-color: #2c2e3b;
-$card-bg-color: #24283b;
+$accent-light: rgba(122, 162, 247, 0.15);
+$accent-text: #e0e2ee;
+$code-bg-color: #13141c;
+$code-text-color: #c0caf5;
+$org-star-color: #bb9af7;
 
-$accent-text: #c0caf5;
-$accent-text-light: #2c3e50;
+// Light Mode (Warm Paper & Deep Teal Literate)
+$background-color-light: #faf7f0;
+$card-bg-color-light: #f2eee3;
+$text-color-light: #1c1917;
+$secondary-text-color-light: #57534e;
+$muted-text-color-light: #8c827a;
+$border-color-light: #e7e0d3;
+$brand-color-light: #0f766e;
+$accent-color-light: #0f766e;
+$accent-hover-color-light: #115e59;
+$accent-light-light: rgba(15, 118, 110, 0.1);
+$accent-text-light: #1c1917;
+$code-bg-color-light: #22252a;
+$code-text-color-light: #e2e8f0;
+$org-star-color-light: #0f766e;
 
-$border-color-light: #d9ceb8;
-$card-bg-color-light: #eee8d5;
+$grey-color:       #8c827a;
+$grey-color-light: #e7e0d3;
+$grey-color-dark:  #57534e;
 
 // Width of the content area
 $content-width:    800px;
