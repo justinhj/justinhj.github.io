@@ -10,7 +10,17 @@ comments: true
 
 
   <ul class="post-list">
-    {% for post in site.tags.popular %}
+    {% for post_url in site.data.popular_posts %}
+      {% assign target_slug = post_url | split: "/" | last %}
+      {% assign post = nil %}
+      {% for p in site.posts %}
+        {% assign p_slug = p.url | split: "/" | last %}
+        {% if p_slug == target_slug %}
+          {% assign post = p %}
+          {% break %}
+        {% endif %}
+      {% endfor %}
+      {% if post %}
       <li>
         <article class="post-card">
             <header class="mb-2">
@@ -38,6 +48,7 @@ comments: true
         </article>
 
       </li>
+      {% endif %}
     {% endfor %}
   </ul>
 
